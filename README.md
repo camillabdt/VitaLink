@@ -170,6 +170,4 @@ Desenvolver um sistema que coloque o paciente no controle dos seus próprios dad
 
 ### Sua saúde. Seus dados. Seu controle.
 
-<img src="imagens/logo.png" width="140"/>
-
 </div>
