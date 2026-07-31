@@ -97,29 +97,6 @@ O profissional poderá:
 
 ---
 
-# 🏗 Arquitetura Simplificada
-
-```mermaid
-flowchart LR
-
-Paciente --> VitaLink
-
-Profissional --> VitaLink
-
-VitaLink --> API
-
-API --> Banco[(Banco de Dados)]
-
-Banco --> API
-
-API --> VitaLink
-
-VitaLink --> Paciente
-
-VitaLink --> Profissional
-```
-
----
 
 # 🔄 Fluxo do Sistema
 
@@ -169,55 +146,20 @@ Profissional autorizado
 
 ---
 
-# 📂 Organização do Projeto
-
-```text
-vitalink-prontuario-seguro
-│
-├── README.md
-│
-├── docs/
-│      modelagem-de-ameacas.md
-│
-├── diagramas/
-│      contexto.drawio
-│      contexto.png
-│      fluxo.drawio
-│      fluxo.png
-│
-└── imagens/
-       medico-prontuario.gif
-       logo.png
-```
-
----
 
 # 👩‍💻 Integrantes
 
-| Integrante | Responsabilidade |
-|------------|-----------------|
-| Integrante 1 | Organização do projeto e revisão |
-| Integrante 2 | Usuários, ativos e arquitetura |
-| Integrante 3 | STRIDE (Spoofing, Tampering e Repudiation) |
-| Integrante 4 | STRIDE (Information Disclosure, DoS e Elevation of Privilege) |
-| Integrante 5 | Casos de abuso e considerações finais |
 
----
-
-# 📋 Tecnologias
-
-- Markdown
-- GitHub
-- Mermaid
-- Draw.io
-
+* Amanda Dias
+* Camilla Borchhardt
+* Milena Castro
+* Rafela Nunes
+* Tauani Sauceda
 ---
 
 # 📚 Disciplina
 
 **Engenharia de Software Seguro**
-
-Trabalho de Modelagem de Ameaças utilizando STRIDE e Casos de Abuso.
 
 ---
 
