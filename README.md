@@ -3,12 +3,6 @@
 <img src="8d649d06-87d6-4e1d-a219-96347d7dced6.png" width="450"/>
 
 
-# 💙 VitaLink
-
-### Prontuário Digital Compartilhado
-
-Sistema seguro para armazenamento, gerenciamento e compartilhamento de exames, consultas e documentos médicos.
-
 ![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-00b894?style=for-the-badge)
 ![Disciplina](https://img.shields.io/badge/Disciplina-Engenharia%20de%20Software%20Seguro-0984e3?style=for-the-badge)
 ![GitHub](https://img.shields.io/badge/GitHub-Projeto%20Acadêmico-2d3436?style=for-the-badge)
