@@ -43,11 +43,12 @@ Nesta etapa, o grupo realizará:
 * a identificação dos riscos mais relevantes.
 
 ## Integrantes
-Amanda Dias 
-Camilla Borchhardt
-Milena Castro
-Rafaela Nunes
-Tauani Sauceda
+
+* Amanda Dias 
+* Camilla Borchhardt
+* Milena Castro
+* Rafaela Nunes
+* Tauani Sauceda
 
 
 ## Disciplina
