@@ -1,6 +1,7 @@
 <div align="center">
 
-<img src="imagens/medico-prontuario.gif" width="420"/>
+<img src="8d649d06-87d6-4e1d-a219-96347d7dced6.png" width="450"/>
+
 
 # 💙 VitaLink
 
