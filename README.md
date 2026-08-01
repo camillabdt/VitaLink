@@ -25,6 +25,20 @@ Os profissionais de saúde poderão registrar atendimentos, anexar documentos e 
 
 Este projeto está sendo desenvolvido na disciplina de **Engenharia de Software Seguro**, com foco na análise de ameaças, casos de abuso e requisitos de segurança antes da implementação.
 
+## Ambiente de desenvolvimento
+
+Instale o [uv](https://docs.astral.sh/uv/getting-started/installation/) e prepare o ambiente local:
+
+```bash
+uv sync
+```
+
+Execute comandos dentro do ambiente com `uv run`, por exemplo:
+
+```bash
+uv run python --version
+```
+
 ---
 
 # 🎯 Objetivos
