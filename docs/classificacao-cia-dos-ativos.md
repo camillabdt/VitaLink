@@ -1,0 +1,20 @@
+# Classificação dos ativos
+
+Os ativos foram avaliados como **alto**, **médio** ou **baixo** de acordo com o
+impacto que a perda de confidencialidade, integridade ou disponibilidade teria
+no uso do sistema.
+
+| ID | Ativo | Confidencialidade | Integridade | Disponibilidade | Justificativa |
+| --- | --- | --- | --- | --- | --- |
+| A01 | Dados pessoais dos pacientes | Alto | Alto | Médio | Nome, CPF e dados de contato não podem ser expostos, e o cadastro precisa identificar corretamente o dono do histórico médico. Uma indisponibilidade breve atrapalha o uso da conta, mas não altera os documentos já armazenados. |
+| A02 | Dados dos profissionais de saúde | Alto | Alto | Alto | Parte das informações é pessoal, e o registro profissional precisa estar correto para que o paciente saiba quem solicita acesso ou registra um atendimento. Esses dados também precisam estar disponíveis sempre que a habilitação do profissional for verificada. |
+| A03 | Dados médicos dos pacientes | Alto | Alto | Alto | Diagnósticos, alergias e tratamentos são dados sensíveis. Além de permanecerem restritos, precisam estar corretos e acessíveis para que o profissional autorizado compreenda o histórico do paciente antes de registrar uma conduta. |
+| A04 | Exames, laudos e imagens médicas | Alto | Alto | Alto | Os arquivos revelam condições de saúde e podem orientar diagnósticos. Por isso, somente pessoas autorizadas devem visualizá-los, seu conteúdo não pode ser trocado e eles precisam estar disponíveis durante o atendimento. |
+| A05 | Receitas e prescrições médicas | Alto | Alto | Alto | A receita revela o tratamento e deve chegar ao paciente exatamente como foi registrada pelo profissional. A falta do documento, principalmente durante um tratamento em andamento, pode impedir o uso correto do medicamento. |
+| A06 | Credenciais de autenticação | Alto | Alto | Médio | O sigilo e a integridade das credenciais impedem o roubo de contas. Se o serviço de autenticação ficar temporariamente indisponível, o usuário não entra no sistema, mas seus dados médicos permanecem preservados. |
+| A07 | Tokens | Alto | Alto | Médio | Tokens precisam permanecer secretos e não podem ser alterados, pois representam uma sessão ou uma autorização temporária. Sua indisponibilidade encerra ou impede uma operação, mas um novo token pode ser emitido após a autenticação. |
+| A08 | Registros de auditoria | Alto | Alto | Médio | O histórico de acesso pode revelar quais profissionais atendem determinado paciente. Ele não pode ser apagado ou alterado, pois serve para prestar contas e investigar incidentes; uma consulta temporariamente indisponível pode ser recuperada sem interromper o atendimento. |
+| A09 | API | Alto | Alto | Alto | A API recebe dados sensíveis e executa as operações solicitadas pelos usuários. Ela deve aplicar as permissões sem alteração, impedir respostas para pessoas não autorizadas e permanecer disponível para que a aplicação funcione. |
+| A10 | Banco de dados | Alto | Alto | Alto | Contas, históricos e autorizações ficam relacionados no banco. Um vazamento alcança vários ativos, uma alteração pode misturar dados de pessoas diferentes e a indisponibilidade impede quase todas as funções do sistema. |
+| A11 | Servidor da aplicação | Alto | Alto | Alto | O servidor processa dados e executa as regras de acesso. Quem obtiver controle sobre ele pode observar informações em processamento, mudar o comportamento da aplicação ou interromper completamente o serviço. |
+| A12 | Armazenamento de documentos | Alto | Alto | Alto | Exames, laudos, receitas e imagens devem ficar restritos às pessoas autorizadas, sem substituições ou perdas. Também precisam estar disponíveis quando o paciente ou o profissional autorizado consultar o histórico. |
