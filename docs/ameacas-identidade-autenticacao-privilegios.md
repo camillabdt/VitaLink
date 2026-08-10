@@ -39,7 +39,7 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 
 **Condição ou vulnerabilidade:** as regras de validação do cadastro e do registro profissional não estão documentadas. A existência e a forma dessa validação ficam **[A confirmar]**. A ameaça existe mesmo sem afirmar que o cadastro atual é vulnerável.
 
-**Caso de abuso relacionado:** `CA01 — Cadastro de falso profissional`, situação já listada no README.
+**Caso de abuso relacionado:** `CA01 — Cadastro de falso profissional`, previsto pela Issue #11.
 
 ### T02 — Uso de credenciais roubadas
 
@@ -56,7 +56,7 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 
 **Condição ou vulnerabilidade:** os requisitos para proteger credenciais, recuperar contas, limitar sessões e revogar tokens ainda não foram definidos para o VitaLink. A existência e a cobertura desses controles ficam **[A confirmar]**. O ataque não prova que a autenticação falhou por si só; ele explora o uso de uma evidência de identidade que foi comprometida.
 
-**Caso de abuso relacionado:** `CA02 — Roubo da conta do paciente`, situação já listada no README.
+**Caso de abuso relacionado:** `CA02 — Roubo da conta de um paciente`, previsto pela Issue #11.
 
 ### T03 — Elevação indevida de perfil ou privilégio
 
