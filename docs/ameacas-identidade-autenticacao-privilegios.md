@@ -73,7 +73,7 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 
 **Condição ou vulnerabilidade:** ausência ou aplicação incompleta de autorização por recurso e operação, confiança em identificadores enviados pelo cliente, permissões mais amplas que a necessidade do perfil ou concessão implícita de novos privilégios. Quais controles existirão e se haverá perfil administrativo permanecem **[A confirmar]**.
 
-**Caso de abuso relacionado:** `CA03 — Acesso sem autorização`, situação já listada no README. O caso também deverá ser relacionado às ameaças de consentimento quando a análise da Issue #7 for integrada.
+**Casos de abuso relacionados:** `CA01 — Cadastro de falso profissional` e `CA02 — Roubo da conta de um paciente`. Ambos podem resultar na obtenção de privilégios que não pertencem ao ator.
 
 ## Relação entre identidade, autenticação e privilégio
 
@@ -91,6 +91,6 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 | --- | --- | --- | --- |
 | T01 | CA01 | A02, A03, A04, A05, A06, A09 e A12 | `R01 [A confirmar]` — acesso ou operação de falso profissional. |
 | T02 | CA02 | A03 a A08, A09 e A10 | `R02 [A confirmar]` — uso da conta ou dos tokens de outra pessoa. |
-| T03 | CA03 | A03 a A10 | `R03 [A confirmar]` — operação fora do perfil ou do escopo autorizado. |
+| T03 | CA01 e CA02 | A03 a A10 | `R03 [A confirmar]` — operação fora do perfil ou do escopo autorizado. |
 
 As probabilidades, os impactos numéricos, as classificações, os controles específicos e os riscos residuais serão definidos na etapa de análise de riscos. Não foram alterados neste documento. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar identidades, ativos, ameaças e condições. O detalhamento de Protect, Detect, Respond e Recover permanece **[A confirmar]** nas etapas posteriores.
