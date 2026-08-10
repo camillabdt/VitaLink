@@ -127,7 +127,7 @@ Este painel reúne os documentos que detalham os ativos, perfis, permissões, am
 | Acesso         | Fluxo de autorização e revogação        | [PR #28](https://github.com/camillabdt/VitaLink/pull/28)       |
 | Ameaças        | Identidade, autenticação e privilégios  | [PR #30](https://github.com/camillabdt/VitaLink/pull/30)       |
 | Ameaças        | Consentimento e acesso indevido         | [PR #29](https://github.com/camillabdt/VitaLink/pull/29)       |
-| Casos de abuso | Catálogo central de casos de abuso      | [PR #31](https://github.com/camillabdt/VitaLink/pull/31)       |
+| Casos de abuso | Catálogo central de casos de abuso      | [Acessar documento](docs/casos-de-abuso.md)                    |
 
 Os documentos usam identificadores estáveis, como `T01` para ameaças, `CA01` para casos de abuso e `R01` para riscos, preservando a rastreabilidade entre os artefatos de segurança.
 
