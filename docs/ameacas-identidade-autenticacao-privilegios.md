@@ -11,15 +11,17 @@ Este documento registra as ameaças da Issue #6 para os atores já descritos no 
 - **Credencial:** dado usado para autenticar, como identificador e senha. É o ativo A06.
 - **Token:** representação de sessão, recuperação de conta ou confirmação de operação. É o ativo A07 e não concede, sozinho, um privilégio.
 
+O cadastro de pacientes foi analisado como o ponto em que o sistema estabelece a identidade do paciente. O README permite que o paciente crie a própria conta, mas os critérios que vinculam os dados de A01 à pessoa cadastrada e evitam a associação indevida de A03 permanecem **[A confirmar]**. Aceitar um cadastro como se pertencesse a outra pessoa é uma condição de Spoofing. Esta análise não presume que essa validação já exista nem define mecanismo de implementação.
+
 O perfil Administrador ou Suporte não está documentado no escopo atual. Portanto, T03 trata a obtenção de permissões de outro perfil como ameaça e mantém qualquer privilégio administrativo futuro como **[A confirmar]**.
 
 ## Ameaças identificadas
 
-| ID | Categoria STRIDE | Componente ou ativo | Ameaça concreta | Impacto e ativos afetados |
-| --- | --- | --- | --- | --- |
-| T01 | Spoofing | Cadastro profissional, identidade profissional e A02, A06 e A09 | Uma pessoa se cadastra ou se apresenta como profissional de saúde sem corresponder à identidade ou habilitação alegada e usa essa conta para solicitar acesso a pacientes. | O paciente pode conceder acesso a um falso profissional. Pode ocorrer exposição de A03, A04, A05 e A12, além de fraude, associação incorreta de atendimentos e perda de confiança. |
-| T02 | Spoofing | Login, recuperação de conta, sessão, A06 e A07 | Um atacante obtém credenciais ou um token ainda válido de paciente ou profissional e usa a sessão para agir como a vítima. | O atacante pode consultar, alterar, anexar ou compartilhar dados conforme os privilégios da vítima. Os ativos afetados incluem A03 a A08, A09 e A10. |
-| T03 | Elevation of Privilege | API, autorização por recurso, perfis e A09 a A11 | Um paciente ou profissional autenticado manipula a solicitação, o identificador do recurso ou a informação de perfil para executar operações reservadas a outro perfil ou a outro paciente. | O atacante pode consultar ou alterar dados médicos, permissões e registros de auditoria fora do próprio escopo. Os ativos afetados incluem A03 a A10, além da integridade das autorizações. |
+| ID  | Categoria STRIDE       | Componente ou ativo                                             | Ameaça concreta                                                                                                                                                                             | Impacto e ativos afetados                                                                                                                                                                   |
+| --- | ---------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T01 | Spoofing               | Cadastro profissional, identidade profissional e A02, A06 e A09 | Uma pessoa se cadastra ou se apresenta como profissional de saúde sem corresponder à identidade ou habilitação alegada e usa essa conta para solicitar acesso a pacientes.                  | O paciente pode conceder acesso a um falso profissional. Pode ocorrer exposição de A03, A04, A05 e A12, além de fraude, associação incorreta de atendimentos e perda de confiança.          |
+| T02 | Spoofing               | Login, recuperação de conta, sessão, A06 e A07                  | Um atacante obtém credenciais ou um token ainda válido de paciente ou profissional e usa a sessão para agir como a vítima.                                                                  | O atacante pode consultar, alterar, anexar ou compartilhar dados conforme os privilégios da vítima. Os ativos afetados incluem A03 a A08, A09 e A10.                                        |
+| T03 | Elevation of Privilege | API, autorização por recurso, perfis e A09 a A11                | Um paciente ou profissional autenticado manipula a solicitação, o identificador do recurso ou a informação de perfil para executar operações reservadas a outro perfil ou a outro paciente. | O atacante pode consultar ou alterar dados médicos, permissões e registros de auditoria fora do próprio escopo. Os ativos afetados incluem A03 a A10, além da integridade das autorizações. |
 
 ## Análise por ameaça
 
@@ -77,20 +79,20 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 
 ## Relação entre identidade, autenticação e privilégio
 
-| Pergunta | Resposta documental |
-| --- | --- |
-| Quem é a pessoa? | A identidade registrada como paciente ou profissional. Os dados do cadastro devem corresponder ao sujeito representado; a validação profissional está [A confirmar]. |
-| Como o sistema verifica isso? | Por autenticação. Os requisitos concretos para senha, recuperação, sessão e fatores adicionais estão [A confirmar]. |
-| O que a pessoa pode fazer? | A autorização define o recurso, a operação e o escopo. No caso de dados médicos, a autorização ativa do paciente é uma condição necessária. |
-| O que é privilégio? | O limite efetivo de operações da identidade autenticada. Ele não deve ser ampliado porque o cliente enviou outro identificador ou porque uma função foi ocultada na interface. |
-| O que um token prova? | Apenas o contexto definido para a sessão, recuperação ou confirmação. O servidor ainda deve verificar se o token é válido e se a operação está autorizada. |
+| Pergunta                      | Resposta documental                                                                                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Quem é a pessoa?              | A identidade registrada como paciente ou profissional. Os dados do cadastro devem corresponder ao sujeito representado; a validação profissional está [A confirmar].           |
+| Como o sistema verifica isso? | Por autenticação. Os requisitos concretos para senha, recuperação, sessão e fatores adicionais estão [A confirmar].                                                            |
+| O que a pessoa pode fazer?    | A autorização define o recurso, a operação e o escopo. No caso de dados médicos, a autorização ativa do paciente é uma condição necessária.                                    |
+| O que é privilégio?           | O limite efetivo de operações da identidade autenticada. Ele não deve ser ampliado porque o cliente enviou outro identificador ou porque uma função foi ocultada na interface. |
+| O que um token prova?         | Apenas o contexto definido para a sessão, recuperação ou confirmação. O servidor ainda deve verificar se o token é válido e se a operação está autorizada.                     |
 
 ## Rastreabilidade inicial
 
-| Ameaça | Caso de abuso | Ativos principais | Risco a registrar posteriormente |
-| --- | --- | --- | --- |
-| T01 | CA01 | A02, A03, A04, A05, A06, A09 e A12 | `R01 [A confirmar]` — acesso ou operação de falso profissional. |
-| T02 | CA02 | A03 a A08, A09 e A10 | `R02 [A confirmar]` — uso da conta ou dos tokens de outra pessoa. |
-| T03 | CA01 e CA02 | A03 a A10 | `R03 [A confirmar]` — operação fora do perfil ou do escopo autorizado. |
+| Ameaça | Caso de abuso | Ativos principais                  | Risco a registrar posteriormente                                       |
+| ------ | ------------- | ---------------------------------- | ---------------------------------------------------------------------- |
+| T01    | CA01          | A02, A03, A04, A05, A06, A09 e A12 | `R01 [A confirmar]` — acesso ou operação de falso profissional.        |
+| T02    | CA02          | A03 a A08, A09 e A10               | `R02 [A confirmar]` — uso da conta ou dos tokens de outra pessoa.      |
+| T03    | CA01 e CA02   | A03 a A10                          | `R03 [A confirmar]` — operação fora do perfil ou do escopo autorizado. |
 
 As probabilidades, os impactos numéricos, as classificações, os controles específicos e os riscos residuais serão definidos na etapa de análise de riscos. Não foram alterados neste documento. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar identidades, ativos, ameaças e condições. O detalhamento de Protect, Detect, Respond e Recover permanece **[A confirmar]** nas etapas posteriores.
