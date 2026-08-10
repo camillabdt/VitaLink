@@ -20,11 +20,11 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 
 ## Ameaças identificadas
 
-| ID | Categoria STRIDE | Componente ou ativo | Ameaça concreta | Permissão violada e impacto |
-| --- | --- | --- | --- | --- |
-| T04 | Information Disclosure | API, autorização por recurso e A03 a A05 e A12 | Um profissional ou atacante acessa dados médicos de um paciente sem existir uma autorização ativa para aquele paciente e recurso. | Viola o controle do paciente sobre seus dados e pode expor histórico, exames, receitas, laudos e imagens. Também afeta A08, A09 e A10 se o acesso não for registrado ou se a autorização for ignorada. |
-| T05 | Information Disclosure e Elevation of Privilege | Estado da autorização, sessão, token A07 e A09 | Um profissional continua usando uma autorização que foi revogada ou expirada, ou uma sessão antiga permite novos acessos com base no estado anterior. | Viola a revogação ou o fim do período e prolonga um privilégio encerrado. Pode expor ou alterar A03 a A05 e A12 e comprometer a confiabilidade de A08. |
-| T06 | Elevation of Privilege e Information Disclosure | Escopo de autorização, identificadores de recursos, API e A09 e A10 | Um profissional com autorização limitada amplia a solicitação para outro paciente, dado ou operação e obtém permissões além das concedidas. | Viola o escopo definido pelo paciente. Pode permitir consulta, alteração ou compartilhamento indevido de A03 a A05 e A12, além de modificar autorizações e registros relacionados. |
+| ID  | Categoria STRIDE                                | Componente ou ativo                                                 | Ameaça concreta                                                                                                                                       | Permissão violada e impacto                                                                                                                                                                            |
+| --- | ----------------------------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T04 | Information Disclosure                          | API, autorização por recurso e A03 a A05 e A12                      | Um profissional ou atacante acessa dados médicos de um paciente sem existir uma autorização ativa para aquele paciente e recurso.                     | Viola o controle do paciente sobre seus dados e pode expor histórico, exames, receitas, laudos e imagens. Também afeta A08, A09 e A10 se o acesso não for registrado ou se a autorização for ignorada. |
+| T05 | Information Disclosure e Elevation of Privilege | Estado da autorização, sessão, token A07 e A09                      | Um profissional continua usando uma autorização que foi revogada ou expirada, ou uma sessão antiga permite novos acessos com base no estado anterior. | Viola a revogação ou o fim do período e prolonga um privilégio encerrado. Pode expor ou alterar A03 a A05 e A12 e comprometer a confiabilidade de A08.                                                 |
+| T06 | Elevation of Privilege e Information Disclosure | Escopo de autorização, identificadores de recursos, API e A09 e A10 | Um profissional com autorização limitada amplia a solicitação para outro paciente, dado ou operação e obtém permissões além das concedidas.           | Viola o escopo definido pelo paciente. Pode permitir consulta, alteração ou compartilhamento indevido de A03 a A05 e A12, além de modificar autorizações e registros relacionados.                     |
 
 ## Análise por ameaça
 
@@ -43,7 +43,7 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 
 **Condição ou vulnerabilidade:** ausência de verificação de autorização por recurso, concessão implícita baseada apenas no perfil profissional ou confiança em identificadores fornecidos pelo cliente. A implementação e a cobertura dessas verificações ficam **[A confirmar]**.
 
-**Caso de abuso relacionado:** `CA03 — Acesso sem autorização`, situação já listada no README.
+**Caso de abuso relacionado:** `CA04 — Consulta a prontuário sem autorização`, previsto pela Issue #12.
 
 ### T05 — Uso de autorização revogada ou expirada
 
@@ -61,7 +61,7 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 
 **Condição ou vulnerabilidade:** verificação feita somente no momento da emissão do token, cache de autorização desatualizado, sessão que não é reavaliada ou ausência de contenção após revogação e expiração. O mecanismo exato permanece **[A confirmar]**, mas o resultado esperado é impedir novos acessos.
 
-**Caso de abuso relacionado:** `CA10 — Uso de permissões expiradas`, situação já listada no README.
+**Caso de abuso relacionado:** `CA03 — Uso de autorização revogada`, previsto pela Issue #12.
 
 ### T06 — Ampliação indevida da permissão
 
@@ -78,7 +78,7 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 
 **Condição ou vulnerabilidade:** escopo amplo ou implícito, autorização incompleta por recurso e operação, confiança em parâmetros do cliente ou possibilidade de alterar uma autorização sem decisão do paciente. As regras de granularidade permanecem **[A confirmar]**.
 
-**Caso de abuso relacionado:** `CA06 — Compartilhamento indevido`, situação já listada no README.
+**Caso de abuso relacionado:** `CA04 — Consulta a prontuário sem autorização`, quando uma autorização limitada é usada para alcançar outro paciente, recurso ou operação.
 
 ## Permissões explicitamente violadas
 
@@ -90,10 +90,10 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 
 ## Rastreabilidade inicial
 
-| Ameaça | Caso de abuso | Ativos principais | Risco a registrar posteriormente |
-| --- | --- | --- | --- |
-| T04 | CA03 | A03, A04, A05, A08, A09, A10 e A12 | `R04 [A confirmar]` — acesso a dados sem consentimento ativo. |
-| T05 | CA10 | A03 a A08, A09 e A10 | `R05 [A confirmar]` — uso de autorização revogada ou expirada. |
-| T06 | CA06 | A03, A04, A05, A08, A09, A10 e A12 | `R06 [A confirmar]` — ampliação indevida de escopo ou operação. |
+| Ameaça | Caso de abuso | Ativos principais                  | Risco a registrar posteriormente                                |
+| ------ | ------------- | ---------------------------------- | --------------------------------------------------------------- |
+| T04    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | `R04 [A confirmar]` — acesso a dados sem consentimento ativo.   |
+| T05    | CA03          | A03 a A08, A09 e A10               | `R05 [A confirmar]` — uso de autorização revogada ou expirada.  |
+| T06    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | `R06 [A confirmar]` — ampliação indevida de escopo ou operação. |
 
 As probabilidades, os impactos numéricos, as classificações, os controles específicos e os riscos residuais serão definidos na etapa de análise de riscos. Não foram alterados neste documento. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar consentimento, escopo, estados, ativos e ameaças. Protect, Detect e Respond permanecem **[A confirmar]** nas etapas posteriores.
