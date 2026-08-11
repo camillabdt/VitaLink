@@ -1,0 +1,13 @@
+flowchart LR
+    patient[Paciente] --> client[Cliente]
+    professional[Profissional de Saúde] --> client
+    client --> api[API: autenticação e autorização]
+    api --> authorization[Autorizações]
+    api --> medical[Dados médicos]
+    api --> documents[Documentos]
+    api --> audit[Registros de auditoria]
+
+    authorization --> api
+    api -. RS01 e RS02 .-> medical
+    api -. RS01 e RS02 .-> documents
+    api -. RS03 .-> audit

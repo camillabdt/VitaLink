@@ -2,163 +2,67 @@
 
 <img src="imagens/logo.png" alt="Logo do VitaLink" width="620">
 
-![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-00b894?style=for-the-badge)
-![Disciplina](https://img.shields.io/badge/Disciplina-Engenharia%20de%20Software%20Seguro-0984e3?style=for-the-badge)
-![GitHub](https://img.shields.io/badge/GitHub-Projeto%20Acadêmico-2d3436?style=for-the-badge)
+# VitaLink
 
 _Sua saúde. Seus dados. Seu controle._
 
 </div>
 
----
+## Escopo e estado atual
 
-# 📖 Sobre o projeto
+O VitaLink é uma proposta acadêmica de sistema para gerenciamento seguro de informações médicas. Pacientes mantêm o próprio histórico e decidem quando profissionais de saúde podem acessá-lo. O repositório contém a análise e o planejamento de segurança. Ele **não contém uma implementação executável do sistema, pipeline, testes de segurança ou verificação de segurança real**.
 
-O **VitaLink** é uma proposta de sistema para gerenciamento seguro de informações médicas.
+Nesta documentação, os termos têm significado explícito:
 
-O objetivo é permitir que pacientes mantenham um histórico digital de sua saúde, reunindo exames, consultas, receitas, laudos e imagens médicas em um único ambiente.
+- **Estado atual:** artefato ou evidência presente no repositório.
+- **Proposto:** requisito, controle ou decisão planejada, ainda sem comprovação de implementação.
+- **Evidência:** saída, teste, relatório ou outro artefato reproduzível versionado.
+- **[A confirmar]:** informação ainda não documentada ou não validável.
 
-Os profissionais de saúde poderão registrar atendimentos, anexar documentos e consultar informações dos pacientes **somente mediante autorização**.
+## Perfis e ativos principais
 
-O projeto é desenvolvido na disciplina de **Engenharia de Software Seguro**, com foco na proteção de dados médicos e no controle consciente de seu compartilhamento.
+| Perfil | Papel documentado |
+| --- | --- |
+| Paciente | Mantém dados próprios, compartilha informações e concede ou revoga acesso. |
+| Profissional de Saúde | Solicita acesso e atua apenas no escopo de autorização ativa. |
+| Administrador ou Suporte | Fora do escopo atual; não recebe permissão. |
 
-## 🛠️ Ambiente de desenvolvimento
+Os ativos incluem dados pessoais (A01–A02), dados e documentos médicos (A03–A05 e A12), credenciais e tokens (A06–A07), auditoria (A08) e componentes internos (A09–A11). Consulte o [inventário](docs/inventario-de-ativos.md) e a [classificação CIA](docs/classificacao-cia-dos-ativos.md).
 
-Instale o [uv](https://docs.astral.sh/uv/getting-started/installation/) e prepare o ambiente local:
+## Navegação por etapa
 
-```bash
-uv sync
-```
+| Etapa | Status documental | Artefatos locais |
+| --- | --- | --- |
+| Base | Documentada | [Perfis e permissões](docs/usuarios-perfis-e-permissoes.md), [autorização e revogação](docs/fluxo-autorizacao-revogacao.md) |
+| 1. Ameaças e casos de abuso | Documentada, com lacunas de implementação marcadas | [Índice STRIDE e casos de abuso](docs/etapa1-modelagem-de-ameacas.md), [identidade](docs/ameacas-identidade-autenticacao-privilegios.md), [consentimento](docs/ameacas-consentimento-acesso-indevido.md), [disponibilidade](docs/ameacas-disponibilidade.md) |
+| 2. Riscos e NIST CSF 2.0 | Planejada e documentada; residual apenas estimado | [Critérios](docs/etapa2-criterios-e-risco-residual.md), [registro e tratamento](docs/etapa2-riscos-e-tratamento.md) |
+| 3. Arquitetura segura | Proposta; sem implementação verificável | [Requisitos e decisões](docs/etapa3-arquitetura-segura.md), [diagrama-fonte Mermaid](docs/diagramas/arquitetura-segura.mmd) |
+| 4. Código seguro | Pendente de código e evidência executável | [Registro da lacuna](docs/etapa4-codigo-seguro.md) |
+| 5. Verificação de segurança | Pendente de execução real e relatório | [Registro da lacuna](docs/etapa5-verificacao-de-seguranca.md) |
+| 6. Resposta e detecção | Roteiro e regras propostos; sem monitoramento ativo | [Resposta e detecção](docs/etapa6-resposta-e-deteccao.md) |
+| 7. Pipeline e vídeo | Roteiros propostos; sem pipeline ou vídeo encontrado | [Pipeline e vídeo](docs/etapa7-pipeline-e-video.md) |
 
-Execute comandos dentro do ambiente com `uv run`, por exemplo:
+## Rastreabilidade central
 
-```bash
-uv run python --version
-```
+Os identificadores estáveis são `Axx` (ativos), `Txx` (ameaças), `CAxx` (casos de abuso), `Rxx` (riscos), `RSxx` (requisitos), `Vxx` (vulnerabilidades candidatas), `DAxx` (decisões arquiteturais) e `Dxx` (regras de detecção). A [Etapa 1](docs/etapa1-modelagem-de-ameacas.md) liga ativos, ameaças e abusos. A [Etapa 2](docs/etapa2-riscos-e-tratamento.md) liga ameaças, riscos, NIST CSF 2.0, controles propostos, responsáveis propostos e verificação necessária. A [Etapa 3](docs/etapa3-arquitetura-segura.md) liga riscos a requisitos, vulnerabilidades candidatas e decisões.
 
----
+As decisões de escopo, autorização, sessão, auditoria e detecção estão em [decisões de segurança propostas](docs/decisoes-de-seguranca.md).
 
-# 🎯 Objetivos
+## Evidências e participação
 
-- Centralizar informações médicas.
-- Facilitar o compartilhamento entre paciente e profissional.
-- Garantir a privacidade dos dados.
-- Proteger informações sensíveis.
-- Aplicar princípios de Engenharia de Software Seguro.
-- Realizar Modelagem de Ameaças utilizando STRIDE.
+A [auditoria de evidências do repositório](docs/evidencias-repositorio.md) registra o que foi encontrado no histórico Git e o que ainda não pode ser comprovado. Ela não substitui a conferência no GitHub após o push.
 
----
-
-# 👥 Perfis de usuário
-
-## 🧑 Paciente
-
-O paciente poderá:
-
-- Criar conta.
-- Fazer login.
-- Editar perfil.
-- Anexar exames.
-- Anexar receitas.
-- Anexar laudos.
-- Anexar imagens médicas.
-- Registrar consultas.
-- Visualizar o histórico médico.
-- Compartilhar informações.
-- Revogar o acesso de profissionais.
-- Consultar o histórico de acessos.
-
-## 👨‍⚕️ Profissional de Saúde
-
-O profissional poderá:
-
-- Criar conta profissional.
-- Fazer login.
-- Solicitar acesso ao paciente.
-- Registrar consultas.
-- Adicionar exames.
-- Adicionar laudos.
-- Adicionar receitas.
-- Consultar pacientes autorizados.
-- Atualizar informações médicas.
-
----
-
-# 🔐 Principais recursos protegidos
-
-| Categoria              | Recursos                                                 |
-| ---------------------- | -------------------------------------------------------- |
-| 👤 Dados pessoais      | Informações cadastrais de pacientes e profissionais      |
-| 🩺 Informações médicas | Histórico, consultas, exames, receitas, laudos e imagens |
-| 🔑 Controle de acesso  | Credenciais, tokens, permissões e autorizações           |
-| 🗄️ Infraestrutura      | Banco de dados, API e servidor                           |
-| 📜 Rastreabilidade     | Registros de auditoria e histórico de acessos            |
-
----
-
-# 🔄 Fluxo geral do sistema
-
-```text
-Paciente
-    │
-    │ Mantém dados e autorizações
-    ▼
-VitaLink
-    ├── Armazena informações médicas
-    ├── Gerencia permissões
-    └── Registra acessos
-    │
-    ▼
-Profissional autorizado
-```
-
----
-
-# 🛡️ Documentação de segurança
-
-Este painel reúne os documentos que detalham os ativos, perfis, permissões, ameaças, casos de abuso e critérios de risco do VitaLink.
-
-| Área           | Documento                               | Referência                                                     |
-| -------------- | --------------------------------------- | -------------------------------------------------------------- |
-| Ativos         | Inventário de ativos                    | [Acessar documento](docs/inventario-de-ativos.md)              |
-| Classificação  | Classificação CIA dos ativos            | [Acessar documento](docs/classificacao-cia-dos-ativos.md)      |
-| Riscos         | Critérios de avaliação e risco residual | [Acessar documento](docs/etapa2-criterios-e-risco-residual.md) |
-| Acesso         | Usuários, perfis e permissões           | [PR #27](https://github.com/camillabdt/VitaLink/pull/27)       |
-| Acesso         | Fluxo de autorização e revogação        | [PR #28](https://github.com/camillabdt/VitaLink/pull/28)       |
-| Ameaças        | Identidade, autenticação e privilégios  | [PR #30](https://github.com/camillabdt/VitaLink/pull/30)       |
-| Ameaças        | Consentimento e acesso indevido         | [PR #29](https://github.com/camillabdt/VitaLink/pull/29)       |
-| Casos de abuso | Catálogo central de casos de abuso      | [PR #31](https://github.com/camillabdt/VitaLink/pull/31)       |
-
-Os documentos usam identificadores estáveis, como `T01` para ameaças, `CA01` para casos de abuso e `R01` para riscos, preservando a rastreabilidade entre os artefatos de segurança.
-
----
-
-# 👩‍💻 Integrantes
+## Integrantes
 
 - Amanda Dias
 - Camilla Borchhardt
+- Luiza Figueiredo
 - Milena Castro
 - Rafela Nunes
 - Tauani Sauceda
 
----
+O histórico local contém autoria associada a Amanda, Camilla, Luiza, Milena e Tauani. A ausência de contribuição identificada para Rafela e a associação entre identidades de autoria estão registradas como **[A confirmar]** em [evidências](docs/evidencias-repositorio.md).
 
-# 📚 Disciplina
+## Ambiente local
 
-**Engenharia de Software Seguro**
-
----
-
-# ❤️ Nossa missão
-
-Desenvolver um sistema que coloque o paciente no controle dos próprios dados de saúde, garantindo **privacidade**, **segurança** e **compartilhamento consciente** das informações médicas.
-
----
-
-<div align="center">
-
-## 💙 VitaLink
-
-### Sua saúde. Seus dados. Seu controle.
-
-</div>
+O projeto declara Python 3.12 e `uv` em [pyproject.toml](pyproject.toml). Não há aplicação executável definida. Quando houver código, execute os comandos definidos pelo próprio projeto com `uv run` e versionem as evidências necessárias.
