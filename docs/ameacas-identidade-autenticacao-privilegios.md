@@ -1,6 +1,6 @@
 # Ameaças de identidade, autenticação e privilégios
 
-Este documento registra as ameaças da Issue #6 para os atores já descritos no [README](../README.md): paciente e profissional de saúde. A análise usa os ativos do [inventário de ativos](inventario-de-ativos.md) e diferencia identidade, autenticação, autorização e privilégio sem definir mecanismos de implementação.
+Este documento detalha ameaças para os atores já descritos no [README](../README.md): paciente e profissional de saúde. A análise usa os ativos do [inventário de ativos](inventario-de-ativos.md), o [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) e diferencia identidade, autenticação, autorização e privilégio sem definir mecanismos de implementação.
 
 ## Conceitos e limites
 
@@ -11,9 +11,9 @@ Este documento registra as ameaças da Issue #6 para os atores já descritos no 
 - **Credencial:** dado usado para autenticar, como identificador e senha. É o ativo A06.
 - **Token:** representação de sessão, recuperação de conta ou confirmação de operação. É o ativo A07 e não concede, sozinho, um privilégio.
 
-O cadastro de pacientes foi analisado como o ponto em que o sistema estabelece a identidade do paciente. O README permite que o paciente crie a própria conta, mas os critérios que vinculam os dados de A01 à pessoa cadastrada e evitam a associação indevida de A03 permanecem **[A confirmar]**. Aceitar um cadastro como se pertencesse a outra pessoa é uma condição de Spoofing. Esta análise não presume que essa validação já exista nem define mecanismo de implementação.
+O cadastro de pacientes estabelece a identidade no sistema. A conta é individual e o cadastro só pode manipular dados próprios; a implementação ainda precisa demonstrar essa regra. Aceitar um cadastro como se pertencesse a outra pessoa é uma condição de Spoofing.
 
-O perfil Administrador ou Suporte não está documentado no escopo atual. Portanto, T03 trata a obtenção de permissões de outro perfil como ameaça e mantém qualquer privilégio administrativo futuro como **[A confirmar]**.
+Administrador ou Suporte está fora do escopo atual por DS01. Portanto, T03 trata a obtenção de permissões de outro perfil como ameaça; qualquer privilégio administrativo futuro exige nova decisão.
 
 ## Ameaças identificadas
 
@@ -39,9 +39,9 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 4. O paciente interpreta o perfil como legítimo e pode conceder uma autorização.
 5. O ator consulta ou manipula os dados incluídos na autorização.
 
-**Condição ou vulnerabilidade:** as regras de validação do cadastro e do registro profissional não estão documentadas. A existência e a forma dessa validação ficam **[A confirmar]**. A ameaça existe mesmo sem afirmar que o cadastro atual é vulnerável.
+**Condição ou vulnerabilidade:** a ameaça ocorre se DS02 não for implementada corretamente. A decisão exige identificação e registro profissional informados e validação manual antes de solicitar acesso; ela não prova que o fluxo já existe.
 
-**Caso de abuso relacionado:** `CA01 — Cadastro de falso profissional`, previsto pela Issue #11.
+**Caso de abuso relacionado:** [CA01 — Cadastro de falso profissional](etapa1-modelagem-de-ameacas.md#ca01--cadastro-de-falso-profissional).
 
 ### T02 — Uso de credenciais roubadas
 
@@ -56,9 +56,9 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 3. O VitaLink associa a sessão à identidade da vítima.
 4. O atacante consulta ou altera recursos dentro ou além do escopo que a conta deveria possuir.
 
-**Condição ou vulnerabilidade:** os requisitos para proteger credenciais, recuperar contas, limitar sessões e revogar tokens ainda não foram definidos para o VitaLink. A existência e a cobertura desses controles ficam **[A confirmar]**. O ataque não prova que a autenticação falhou por si só; ele explora o uso de uma evidência de identidade que foi comprometida.
+**Condição ou vulnerabilidade:** o ataque ocorre se DS03 não for implementada corretamente. DS03 exige conta individual, recuperação que invalida sessões e limites de sessão; a decisão não é evidência de cobertura real.
 
-**Caso de abuso relacionado:** `CA02 — Roubo da conta de um paciente`, previsto pela Issue #11.
+**Caso de abuso relacionado:** [CA02 — Uso de conta ou token de outra pessoa](etapa1-modelagem-de-ameacas.md#ca02--uso-de-conta-ou-token-de-outra-pessoa).
 
 ### T03 — Elevação indevida de perfil ou privilégio
 
@@ -73,16 +73,16 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 3. A API aceita a informação enviada pelo cliente sem verificar a autorização correspondente no servidor.
 4. O ator consulta ou altera um recurso de outro paciente, altera uma autorização ou usa uma operação reservada a outro perfil.
 
-**Condição ou vulnerabilidade:** ausência ou aplicação incompleta de autorização por recurso e operação, confiança em identificadores enviados pelo cliente, permissões mais amplas que a necessidade do perfil ou concessão implícita de novos privilégios. Quais controles existirão e se haverá perfil administrativo permanecem **[A confirmar]**.
+**Condição ou vulnerabilidade:** ausência ou aplicação incompleta de DS04 e DS06, confiança em identificadores enviados pelo cliente, permissões mais amplas que a necessidade do perfil ou concessão implícita de novos privilégios.
 
-**Casos de abuso relacionados:** `CA01 — Cadastro de falso profissional` e `CA02 — Roubo da conta de um paciente`. Ambos podem resultar na obtenção de privilégios que não pertencem ao ator.
+**Casos de abuso relacionados:** [CA01](etapa1-modelagem-de-ameacas.md#ca01--cadastro-de-falso-profissional), [CA02](etapa1-modelagem-de-ameacas.md#ca02--uso-de-conta-ou-token-de-outra-pessoa) e [CA04](etapa1-modelagem-de-ameacas.md#ca04--consulta-ou-alteração-fora-do-escopo-autorizado). Todos podem resultar na obtenção de privilégios que não pertencem ao ator.
 
 ## Relação entre identidade, autenticação e privilégio
 
 | Pergunta                      | Resposta documental                                                                                                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Quem é a pessoa?              | A identidade registrada como paciente ou profissional. Os dados do cadastro devem corresponder ao sujeito representado; a validação profissional está [A confirmar].           |
-| Como o sistema verifica isso? | Por autenticação. Os requisitos concretos para senha, recuperação, sessão e fatores adicionais estão [A confirmar].                                                            |
+| Quem é a pessoa?              | A identidade registrada como paciente ou profissional. DS02 exige validação manual de profissional antes de solicitar acesso. |
+| Como o sistema verifica isso? | Por autenticação de conta individual. DS03 define recuperação e limites de sessão; a implementação é pendente. |
 | O que a pessoa pode fazer?    | A autorização define o recurso, a operação e o escopo. No caso de dados médicos, a autorização ativa do paciente é uma condição necessária.                                    |
 | O que é privilégio?           | O limite efetivo de operações da identidade autenticada. Ele não deve ser ampliado porque o cliente enviou outro identificador ou porque uma função foi ocultada na interface. |
 | O que um token prova?         | Apenas o contexto definido para a sessão, recuperação ou confirmação. O servidor ainda deve verificar se o token é válido e se a operação está autorizada.                     |
@@ -91,8 +91,8 @@ O perfil Administrador ou Suporte não está documentado no escopo atual. Portan
 
 | Ameaça | Caso de abuso | Ativos principais                  | Risco a registrar posteriormente                                       |
 | ------ | ------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| T01    | CA01          | A02, A03, A04, A05, A06, A09 e A12 | `R01 [A confirmar]` — acesso ou operação de falso profissional.        |
-| T02    | CA02          | A03 a A08, A09 e A10               | `R02 [A confirmar]` — uso da conta ou dos tokens de outra pessoa.      |
-| T03    | CA01 e CA02   | A03 a A10                          | `R03 [A confirmar]` — operação fora do perfil ou do escopo autorizado. |
+| T01    | CA01          | A02, A03, A04, A05, A06, A09 e A12 | [R01](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — acesso ou operação de falso profissional.        |
+| T02    | CA02          | A03 a A08, A09 e A10               | [R02](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — uso da conta ou dos tokens de outra pessoa.      |
+| T03    | CA01, CA02 e CA04 | A03 a A10                       | [R03](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — operação fora do perfil ou do escopo autorizado. |
 
-As probabilidades, os impactos numéricos, as classificações, os controles específicos e os riscos residuais serão definidos na etapa de análise de riscos. Não foram alterados neste documento. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar identidades, ativos, ameaças e condições. O detalhamento de Protect, Detect, Respond e Recover permanece **[A confirmar]** nas etapas posteriores.
+As probabilidades, impactos, classificações, controles propostos e estimativas residuais estão no [registro da Etapa 2](etapa2-riscos-e-tratamento.md). Elas continuam sendo planejamento, não evidência de controles implementados. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar identidades, ativos, ameaças e condições; a implementação de Protect, Detect, Respond e Recover permanece **[A confirmar]**.

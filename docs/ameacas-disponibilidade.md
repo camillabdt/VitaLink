@@ -1,6 +1,8 @@
-# Modelagem de Ameaças — Bloco B (STRIDE: Disponibilidade e Adulteração)
+# Modelagem de Ameaças — Disponibilidade e adulteração
 
 Análise de ameaças focada nos impactos de indisponibilidade, sobrecarga e perda de dados no ambiente do **VitaLink**.
+
+O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento proposto de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), como R07, R08 e R09. Não há controle implementado comprovado neste documento.
 
 ---
 
@@ -31,3 +33,11 @@ Análise de ameaças focada nos impactos de indisponibilidade, sobrecarga e perd
 * **Impacto no Contexto de Saúde:**
   * **Profissionais de Saúde:** Deparam-se com exames ou laudos corrompidos que não abrem, impedindo a interpretação correta de diagnósticos passados e podendo induzir a um diagnóstico equivocado caso informações estejam parcialmente corrompidas.
   * **Pacientes:** Perda definitiva e irrecuperável de documentos históricos (laudos, receitas e exames antigos), comprometendo todo o histórico médico acumulado no VitaLink e exigindo que o paciente refaça exames invasivos ou dispendiosos.
+
+## Rastreabilidade
+
+| Ameaça | Caso de abuso | Risco |
+| --- | --- | --- |
+| T13 | [CA05](etapa1-modelagem-de-ameacas.md#ca05--esgotamento-deliberado-de-capacidade) | [R07](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) |
+| T14 | [CA05](etapa1-modelagem-de-ameacas.md#ca05--esgotamento-deliberado-de-capacidade) | [R08](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) |
+| T15 | [CA06](etapa1-modelagem-de-ameacas.md#ca06--alteração-corrupção-ou-exclusão-de-documentos) | [R09](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) |

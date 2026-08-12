@@ -1,6 +1,6 @@
 # Ameaças de consentimento e acesso indevido
 
-Este documento registra as ameaças da Issue #7 relacionadas ao uso incorreto, prolongado ou fraudulento das autorizações do paciente. A análise considera os perfis do [README](../README.md), os ativos do [inventário de ativos](inventario-de-ativos.md) e o fluxo documental de autorização e revogação, sem implementar mecanismos.
+Este documento detalha ameaças relacionadas ao uso incorreto, prolongado ou fraudulento das autorizações do paciente. A análise considera os perfis do [README](../README.md), os ativos do [inventário de ativos](inventario-de-ativos.md), o [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) e o fluxo documental de autorização e revogação, sem implementar mecanismos.
 
 ## Consentimento e autorização
 
@@ -16,7 +16,7 @@ As premissas usadas nesta análise são:
 - a revogação impede novos acessos mesmo quando a sessão ou o token ainda não expirou;
 - decisões, mudanças de estado e tentativas bloqueadas são registradas no ativo A08.
 
-A duração padrão, a granularidade exata do escopo e o comportamento concreto de invalidação de tokens permanecem **[A confirmar]**. Essa incerteza não autoriza acesso por padrão.
+A granularidade, duração e revogação seguem DS04–DS06. A implementação desses comportamentos permanece pendente, e a ausência de implementação não autoriza acesso por padrão.
 
 ## Ameaças identificadas
 
@@ -41,9 +41,9 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 3. A aplicação verifica apenas a autenticação, o perfil geral ou a existência do recurso.
 4. A API devolve ou altera dados médicos sem confirmar uma autorização `Ativa` para aquele paciente, operação e recurso.
 
-**Condição ou vulnerabilidade:** ausência de verificação de autorização por recurso, concessão implícita baseada apenas no perfil profissional ou confiança em identificadores fornecidos pelo cliente. A implementação e a cobertura dessas verificações ficam **[A confirmar]**.
+**Condição ou vulnerabilidade:** ausência de implementação de DS04 e DS06, concessão implícita baseada apenas no perfil profissional ou confiança em identificadores fornecidos pelo cliente.
 
-**Caso de abuso relacionado:** `CA04 — Consulta a prontuário sem autorização`, previsto pela Issue #12.
+**Caso de abuso relacionado:** [CA04 — Consulta ou alteração fora do escopo autorizado](etapa1-modelagem-de-ameacas.md#ca04--consulta-ou-alteração-fora-do-escopo-autorizado).
 
 ### T05 — Uso de autorização revogada ou expirada
 
@@ -59,9 +59,9 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 4. O ator reutiliza a sessão, o token ou uma decisão de autorização armazenada anteriormente.
 5. O sistema permite novo acesso sem consultar o estado atual.
 
-**Condição ou vulnerabilidade:** verificação feita somente no momento da emissão do token, cache de autorização desatualizado, sessão que não é reavaliada ou ausência de contenção após revogação e expiração. O mecanismo exato permanece **[A confirmar]**, mas o resultado esperado é impedir novos acessos.
+**Condição ou vulnerabilidade:** verificação feita somente no momento da emissão do token, cache de autorização desatualizado, sessão que não é reavaliada ou ausência de contenção após revogação e expiração. DS06 exige reavaliação no acesso e bloqueio imediato de novo acesso.
 
-**Caso de abuso relacionado:** `CA03 — Uso de autorização revogada`, previsto pela Issue #12.
+**Caso de abuso relacionado:** [CA03 — Reuso de autorização revogada ou expirada](etapa1-modelagem-de-ameacas.md#ca03--reuso-de-autorização-revogada-ou-expirada).
 
 ### T06 — Ampliação indevida da permissão
 
@@ -76,9 +76,9 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 3. O servidor aplica a autorização somente ao módulo ou ao perfil, sem comparar o pedido com o escopo concedido.
 4. O ator acessa ou altera recursos fora da decisão do paciente.
 
-**Condição ou vulnerabilidade:** escopo amplo ou implícito, autorização incompleta por recurso e operação, confiança em parâmetros do cliente ou possibilidade de alterar uma autorização sem decisão do paciente. As regras de granularidade permanecem **[A confirmar]**.
+**Condição ou vulnerabilidade:** escopo amplo ou implícito, autorização incompleta por recurso e operação, confiança em parâmetros do cliente ou possibilidade de alterar uma autorização sem decisão do paciente. DS04 define a granularidade exigida.
 
-**Caso de abuso relacionado:** `CA04 — Consulta a prontuário sem autorização`, quando uma autorização limitada é usada para alcançar outro paciente, recurso ou operação.
+**Caso de abuso relacionado:** [CA04 — Consulta ou alteração fora do escopo autorizado](etapa1-modelagem-de-ameacas.md#ca04--consulta-ou-alteração-fora-do-escopo-autorizado), quando uma autorização limitada é usada para alcançar outro paciente, recurso ou operação.
 
 ## Permissões explicitamente violadas
 
@@ -92,8 +92,8 @@ A duração padrão, a granularidade exata do escopo e o comportamento concreto 
 
 | Ameaça | Caso de abuso | Ativos principais                  | Risco a registrar posteriormente                                |
 | ------ | ------------- | ---------------------------------- | --------------------------------------------------------------- |
-| T04    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | `R04 [A confirmar]` — acesso a dados sem consentimento ativo.   |
-| T05    | CA03          | A03 a A08, A09 e A10               | `R05 [A confirmar]` — uso de autorização revogada ou expirada.  |
-| T06    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | `R06 [A confirmar]` — ampliação indevida de escopo ou operação. |
+| T04    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | [R04](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — acesso a dados sem consentimento ativo.   |
+| T05    | CA03          | A03 a A08, A09 e A10               | [R05](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — uso de autorização revogada ou expirada.  |
+| T06    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | [R06](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — ampliação indevida de escopo ou operação. |
 
-As probabilidades, os impactos numéricos, as classificações, os controles específicos e os riscos residuais serão definidos na etapa de análise de riscos. Não foram alterados neste documento. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar consentimento, escopo, estados, ativos e ameaças. Protect, Detect e Respond permanecem **[A confirmar]** nas etapas posteriores.
+As probabilidades, impactos, classificações, controles propostos e estimativas residuais estão no [registro da Etapa 2](etapa2-riscos-e-tratamento.md). Elas continuam sendo planejamento, não evidência de controles implementados. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar consentimento, escopo, estados, ativos e ameaças; a implementação de Protect, Detect e Respond permanece **[A confirmar]**.

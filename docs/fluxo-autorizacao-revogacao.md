@@ -40,9 +40,9 @@ Uma autorização ativa deve identificar, no mínimo:
 - o início e o fim do período autorizado;
 - o estado atual e o momento da última mudança.
 
-O escopo deve respeitar as funcionalidades documentadas do VitaLink e pode incluir dados médicos, exames, laudos, receitas, imagens ou consultas somente quando o paciente os incluir na autorização. A granularidade exata por tipo de documento ou operação permanece **[A confirmar]**.
+O escopo respeita DS04 das [decisões de segurança](decisoes-de-seguranca.md): a autorização lista categorias de dado e operações `consultar`, `anexar` ou `atualizar`. Exclusão não é concedida a profissionais.
 
-A duração é um intervalo temporal obrigatório. A duração padrão, caso exista, e a possibilidade de o paciente escolher livremente o fim do período são **[A confirmar]**. Enquanto isso, uma autorização sem fim definido não deve ser considerada válida para acesso profissional.
+A duração é um intervalo temporal obrigatório. Conforme DS05, o padrão é 30 dias e o paciente pode escolher prazo entre 1 e 90 dias. Uma autorização sem fim definido não é válida para acesso profissional.
 
 ## Regras de negócio de segurança
 
@@ -53,7 +53,7 @@ A duração é um intervalo temporal obrigatório. A duração padrão, caso exi
 - A autenticação identifica a pessoa, mas cada operação deve passar por autorização completa do recurso e do escopo.
 - O paciente pode revogar sem depender do fim do período. A revogação deve bloquear novos acessos mesmo que exista uma sessão autenticada ou um token ainda não expirado.
 - Um token representa sessão, recuperação ou confirmação de operação. Ele não cria autorização e não pode substituir a verificação do estado da autorização.
-- **[A confirmar]** O mecanismo exato para invalidar tokens ou sessões relacionados à autorização revogada. O resultado esperado é que uma sessão antiga não consiga iniciar novos acessos ao escopo revogado.
+- Conforme DS06, a sessão pode continuar autenticada, mas não conserva autorização: a API reavalia a decisão a cada acesso e bloqueia imediatamente o escopo revogado.
 - A expiração deve ser verificada no momento do acesso. Não basta ocultar o paciente na interface ou aguardar a expiração de um token.
 
 ## Registros de auditoria
@@ -83,10 +83,6 @@ Tokens completos, senhas e o conteúdo integral de documentos não devem ser reg
 | Protect e Detect       | Verificação do acesso e registros de auditoria das decisões e tentativas.                 |
 | Respond                | Revogação e contenção de sessões ou tokens que tentem usar autorização encerrada.         |
 
-## Lacunas a confirmar
+## Decisões aplicadas
 
-- duração padrão e regras para renovação;
-- granularidade do escopo por dado e por operação;
-- necessidade de confirmação adicional para revogação ou alteração de escopo;
-- comportamento esperado de sessões e tokens já emitidos quando a autorização for revogada;
-- responsável por revisar autorizações e registros em caso de incidente.
+O paciente pode revogar ou alterar escopo sem confirmação adicional. Renovação exige nova solicitação e nova decisão explícita do paciente. A equipe de Segurança revisa autorizações e registros em incidentes, conforme DS09.
