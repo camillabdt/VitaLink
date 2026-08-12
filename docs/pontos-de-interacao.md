@@ -4,18 +4,22 @@ Este documento detalha as interações de entrada e saída do VitaLink, além de
 
 ## 1. Pontos de Entrada de Dados
 
-- **Cadastro e Edição de Perfis:** O paciente ou profissional insere seus dados pessoais na Aplicação Web. Esses dados entram no sistema através das rotas da API que validam o formato e os salvam no Banco de Dados.
-- **Upload de Exames e Receitas:** O usuário anexa um arquivo. O documento entra pela Aplicação Web e é transmitido para a API. A API direciona o arquivo bruto para o *Storage* e salva os metadados (quem enviou, quando, de qual paciente) no Banco de Dados.
-- **Gerenciamento de Consentimento (Solicitação, Concessão, Revogação):** As decisões de acesso (aprovar ou bloquear um profissional) são entradas de dados submetidas pelo usuário na interface e consolidadas pela API no Banco de Dados.
-- **Registro de Atendimentos Clínicos:** O profissional de saúde insere diagnósticos e anotações sobre o paciente autorizado, enviando os textos por requisição para a API.
+| Ponto de Interação | Fluxo de Dados e Componentes Envolvidos |
+| --- | --- |
+| **Cadastro e Edição de Perfis** | O paciente ou profissional insere seus dados pessoais na Aplicação Web. Esses dados entram no sistema através das rotas da API que validam o formato e os salvam no Banco de Dados. |
+| **Upload de Exames e Receitas** | O usuário anexa um arquivo. O documento entra pela Aplicação Web e é transmitido para a API. A API direciona o arquivo bruto para o *Storage* e salva os metadados (quem enviou, quando, de qual paciente) no Banco de Dados. |
+| **Gerenciamento de Consentimento** | As decisões de acesso (aprovar ou bloquear um profissional) são entradas de dados submetidas pelo usuário na interface e consolidadas pela API no Banco de Dados. |
+| **Registro de Atendimentos** | O profissional de saúde insere diagnósticos e anotações sobre o paciente autorizado, enviando os textos por requisição para a API. |
 
 ---
 
 ## 2. Pontos de Saída e Compartilhamento
 
-- **Consulta ao Histórico e Prontuário:** É uma requisição de leitura (saída). A Aplicação Web solicita as informações; a API compila os dados do Banco de Dados e os envia de volta à tela do usuário.
-- **Download / Visualização de Arquivos:** Quando um exame precisa ser lido, a API busca a referência do documento no Banco, valida as permissões e recupera o arquivo diretamente do *Storage* para entregar ao navegador.
-- **Compartilhamento por Link (Acesso Externo):** O sistema emite um URL (link temporário ou permanente) que, quando acessado por um terceiro (mesmo fora do sistema), expõe o documento médico como saída de dados pública ou semi-pública.
+| Ponto de Interação |  Fluxo de Dados e Componentes Envolvidos |
+| --- | --- |
+| **Consulta ao Histórico/Prontuário** | É uma requisição de leitura (saída). A Aplicação Web solicita as informações; a API compila os dados do Banco de Dados e os envia de volta à tela do usuário. |
+| **Download e Leitura de Arquivos** | Quando um exame precisa ser lido, a API busca a referência do documento no Banco, valida as permissões e recupera o arquivo diretamente do *Storage* para entregar ao navegador. |
+| **Compartilhamento por Link** | O sistema emite um URL (link temporário ou permanente) que, quando acessado por um terceiro (mesmo fora do sistema), expõe o documento médico como saída de dados pública ou semi-pública. |
 
 ---
 
