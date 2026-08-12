@@ -1,74 +1,54 @@
 # Etapa 2 — Registro, priorização e tratamento de riscos
 
-## Status e método
+## Método e status
 
-Este documento completa o método de [critérios e risco residual](etapa2-criterios-e-risco-residual.md). Os valores são estimativas de planejamento baseadas nas ameaças da [Etapa 1](etapa1-modelagem-de-ameacas.md), não resultados de testes. Controle **proposto** não é controle implementado; o risco residual é esperado e só pode ser confirmado com implementação e evidência.
+Esta análise usa `pontuação = probabilidade × impacto`, com as faixas definidas em [critérios](etapa2-criterios-e-risco-residual.md): 1–3 baixo, 4–7 médio, 8–11 alto e 12–16 crítico. Os valores são estimativas documentais. Um controle proposto não é controle implementado, e o residual só pode ser confirmado por evidência executável.
 
-Usa-se `pontuação = probabilidade × impacto` e as faixas já definidas: 1–3 baixo, 4–7 médio, 8–11 alto e 12–16 crítico.
+## Registro consolidado
 
-## Registro, cálculo e justificativas
+| Prioridade | ID | Origem | Evento de risco | P | I | Pontuação | Nível |
+| ---: | --- | --- | --- | ---: | ---: | ---: | --- |
+| 1 | R04 | T04 | Dados médicos são acessados sem autorização ativa. | 3 | 4 | 12 | Crítico |
+| 2 | R05 | T05 | Acesso continua após revogação ou expiração. | 3 | 4 | 12 | Crítico |
+| 3 | R06 | T06 | Autorização limitada é ampliada. | 3 | 4 | 12 | Crítico |
+| 4 | R03 | T03 | Perfil, paciente, recurso ou operação fora do privilégio é alcançado. | 3 | 4 | 12 | Crítico |
+| 5 | R02 | T02 | Conta ou token comprometido é usado em nome da vítima. | 3 | 4 | 12 | Crítico |
+| 6 | R10 | T10 | Documento médico é exposto por link indevido. | 3 | 4 | 12 | Crítico |
+| 7 | R01 | T01 | Falso profissional obtém acesso autorizado pelo paciente. | 2 | 4 | 8 | Alto |
+| 8 | R07 | T07 | Informação clínica é criada ou alterada indevidamente. | 2 | 4 | 8 | Alto |
+| 9 | R08 | T08 | Registro clínico é excluído ou ocultado. | 2 | 4 | 8 | Alto |
+| 10 | R11 | T11 | Dados de múltiplos pacientes são extraídos pela API. | 2 | 4 | 8 | Alto |
+| 11 | R15 | T15 | Arquivo ou referência clínica é corrompido ou perdido. | 2 | 4 | 8 | Alto |
+| 12 | R13 | T13 | Sobrecarga indisponibiliza API ou banco. | 3 | 3 | 9 | Alto |
+| 13 | R12 | T12 | Compartilhamento não possui rastreabilidade suficiente. | 3 | 3 | 9 | Alto |
+| 14 | R09 | T09 | Ação relevante não pode ser atribuída ao autor. | 2 | 3 | 6 | Médio |
+| 15 | R14 | T14 | Upload massivo esgota o armazenamento. | 2 | 3 | 6 | Médio |
 
-| Prioridade | ID | Origem | Evento de risco | Condição ou vulnerabilidade | P | I | Pontuação | Nível |
-| ---: | --- | --- | --- | --- | ---: | ---: | ---: | --- |
-| 1 | R04 | T04 | Dados médicos são acessados sem autorização ativa. | Autorização por recurso/operação ausente ou incompleta. | 3 | 4 | 12 | Crítico |
-| 2 | R05 | T05 | Acesso continua após revogação ou expiração. | Estado desatualizado de autorização, sessão ou token. | 3 | 4 | 12 | Crítico |
-| 3 | R06 | T06 | Autorização limitada é ampliada. | Confiança em identificador/escopo enviado pelo cliente. | 3 | 4 | 12 | Crítico |
-| 4 | R03 | T03 | Perfil, paciente ou operação fora do privilégio é alcançado. | Confiança no perfil ou identificador informado pelo cliente. | 3 | 4 | 12 | Crítico |
-| 5 | R02 | T02 | Conta ou token comprometido é usado em nome da vítima. | Credencial ou sessão comprometida; proteções concretas **[A confirmar]**. | 3 | 4 | 12 | Crítico |
-| 6 | R01 | T01 | Falso profissional obtém acesso autorizado pelo paciente. | Validação de identidade/habilitação **[A confirmar]**. | 2 | 4 | 8 | Alto |
-| 7 | R09 | T15 | Documento ou referência clínica é alterado, corrompido ou apagado. | Escrita indevida, falha de persistência ou recuperação insuficiente **[A confirmar]**. | 2 | 4 | 8 | Alto |
-| 8 | R07 | T13 | Sobrecarga torna a API ou banco indisponível. | Limites e capacidade **[A confirmar]**. | 3 | 3 | 9 | Alto |
-| 9 | R08 | T14 | Envio massivo esgota armazenamento. | Quota, limite de tamanho e validação de upload **[A confirmar]**. | 2 | 3 | 6 | Médio |
-| 10 | R10 | T07 | Ação relevante não pode ser atribuída ou é negada. | Auditoria insuficiente ou alterável **[A confirmar]**. | 2 | 3 | 6 | Médio |
-
-P=3 é plausível porque requisições e credenciais podem ser manipuladas por atores externos ou autenticados. P=2 depende de condição específica ainda não confirmada. I=4 foi usado quando dados médicos ou autorização podem afetar confidencialidade e integridade em larga escala. I=3 representa indisponibilidade ou perda significativa, mas com recuperação potencial. Esses argumentos são inferências documentais, não medição do sistema.
-
-R04–R06 e R03 precedem R02 porque a autorização por recurso e a reavaliação de revogação são a barreira comum ao acesso médico. R02 vem depois por também atingir vários fluxos. R01 e R09 têm impacto clínico alto, mas dependem de decisões ou controles ainda não definidos. R07 e R08 vêm após proteção de acesso; R10 sustenta investigação e deve acompanhar as ações críticas desde o início.
-
-## Mapeamento NIST CSF 2.0
-
-| Risco | Govern | Identify | Protect | Detect | Respond | Recover |
-| --- | --- | --- | --- | --- | --- | --- |
-| R01 | X | X | X | X | X | — |
-| R02 | X | X | X | X | X | X |
-| R03 | X | X | X | X | X | — |
-| R04 | X | X | X | X | X | — |
-| R05 | X | X | X | X | X | — |
-| R06 | X | X | X | X | X | — |
-| R07 | X | X | X | X | X | X |
-| R08 | X | X | X | X | X | X |
-| R09 | X | X | X | X | X | X |
-| R10 | X | X | X | X | X | — |
-
-As funções organizam resultados. Elas não são controles: por exemplo, Protect em R04 requer a verificação proposta descrita abaixo; não é evidência de que ela exista.
+P=3 representa cenário plausível com recursos comuns ou uso normal da API. P=2 depende de condição específica ainda não comprovada. I=4 representa exposição, alteração ou perda de informação clínica; I=3 representa indisponibilidade ou perda relevante com recuperação possível. Essas justificativas são inferências de planejamento, não medições do sistema.
 
 ## Plano de tratamento e residual estimado
 
-| Risco | Estratégia | Controles propostos e específicos | Funções | Responsável proposto | Evidência ou verificação necessária | Residual esperado |
-| --- | --- | --- | --- | --- | --- | --- |
-| R04 | Reduzir | Verificar no servidor paciente, recurso, operação e estado `Ativa` a cada acesso. | Protect, Detect, Respond | Desenvolvimento | Teste negativo de acesso fora do escopo e registro da tentativa. | Médio (2×4) |
-| R05 | Reduzir | Reavaliar estado e período no acesso; invalidar decisão de acesso após revogação. | Protect, Detect, Respond | Desenvolvimento | Teste após revogação/expiração e log de bloqueio. | Médio (2×4) |
-| R06 | Reduzir | Derivar identidade da sessão e comparar escopo no servidor; não confiar em identificadores do cliente. | Protect, Detect, Respond | Desenvolvimento | Teste de alteração de paciente, documento e operação. | Médio (2×4) |
-| R02 | Reduzir | Proteger credenciais e sessão; definir expiração, recuperação e revogação de token. | Protect, Detect, Respond, Recover | Desenvolvimento | Testes de sessão/revogação e registros de uso suspeito. | Alto (2×4) |
-| R03 | Reduzir | Aplicar autorização por perfil, recurso e operação no servidor. | Protect, Detect, Respond | Desenvolvimento | Teste negativo de operação de outro perfil. | Médio (2×4) |
-| R01 | Reduzir | Definir e aplicar validação de identidade e habilitação antes de liberar perfil profissional. | Govern, Protect, Detect, Respond | Desenvolvimento e Segurança | Critério versionado e teste do fluxo de aprovação/rejeição. | Médio (1×4) |
-| R09 | Reduzir | Autorizar escrita, validar vínculo paciente-documento e definir cópia/restauração verificável. | Protect, Detect, Respond, Recover | Desenvolvimento e infraestrutura **[A confirmar]** | Teste de escrita indevida e restauração em ambiente controlado. | Médio (1×4) |
-| R07 | Reduzir | Limitar requisições nos pontos expostos e definir capacidade/degradação aceitável. | Protect, Detect, Respond, Recover | Infraestrutura **[A confirmar]** | Teste de carga controlado e métricas de disponibilidade. | Médio (2×3) |
-| R08 | Reduzir | Limitar tamanho/tipo de arquivo e quota por política definida. | Protect, Detect, Respond, Recover | Desenvolvimento e infraestrutura **[A confirmar]** | Teste de upload acima do limite e alerta de capacidade. | Baixo (1×3) |
-| R10 | Reduzir | Registrar identidade, ação, alvo, resultado e tempo; restringir alteração dos registros. | Govern, Protect, Detect, Respond | Desenvolvimento **[A confirmar]** | Teste que gera evento e revisão de integridade do registro. | Baixo (1×3) |
+| Riscos | Estratégia e controle proposto | NIST CSF 2.0 | Responsável proposto | Evidência necessária | Residual esperado |
+| --- | --- | --- | --- | --- | --- |
+| R04–R06, R03 | Decidir no servidor usando identidade, paciente, recurso, operação, escopo, período e estado `Ativa`; negar por padrão. | Govern, Protect, Detect, Respond | Desenvolvimento | Testes negativos de acesso cruzado, escopo e revogação. | Médio (2×4) |
+| R02, R01 | Validar profissional; proteger recuperação, sessão e credenciais. | Govern, Protect, Detect, Respond, Recover | Desenvolvimento e Segurança | Testes de cadastro, recuperação e revogação de sessão. | Médio (1×4) |
+| R07, R08, R15 | Autorizar escrita e exclusão, preservar versão e executar restauração verificável. | Protect, Detect, Respond, Recover | Desenvolvimento e Infraestrutura | Testes de escrita indevida, exclusão e restauração. | Médio (1×4) |
+| R09, R12 | Registrar ator, ação, alvo, resultado e tempo sem segredos; restringir alteração dos registros. | Govern, Protect, Detect, Respond | Desenvolvimento | Teste que produz evento completo e verifica integridade. | Médio (1×3) |
+| R10, R11 | Exigir autorização para compartilhamento, usar identificador imprevisível e expiração; limitar consultas e alertar volume anômalo. | Protect, Detect, Respond, Recover | Desenvolvimento e Infraestrutura | Testes de link expirado, acesso fora do escopo, limite e alerta. | Médio (1×4) |
+| R13, R14 | Limitar requisições, tamanho, tipo e quota de uploads; monitorar capacidade e recuperar serviço. | Protect, Detect, Respond, Recover | Infraestrutura | Teste de carga controlado, upload bloqueado e métrica de capacidade. | Médio (2×3) |
 
-Nenhum residual é aceito no estado atual. Aceite futuro exige responsável nomeado, implementação do controle, teste bem-sucedido e evidência versionada. A redução real de risco é **[A confirmar]**.
+As funções NIST organizam resultados e não são controles por si só. Nenhum risco residual é aceito no estado atual: o aceite futuro exige responsável nomeado, implementação, teste bem-sucedido e evidência versionada.
 
 ## Ordem inicial de implementação
 
-1. Definir modelo de autorização e implementar verificação de servidor para R04–R06.
-2. Implementar revogação/expiração efetiva e testes para R05.
-3. Definir autenticação, sessão e validação profissional para R02 e R01.
-4. Implementar auditoria de ações críticas para R10.
-5. Proteger escrita, recuperação e disponibilidade para R09, R07 e R08.
+1. Implementar autorização por recurso, operação, escopo e período, incluindo revogação imediata.
+2. Proteger identidade, sessão e validação profissional.
+3. Implementar auditoria de ações críticas e proteção contra alteração dos registros.
+4. Proteger escrita, exclusão, integridade e recuperação de documentos.
+5. Limitar compartilhamento, consultas, uploads e capacidade da infraestrutura.
 
-Essa ordem é proposta pois as primeiras barreiras reduzem diversos caminhos de acesso indevido. Ela deve ser revisada quando houver arquitetura, implementação e capacidade real **[A confirmar]**.
+Essa ordem reduz primeiro os caminhos que permitem acesso indevido a dados médicos e depois fortalece rastreabilidade, integridade e disponibilidade.
 
 ## Considerações finais
 
-O maior risco planejado é acesso indevido a dados médicos, seguido por continuidade após revogação e ampliação de escopo. A limitação central é que o repositório não contém aplicação, pipeline, execução de teste ou evidência de controle. Portanto, este plano atende à análise documental, mas não comprova redução de risco.
+R01–R15 cobrem todas as ameaças T01–T15 e mantêm a rastreabilidade com os casos de abuso da Etapa 1. A documentação conclui o plano de análise e tratamento, mas não comprova a redução real dos riscos sem código, testes, execução e relatórios.
