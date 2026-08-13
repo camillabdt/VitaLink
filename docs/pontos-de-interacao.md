@@ -19,7 +19,7 @@ Este documento detalha as interações de entrada e saída do VitaLink, além de
 | --- | --- |
 | **Consulta ao Histórico/Prontuário** | É uma requisição de leitura (saída). A Aplicação Web solicita as informações; a API compila os dados do Banco de Dados e os envia de volta à tela do usuário. |
 | **Download e Leitura de Arquivos** | Quando um exame precisa ser lido, a API busca a referência do documento no Banco, valida as permissões e recupera o arquivo diretamente do *Storage* para entregar ao navegador. |
-| **Compartilhamento por Link** | O sistema emite um URL (link temporário ou permanente) que, quando acessado por um terceiro (mesmo fora do sistema), expõe o documento médico como saída de dados pública ou semi-pública. |
+| **Compartilhamento por Link** | O sistema pode emitir um link temporário contendo um identificador imprevisível, destinado ao compartilhamento controlado de um documento específico. O link não expõe diretamente o *Storage*: o acesso é sempre processado pela API. O link possui prazo de expiração, pode ser revogado pelo paciente e cada utilização deve ser registrada para auditoria. Para um terceiro sem conta no VitaLink, o identificador do link funciona como uma credencial de capacidade limitada exclusivamente ao recurso compartilhado. |
 
 ---
 
@@ -28,5 +28,5 @@ Este documento detalha as interações de entrada e saída do VitaLink, além de
 A validação de segurança **não deve ocorrer apenas ocultando botões na interface do usuário (Aplicação Web)**. Todas as interações devem ser verificadas na principal fronteira de confiança da arquitetura: a API REST.
 
 - **Autenticação:** Ocorre de forma centralizada na **API REST**, que valida a assinatura e a validade do Token com o **Serviço de Autenticação** a cada nova requisição, garantindo a identidade (*quem é o usuário*).
-- **Autorização:** Imediatamente após a autenticação, e sempre antes de qualquer operação de entrada ou saída, a **API REST** cruza a identidade do usuário com as regras do **Banco de Dados**. Ela verifica o escopo e o consentimento: *Este usuário possui uma permissão Ativa para acessar este recurso neste exato momento?*
+- **Autorização:** Para pacientes e profissionais autenticados, imediatamente após a autenticação e antes de qualquer operação de entrada ou saída, a **API REST** cruza a identidade do usuário com as regras do **Banco de Dados**, verificando escopo, consentimento e estado da permissão. No fluxo excepcional de compartilhamento por link, a API valida a credencial de capacidade associada ao link, incluindo recurso autorizado, validade e estado de revogação, antes de liberar o documento.
 - **Acesso ao Storage:** O *Armazenamento de Documentos* não pode estar exposto de forma pública ou acessível por requisições diretas do navegador sem proteção. Qualquer requisição a um arquivo precisa ser intermediada pela API, que só busca e devolve o arquivo físico após a confirmação rigorosa da Autorização.
