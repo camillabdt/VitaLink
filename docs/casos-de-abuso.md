@@ -84,7 +84,7 @@ Nesta contribuição, somente CA03 e CA04 são detalhados. Os demais identificad
 
 | Caso de abuso | Ameaças   | Ativos principais                       | Riscos relacionados                                                                |
 | ------------- | --------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
-| CA03          | T05 e T04 | A03, A04, A05, A07, A08, A09, A10 e A12 | `R05 [A confirmar]` — uso de autorização revogada ou expirada                      |
-| CA04          | T04 e T06 | A03, A04, A05, A08, A09, A10 e A12      | `R04 e R06 [A confirmar]` — acesso sem autorização ou ampliação indevida de escopo |
+| CA03          | T05 e T04 | A03, A04, A05, A07, A08, A09, A10 e A12 | `R05` — uso de autorização revogada ou expirada                      |
+| CA04          | T04 e T06 | A03, A04, A05, A08, A09, A10 e A12      | `R04 e R06` — acesso sem autorização ou ampliação indevida de escopo |
 
-As probabilidades, os impactos numéricos, os controles e os riscos residuais serão definidos na etapa de análise de riscos. Esta documentação não atribui pontuações nem presume mecanismos já implementados.
+As probabilidades, os impactos numéricos, os controles propostos e os riscos residuais estão consolidados na Etapa 2. Este documento mantém o detalhamento dos casos de abuso e não presume que os controles propostos já estejam implementados.

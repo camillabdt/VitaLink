@@ -2,7 +2,7 @@
 
 Análise de ameaças focada nos impactos de indisponibilidade, sobrecarga e perda de dados no ambiente do **VitaLink**.
 
-O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento proposto de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), como R07, R08 e R09. Não há controle implementado comprovado neste documento.
+O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento proposto de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), respectivamente como R13, R14 e R15. Não há controle implementado comprovado neste documento.
 
 ---
 
@@ -38,6 +38,6 @@ O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade
 
 | Ameaça | Caso de abuso | Risco |
 | --- | --- | --- |
-| T13 | [CA05](etapa1-modelagem-de-ameacas.md#ca05--esgotamento-deliberado-de-capacidade) | [R07](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) |
-| T14 | [CA05](etapa1-modelagem-de-ameacas.md#ca05--esgotamento-deliberado-de-capacidade) | [R08](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) |
-| T15 | [CA06](etapa1-modelagem-de-ameacas.md#ca06--alteração-corrupção-ou-exclusão-de-documentos) | [R09](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) |
+| T13 | [CA09 — Sobrecarga da API](etapa1-modelagem-de-ameacas.md#ca09--sobrecarga-da-api) | [R13](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T14 | [CA10 — Esgotamento do armazenamento](etapa1-modelagem-de-ameacas.md#ca10--esgotamento-do-armazenamento) | [R14](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T15 | [CA05 — Alteração maliciosa de exame](etapa1-modelagem-de-ameacas.md#ca05--alteração-maliciosa-de-exame) e [CA06 — Exclusão de registro](etapa1-modelagem-de-ameacas.md#ca06--exclusão-de-registro) | [R15](etapa2-riscos-e-tratamento.md#registro-consolidado) |

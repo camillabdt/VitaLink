@@ -67,7 +67,7 @@ As premissas usadas nesta análise são:
 
 **Condição ou vulnerabilidade:** registro de logs incompleto ou inexistente para eventos críticos de acesso, logs mutáveis que não protegem contra adulteração, ou banco de dados de auditoria não isolado. A proteção e o escopo dos registros ficam [A confirmar].
 
-**Caso de abuso relacionado:** previsto para ser detalhado futuramente (podendo estar relacionado ao CA06 sobre exclusão de registro).
+**Casos de abuso relacionados:** CA07 — Compartilhamento público de documento médico; CA08 — Extração em massa de informações.
 
 ## Permissões explicitamente violadas
 
@@ -79,8 +79,8 @@ As premissas usadas nesta análise são:
 
 | Ameaça | Caso de abuso | Ativos principais | Risco a registrar posteriormente |
 | --- | --- | --- | --- |
-| T10 | CA07 | A03, A04, A05, A09, A12 | R10 [A confirmar] — documento é exposto por link. |
-| T11 | CA08 | A03, A09, A10 | R11 [A confirmar] — dados são extraídos em massa. |
-| T12 | CA06 (parcial) | A08, A09 | R12 [A confirmar] — informação sensível aparece em logs / não rastreabilidade. |
+| T10 | CA07 | A03, A04, A05, A09, A12 | R10 — documento médico é exposto por link indevido. |
+| T11 | CA08 | A03, A09, A10 | R11 — dados de múltiplos pacientes são extraídos pela API. |
+| T12 | CA07, CA08 | A03, A04, A05, A08, A09, A10 | R12 — compartilhamento ou consulta sensível não possui rastreabilidade suficiente. |
 
-Os casos de abuso CA07 e CA08 serão detalhados na Issue #14, e os riscos R10, R11 e R12 serão avaliados na Issue #19.
+Os casos de abuso CA07 e CA08 e os riscos R10, R11 e R12 já estão consolidados na documentação atual do VitaLink.

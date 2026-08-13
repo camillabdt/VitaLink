@@ -22,7 +22,7 @@ Este documento detalha os casos de abuso relacionados à privacidade e vazamento
 6. O atacante visualiza e salva o documento confidencial do paciente.
 
 **Falha de segurança explorada:**
-O sistema confia exclusivamente no conhecimento do link para conceder o acesso (configurando um acesso público a dados privados). Ignora controles de validade, proteção por senha ou autenticação forte para acessar os anexos. O modelo exato de controle de links permanece [A confirmar].
+O abuso ocorre caso a implementação confie exclusivamente no conhecimento do link e deixe de aplicar o modelo de compartilhamento definido para o VitaLink: identificador imprevisível, validade limitada, possibilidade de revogação, mediação pela API e registro de auditoria. Nesse cenário inseguro, o conhecimento da URL seria suficiente para expor um dado privado.
 
 **Impacto:**
 Violação grave de privacidade com a exposição de exames, diagnósticos e históricos médicos sensíveis. Resulta em exposição direta e indevida da intimidade do paciente e potencial quebra da confiança na plataforma médica.

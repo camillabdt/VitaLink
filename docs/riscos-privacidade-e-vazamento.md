@@ -2,7 +2,7 @@
 
 Esta documentação registra os riscos R10, R11 e R12, com foco na análise de proteção da privacidade e a prevenção contra vazamentos de dados médicos no sistema VitaLink.
 
-A metodologia de priorização adotada cruza métricas de probabilidade (escala 1-4) com impacto potencial (escala 1-4), estabelecendo a criticidade pela multiplicação de ambos os fatores. 
+A metodologia de priorização adotada cruza métricas de probabilidade (escala 1-4) com impacto potencial (escala 1-4), estabelecendo a criticidade pela multiplicação de ambos os fatores.
 
 As matrizes de origem derivam diretamente das ameaças T10, T11 e T12 mapeadas anteriormente (Issue #9).
 
@@ -12,7 +12,7 @@ As matrizes de origem derivam diretamente das ameaças T10, T11 e T12 mapeadas a
 | --- | --- | --- | --- | --- | --- | --- |
 | R10 | Documento é exposto por link | T10 | 3 | 4 | 12 | Crítico |
 | R11 | Dados são extraídos em massa | T11 | 2 | 4 | 8 | Alto |
-| R12 | Informação sensível aparece em logs | T12 | 3 | 3 | 9 | Alto |
+| R12 | Compartilhamento ou consulta sensível não possui rastreabilidade suficiente | T12 | 3 | 3 | 9 | Alto |
 
 ## R10 — Documento é exposto por link
 
@@ -62,27 +62,31 @@ O vazamento em massa gera crise reputacional grave para o sistema e resulta em p
 **Estratégia de tratamento**
 Reduzir. As APIs devem necessariamente estar disponíveis para receber consultas de profissionais e pacientes. A mitigação ocorre reduzindo a probabilidade e velocidade de um ataque através de limites estruturais e monitoramento ativo.
 
-## R12 — Informação sensível aparece em logs
+## R12 — Compartilhamento ou consulta sensível sem rastreabilidade suficiente
 
 **Ameaça relacionada:** T12 — Compartilhamento sem rastreabilidade.
 
-**Caso de abuso relacionado:** (Parcialmente) CA06 — Exclusão de registro para ocultar uma ação.
+**Casos de abuso relacionados:** CA07 — Compartilhamento público de documento médico; CA08 — Extração em massa de informações.
 
-**Ativos principais:** A08 e A09.
+**Ativos principais:** A03, A04, A05, A08, A09 e A10.
 
 **Probabilidade — 3 (Média-alta)**
-Na ausência de políticas estritas de sanitização, é muito comum que *frameworks* de backend registrem automaticamente parâmetros inteiros (headers, rotas, payloads) em arquivos de log, incluindo tokens de autenticação ou informações sensíveis. Paralelamente, desenvolvedores podem esquecer de logar eventos de leitura, prejudicando a rastreabilidade.
+Consultas e compartilhamentos são operações recorrentes no VitaLink. Na ausência de requisitos explícitos de auditoria, esses eventos podem ocorrer sem registrar de forma suficiente quem realizou a ação, qual recurso foi acessado ou compartilhado, quando ocorreu e qual foi o resultado.
 
-A ocorrência é considerada plausível pela natureza padrão das configurações da maioria das aplicações.
+A ausência, incompletude ou possibilidade de alteração dos registros de auditoria torna plausível que uma exposição de dados não possa ser reconstruída posteriormente.
 
 **Impacto — 3 (Alto)**
-O vazamento nos logs expõe os dados a equipes internas de suporte ou infraestrutura que não deveriam ter acesso clínico. Além disso, a falha na qualidade da auditoria impede a responsabilização de atos maliciosos.
+A falta de rastreabilidade prejudica a investigação de incidentes, a responsabilização por acessos e compartilhamentos e a identificação do alcance de uma eventual exposição de informações médicas.
+
+Além disso, registros de auditoria mal projetados podem criar um problema complementar: o próprio log pode armazenar tokens, parâmetros ou conteúdo médico desnecessário. Essa condição deve ser evitada por sanitização, mas não altera o significado de R12.
 
 **Pontuação**
 3 × 3 = 9 — Alto
 
 **Estratégia de tratamento**
-Reduzir. O sistema precisa gerar logs para garantir a própria segurança e monitoramento. Assim, o foco é tratar o processo de geração do log para evitar o excesso e garantir que a auditoria seja à prova de fraudes.
+Reduzir. O VitaLink precisa manter uma trilha de auditoria íntegra para consultas, compartilhamentos e demais operações sensíveis, registrando somente os dados necessários para investigação e responsabilização.
+
+Os registros devem identificar ator, recurso, operação, resultado e horário, protegendo a trilha contra alteração indevida e evitando o armazenamento de senhas, tokens completos ou conteúdo integral de documentos médicos.
 
 ## Plano de tratamento
 
@@ -93,8 +97,8 @@ Reduzir. O sistema precisa gerar logs para garantir a própria segurança e moni
 | R11 | Configurar políticas de *Rate Limiting* nas consultas à API | Protect | Infraestrutura | Relatórios de bloqueio (*HTTP 429*) em testes de carga |
 | R11 | Desenvolver alertas para tráfego anômalo e leitura fora do padrão | Detect | Segurança / Monitoramento | Alertas gerados após requisições massivas seguidas |
 | R11 | Validar a autorização de cada ID solicitado (IDOR) | Protect | Desenvolvimento API | Testes confirmando acesso negado ao tentar manipular o *ID* de pacientes |
-| R12 | Mascarar dados pessoais/médicos antes de gravar logs | Protect | Desenvolvimento Backend | Arquivos de log sanitizados sem *tokens* ou diagnósticos legíveis |
-| R12 | Garantir trilha inalterável em consultas e compartilhamentos | Detect | Administração de Banco de Dados | Registros de segurança detalhando usuário, recurso e resultado |
+| R12 | Sanitizar os registros de auditoria para evitar segredos ou conteúdo médico desnecessário | Protect | Desenvolvimento Backend | Logs sem senhas, *tokens* completos ou conteúdo integral de documentos médicos |
+| R12 | Garantir trilha íntegra em consultas e compartilhamentos | Detect | Administração de Banco de Dados | Registros contendo ator, recurso, operação, resultado e horário |
 
 ## Relação complementar com o Framework NIST CSF 2.0
 

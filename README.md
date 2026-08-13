@@ -39,8 +39,8 @@ Os ativos incluem dados pessoais (A01–A02), dados e documentos médicos (A03�
 | 3. Arquitetura segura | Proposta; sem implementação verificável | [Requisitos e decisões](docs/etapa3-arquitetura-segura.md), [diagrama-fonte Mermaid](docs/diagramas/arquitetura-segura.mmd) |
 | 4. Código seguro | Pendente de código e evidência executável | [Registro da lacuna](docs/etapa4-codigo-seguro.md) |
 | 5. Verificação de segurança | Pendente de execução real e relatório | [Registro da lacuna](docs/etapa5-verificacao-de-seguranca.md) |
-| 6. Resposta e detecção | Roteiro e regras propostos; sem monitoramento ativo | [Resposta e detecção](docs/etapa6-resposta-e-deteccao.md) |
-| 7. Pipeline e vídeo | Roteiros propostos; sem pipeline ou vídeo encontrado | [Pipeline e vídeo](docs/etapa7-pipeline-e-video.md) |
+| 6. Monitoramento e detecção | Roteiro e regras propostos; sem monitoramento ativo | [Monitoramento e detecção](roteiros/etapa-6-deteccao-de-intrusoes.md) |
+| 7. DevSecOps e vídeo | Pipeline DevSecOps proposto; vídeo final pendente | [DevSecOps e vídeo](roteiros/etapa-7-devsecops-e-video-final.md) |
 
 ## Rastreabilidade central
 
@@ -58,10 +58,10 @@ A [auditoria de evidências do repositório](docs/evidencias-repositorio.md) reg
 - Camilla Borchhardt
 - Luiza Figueiredo
 - Milena Castro
-- Rafela Nunes
+- Rafaela Nunes
 - Tauani Sauceda
 
-O histórico local contém autoria associada a Amanda, Camilla, Luiza, Milena e Tauani. A ausência de contribuição identificada para Rafela e a associação entre identidades de autoria estão registradas como **[A confirmar]** em [evidências](docs/evidencias-repositorio.md).
+O histórico do projeto contém contribuições associadas a Amanda, Camilla, Luiza, Milena, Rafaela e Tauani. A documentação de participação e as limitações da inspeção estão registradas em [evidências](docs/evidencias-repositorio.md).
 
 ## Ambiente local
 
