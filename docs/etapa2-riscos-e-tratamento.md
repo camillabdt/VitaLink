@@ -30,10 +30,10 @@ P=3 representa cenário plausível com recursos comuns ou uso normal da API. P=2
 
 | Riscos | Estratégia e controle proposto | NIST CSF 2.0 | Responsável proposto | Evidência necessária | Residual esperado |
 | --- | --- | --- | --- | --- | --- |
-| R04–R06, R03 | Decidir no servidor usando identidade, paciente, recurso, operação, escopo, período e estado `Ativa`; negar por padrão. | Govern, Protect, Detect, Respond | Desenvolvimento | Testes negativos de acesso cruzado, escopo e revogação. | Médio (2×4) |
+| R04–R06, R03 | Decidir no servidor usando identidade, paciente, recurso, operação, escopo, período e estado `Ativa`; negar por padrão. | Govern, Protect, Detect, Respond | Desenvolvimento | Testes negativos de acesso cruzado, escopo e revogação. | Alto (2×4) |
 | R02, R01 | Validar profissional; proteger recuperação, sessão e credenciais. | Govern, Protect, Detect, Respond, Recover | Desenvolvimento e Segurança | Testes de cadastro, recuperação e revogação de sessão. | Médio (1×4) |
 | R07, R08, R15 | Autorizar escrita e exclusão, preservar versão e executar restauração verificável. | Protect, Detect, Respond, Recover | Desenvolvimento e Infraestrutura | Testes de escrita indevida, exclusão e restauração. | Médio (1×4) |
-| R09, R12 | Registrar ator, ação, alvo, resultado e tempo sem segredos; restringir alteração dos registros. | Govern, Protect, Detect, Respond | Desenvolvimento | Teste que produz evento completo e verifica integridade. | Médio (1×3) |
+| R09, R12 | Registrar ator, ação, alvo, resultado e tempo sem segredos; restringir alteração dos registros. | Govern, Protect, Detect, Respond | Desenvolvimento | Teste que produz evento completo e verifica integridade. | Baixo (1×3) |
 | R10, R11 | Exigir autorização para compartilhamento, usar identificador imprevisível e expiração; limitar consultas e alertar volume anômalo. | Protect, Detect, Respond, Recover | Desenvolvimento e Infraestrutura | Testes de link expirado, acesso fora do escopo, limite e alerta. | Médio (1×4) |
 | R13, R14 | Limitar requisições, tamanho, tipo e quota de uploads; monitorar capacidade e recuperar serviço. | Protect, Detect, Respond, Recover | Infraestrutura | Teste de carga controlado, upload bloqueado e métrica de capacidade. | Médio (2×3) |
 
