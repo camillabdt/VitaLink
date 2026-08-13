@@ -79,8 +79,8 @@ As premissas usadas nesta análise são:
 
 | Ameaça | Caso de abuso | Ativos principais | Risco a registrar posteriormente |
 | --- | --- | --- | --- |
-| T10 | CA07 | A03, A04, A05, A09, A12 | R10 [A confirmar] — documento é exposto por link. |
-| T11 | CA08 | A03, A09, A10 | R11 [A confirmar] — dados são extraídos em massa. |
+| T10 | CA07 | A03, A04, A05, A09, A12 | R10 — documento médico é exposto por link indevido. |
+| T11 | CA08 | A03, A09, A10 | R11 — dados de múltiplos pacientes são extraídos pela API. |
 | T12 | CA07, CA08 | A03, A04, A05, A08, A09, A10 | R12 — compartilhamento ou consulta sensível não possui rastreabilidade suficiente. |
 
 Os casos de abuso CA07 e CA08 e os riscos R10, R11 e R12 já estão consolidados na documentação atual do VitaLink.

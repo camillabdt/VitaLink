@@ -76,7 +76,7 @@ A avaliação do risco residual seguirá a mesma lógica de cálculo da seção 
 
 | Risco | Nível inicial | Controle aplicado | Nível residual esperado | Condição para aceite |
 |-------|---------------|-------------------|-------------------------|----------------------|
-| *(a ser preenchido nas próximas etapas, com base nos riscos identificados na modelagem de ameaças)* | | | | |
+| R01–R15 | Conforme o registro consolidado da Etapa 2 | Conforme o plano de tratamento da Etapa 2 | Conforme a estimativa residual registrada | Implementação, teste bem-sucedido e evidência versionada |
 
 Pontos importantes sobre o modelo:
 
@@ -85,7 +85,7 @@ Pontos importantes sobre o modelo:
 - a condição para aceite descreve o que precisa ser verdadeiro (por exemplo, ausência de determinada vulnerabilidade após teste, ou existência de determinada evidência de controle) para que o risco residual seja considerado aceitável pela equipe;
 - caso o risco residual estimado permaneça acima do nível aceitável definido pelo grupo, controles adicionais devem ser avaliados.
 
-Esta seção não define riscos específicos do VitaLink nem controles concretos — esse preenchimento é parte do trabalho das próximas etapas, com base nos riscos já mapeados pelo grupo.
+Os riscos específicos R01–R15, os controles propostos e as estimativas residuais estão registrados em `etapa2-riscos-e-tratamento.md`. Este documento permanece como referência metodológica para o cálculo e a classificação.
 
 ---
 
