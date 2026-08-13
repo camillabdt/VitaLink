@@ -1,0 +1,10 @@
+{
+  "description": "Monitor personal health data, track exam results, and receive alerts while enabling doctors to provide insights and recommendations securely.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

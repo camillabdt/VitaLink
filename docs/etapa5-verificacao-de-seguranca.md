@@ -4,24 +4,45 @@
 
 O VitaLink ainda não possui uma implementação executável que possa ser submetida diretamente a uma análise dinâmica de segurança.
 
+O diretório `VitaLink Health Management App/` contém um frontend de referência executável exportado do Figma Make. Como seus fluxos usam dados simulados e não estão conectados ao backend planejado, ele ainda não permite verificar os controles de segurança do sistema.
+
+## Estratégia TDD planejada para o VitaLink
+
+A implementação seguirá TDD em fatias verticais. Cada ciclo seleciona um comportamento observável pela interface pública, produz um teste RED pelo motivo esperado, implementa o mínimo para GREEN e só então permite refatoração. A suíte cresce junto com cada issue; os testes de segurança não ficam adiados para uma fase final.
+
+| ID   | Suíte                              | Cobertura mínima                                                                                                                            | Evidência exigida                                                       |
+| ---- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| TS01 | Conta e identidade                 | Cadastro, confirmação, TOTP, login, recuperação, reautenticação e validação profissional, incluindo limites de tentativa.                   | Relatório com comportamento, resultado, duração e commit.               |
+| TS02 | Sessão e requisição                | Cookie seguro, expirações, logout, invalidação, fixação, CSRF, `Origin`, enumeração e respostas seguras.                                    | Integração pela API e navegador com dados sensíveis removidos.          |
+| TS03 | Autorização negativa               | Paciente, profissional, categoria, operação, estado e prazo; IDOR, acesso cruzado, redução, revogação e expiração imediatas.                | Matriz executada com casos permitidos e negados.                        |
+| TS04 | Integridade clínica                | Criação, proveniência, confirmação, correção, imutabilidade, concorrência e proibição de exclusão de registros e mensagens.                 | Testes de integração demonstrando versões e autoria preservadas.        |
+| TS05 | Upload hostil                      | Tipo real, extensão falsa, conteúdo ativo, malware, limite, quota, nomes maliciosos, falha do scanner, isolamento e autorização de leitura. | Corpus sintético seguro, resultados do ClamAV e descarte da quarentena. |
+| TS06 | Auditoria e privacidade            | Sucesso e negação, atomicidade, append-only, correlação, minimização, log injection e ausência de segredos, PII, áudio e conteúdo clínico.  | Consultas de verificação e relatório sanitizado.                        |
+| TS07 | Ditado clínico                     | Permissão negada, limite, formato, falha, descarte de áudio, rascunho, edição e confirmação explícita nos campos permitidos.                | Testes pela UI e integração com transcrição local real.                 |
+| TS08 | Interface, visual e acessibilidade | Rotas e controles do inventário, estados assíncronos, persistência, teclado, foco, nomes acessíveis, contraste, zoom e viewports definidos. | Relatório E2E, acessibilidade e comparação visual sem dados reais.      |
+| TS09 | Disponibilidade e recuperação      | Rate limiting, carga controlada, quota, falhas de dependências, reinício, backup, restauração e integridade de banco, objetos e auditoria.  | Métricas, comandos reproduzíveis e restauração sintética verificada.    |
+| TS10 | Cadeia e configuração              | Dependências, imagens, segredos, análise estática, portas, TLS, cabeçalhos e permissões do ambiente.                                        | Relatórios das ferramentas com versão, parâmetros e triagem.            |
+
+Testes de integração usarão os serviços reais do ambiente de desenvolvimento. Dublês ficam restritos a fronteiras externas inexistentes, tempo e aleatoriedade controlados. Todos os testes usarão apenas dados sintéticos. Os detalhes e portões de qualidade estão no [plano de implementação](plano-implementacao-primeira-versao.md).
+
 Para tornar a etapa reproduzível e produzir evidência prática sem inventar resultados sobre o VitaLink, foi utilizado o **OWASP Juice Shop** como aplicação-alvo didática. A aplicação foi executada localmente em Docker e analisada com o **OWASP ZAP Baseline Scan**.
 
 Os achados descritos nesta etapa pertencem ao ambiente testado — OWASP Juice Shop — e **não constituem evidência de vulnerabilidades existentes no VitaLink**. Eles são utilizados para demonstrar o processo de verificação, análise de resultados e relação com os controles planejados para o projeto.
 
 ## Ambiente testado
 
-| Item | Configuração |
-| --- | --- |
-| Data da execução | 13 de agosto de 2026 |
-| Aplicação-alvo | OWASP Juice Shop |
-| Imagem utilizada | `bkimminich/juice-shop:latest` |
-| Execução | Container Docker `vitalink-juice-shop` |
-| Porta local | `3000` |
-| Rede Docker | `vitalink-security` |
-| Ferramenta | OWASP ZAP |
-| Imagem do ZAP | `ghcr.io/zaproxy/zaproxy:stable` |
-| Tipo de análise | ZAP Baseline Scan |
-| Alvo interno da análise | `http://vitalink-juice-shop:3000` |
+| Item                    | Configuração                           |
+| ----------------------- | -------------------------------------- |
+| Data da execução        | 13 de agosto de 2026                   |
+| Aplicação-alvo          | OWASP Juice Shop                       |
+| Imagem utilizada        | `bkimminich/juice-shop:latest`         |
+| Execução                | Container Docker `vitalink-juice-shop` |
+| Porta local             | `3000`                                 |
+| Rede Docker             | `vitalink-security`                    |
+| Ferramenta              | OWASP ZAP                              |
+| Imagem do ZAP           | `ghcr.io/zaproxy/zaproxy:stable`       |
+| Tipo de análise         | ZAP Baseline Scan                      |
+| Alvo interno da análise | `http://vitalink-juice-shop:3000`      |
 
 Antes da execução do ZAP, a disponibilidade da aplicação foi confirmada localmente e retornou:
 
@@ -81,13 +102,13 @@ PASS: 59
 
 Portanto:
 
-| Resultado | Quantidade |
-| --- | ---: |
-| URLs observadas | 88 |
-| Regras classificadas como PASS | 59 |
-| Categorias WARN-NEW | 8 |
-| FAIL-NEW | 0 |
-| FAIL-INPROG | 0 |
+| Resultado                      | Quantidade |
+| ------------------------------ | ---------: |
+| URLs observadas                |         88 |
+| Regras classificadas como PASS |         59 |
+| Categorias WARN-NEW            |          8 |
+| FAIL-NEW                       |          0 |
+| FAIL-INPROG                    |          0 |
 
 A ausência de `FAIL-NEW` **não significa ausência de vulnerabilidades**. O resultado descreve apenas o comportamento das verificações executadas pelo ZAP Baseline neste ambiente e nesta execução.
 
@@ -195,12 +216,12 @@ A não seleção desses itens para a tabela principal não significa que sejam f
 
 A verificação prática reforça alguns princípios já definidos para o VitaLink:
 
-| Resultado observado no ambiente didático | Aplicação futura no VitaLink |
-| --- | --- |
-| CORS excessivamente permissivo | Restringir origens e manter autorização dos dados exclusivamente na API. |
-| Ausência de CSP | Configurar cabeçalhos de segurança como defesa em profundidade da aplicação web. |
+| Resultado observado no ambiente didático          | Aplicação futura no VitaLink                                                        |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| CORS excessivamente permissivo                    | Restringir origens e manter autorização dos dados exclusivamente na API.            |
+| Ausência de CSP                                   | Configurar cabeçalhos de segurança como defesa em profundidade da aplicação web.    |
 | Uso de função JavaScript que contorna sanitização | Evitar APIs perigosas e validar dados antes da composição de conteúdo no navegador. |
-| Alertas relacionados a políticas de navegador | Incorporar configuração segura de cabeçalhos à revisão da aplicação implantada. |
+| Alertas relacionados a políticas de navegador     | Incorporar configuração segura de cabeçalhos à revisão da aplicação implantada.     |
 
 O achado A02 possui relação potencial com os riscos de exposição e extração indevida de dados **R10 e R11**. A01 e A03 são preocupações complementares que deverão ser consideradas na implementação mesmo sem correspondência direta com um risco específico do catálogo atual.
 

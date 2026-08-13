@@ -41,7 +41,7 @@ Administrador ou Suporte está fora do escopo atual por DS01. Portanto, T03 trat
 
 **Condição ou vulnerabilidade:** a ameaça ocorre se DS02 não for implementada corretamente. A decisão exige identificação e registro profissional informados e validação manual antes de solicitar acesso; ela não prova que o fluxo já existe.
 
-**Caso de abuso relacionado:** [CA01 — Cadastro de falso profissional](etapa1-modelagem-de-ameacas.md#ca01--cadastro-de-falso-profissional).
+**Caso de abuso relacionado:** [CA01 — Cadastro de falso profissional](casos-de-abuso-identidade.md#ca01--cadastro-de-falso-profissional).
 
 ### T02 — Uso de credenciais roubadas
 
@@ -58,7 +58,7 @@ Administrador ou Suporte está fora do escopo atual por DS01. Portanto, T03 trat
 
 **Condição ou vulnerabilidade:** o ataque ocorre se DS03 não for implementada corretamente. DS03 exige conta individual, recuperação que invalida sessões e limites de sessão; a decisão não é evidência de cobertura real.
 
-**Caso de abuso relacionado:** [CA02 — Uso de conta ou token de outra pessoa](etapa1-modelagem-de-ameacas.md#ca02--uso-de-conta-ou-token-de-outra-pessoa).
+**Caso de abuso relacionado:** [CA02 — Roubo da conta de um paciente](casos-de-abuso-identidade.md#ca02--roubo-da-conta-de-um-paciente).
 
 ### T03 — Elevação indevida de perfil ou privilégio
 
@@ -75,24 +75,24 @@ Administrador ou Suporte está fora do escopo atual por DS01. Portanto, T03 trat
 
 **Condição ou vulnerabilidade:** ausência ou aplicação incompleta de DS04 e DS06, confiança em identificadores enviados pelo cliente, permissões mais amplas que a necessidade do perfil ou concessão implícita de novos privilégios.
 
-**Casos de abuso relacionados:** [CA01](etapa1-modelagem-de-ameacas.md#ca01--cadastro-de-falso-profissional), [CA02](etapa1-modelagem-de-ameacas.md#ca02--uso-de-conta-ou-token-de-outra-pessoa) e [CA04](etapa1-modelagem-de-ameacas.md#ca04--consulta-ou-alteração-fora-do-escopo-autorizado). Todos podem resultar na obtenção de privilégios que não pertencem ao ator.
+**Casos de abuso relacionados:** [CA01](casos-de-abuso-identidade.md#ca01--cadastro-de-falso-profissional), [CA02](casos-de-abuso-identidade.md#ca02--roubo-da-conta-de-um-paciente) e [CA04](casos-de-abuso.md#ca04--consulta-a-prontuário-sem-autorização). Todos podem resultar na obtenção de privilégios que não pertencem ao ator.
 
 ## Relação entre identidade, autenticação e privilégio
 
 | Pergunta                      | Resposta documental                                                                                                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Quem é a pessoa?              | A identidade registrada como paciente ou profissional. DS02 exige validação manual de profissional antes de solicitar acesso. |
-| Como o sistema verifica isso? | Por autenticação de conta individual. DS03 define recuperação e limites de sessão; a implementação é pendente. |
+| Quem é a pessoa?              | A identidade registrada como paciente ou profissional. DS02 exige validação manual de profissional antes de solicitar acesso.                                                  |
+| Como o sistema verifica isso? | Por autenticação de conta individual. DS03 define recuperação e limites de sessão; a implementação é pendente.                                                                 |
 | O que a pessoa pode fazer?    | A autorização define o recurso, a operação e o escopo. No caso de dados médicos, a autorização ativa do paciente é uma condição necessária.                                    |
 | O que é privilégio?           | O limite efetivo de operações da identidade autenticada. Ele não deve ser ampliado porque o cliente enviou outro identificador ou porque uma função foi ocultada na interface. |
 | O que um token prova?         | Apenas o contexto definido para a sessão, recuperação ou confirmação. O servidor ainda deve verificar se o token é válido e se a operação está autorizada.                     |
 
 ## Rastreabilidade inicial
 
-| Ameaça | Caso de abuso | Ativos principais                  | Risco a registrar posteriormente                                       |
-| ------ | ------------- | ---------------------------------- | ---------------------------------------------------------------------- |
-| T01    | CA01          | A02, A03, A04, A05, A06, A09 e A12 | [R01](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — acesso ou operação de falso profissional.        |
-| T02    | CA02          | A03 a A08, A09 e A10               | [R02](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — uso da conta ou dos tokens de outra pessoa.      |
-| T03    | CA01, CA02 e CA04 | A03 a A10                       | [R03](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — operação fora do perfil ou do escopo autorizado. |
+| Ameaça | Caso de abuso     | Ativos principais                  | Risco a registrar posteriormente                                                                             |
+| ------ | ----------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| T01    | CA01              | A02, A03, A04, A05, A06, A09 e A12 | [R01](etapa2-riscos-e-tratamento.md#registro-consolidado) — acesso ou operação de falso profissional.        |
+| T02    | CA02              | A03 a A08, A09 e A10               | [R02](etapa2-riscos-e-tratamento.md#registro-consolidado) — uso da conta ou dos tokens de outra pessoa.      |
+| T03    | CA01, CA02 e CA04 | A03 a A10                          | [R03](etapa2-riscos-e-tratamento.md#registro-consolidado) — operação fora do perfil ou do escopo autorizado. |
 
 As probabilidades, impactos, classificações, controles propostos e estimativas residuais estão no [registro da Etapa 2](etapa2-riscos-e-tratamento.md). Elas continuam sendo planejamento, não evidência de controles implementados. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar identidades, ativos, ameaças e condições; a implementação de Protect, Detect, Respond e Recover permanece **[A confirmar]**.

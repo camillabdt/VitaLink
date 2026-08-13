@@ -4,30 +4,30 @@
 
 Esta etapa integra os artefatos produzidos ao longo das Etapas 1 a 6 em uma visão de ciclo de desenvolvimento seguro.
 
-O VitaLink ainda não possui uma aplicação executável nem um pipeline automatizado de CI/CD capaz de compilar, testar e implantar o sistema. Portanto, o pipeline DevSecOps apresentado abaixo é **proposto e rastreável aos artefatos existentes**, mas não deve ser apresentado como automação já executada.
+O VitaLink possui um frontend de referência executável exportado do Figma Make, mas ainda não possui backend, integração funcional nem pipeline automatizado de CI/CD capaz de compilar, testar e implantar o sistema completo. Portanto, o pipeline DevSecOps apresentado abaixo é **proposto e rastreável aos artefatos existentes**, mas não deve ser apresentado como automação já executada.
 
 Há, entretanto, uma diferença importante entre as atividades:
 
 - as Etapas 1, 2 e 3 possuem documentação de segurança versionada;
-- a Etapa 4 possui práticas, pseudocódigo e testes planejados, mas não código executável do VitaLink;
+- a Etapa 4 possui práticas, pseudocódigo e testes planejados; o frontend de referência ainda usa dados simulados e não comprova esses controles;
 - a Etapa 5 possui uma verificação prática executada com OWASP ZAP sobre o OWASP Juice Shop, utilizada como ambiente didático enquanto o VitaLink não possui implementação;
 - a Etapa 6 possui regras e roteiro de detecção e resposta propostos, ainda sem monitoramento executável;
 - o vídeo final permanece pendente de gravação e publicação.
 
 ## Pipeline DevSecOps proposto
 
-| Momento | Atividade de segurança | Evidência atual | Condição para avançar | Estado |
-| --- | --- | --- | --- | --- |
-| Planejamento | Definir escopo, ativos, perfis, CIA, casos de abuso e modelagem STRIDE | Documentação das Etapas 1 e artefatos de apoio | Ativos, atores, ameaças e casos de abuso devem estar consistentes e rastreáveis | Documentado |
-| Análise de risco | Avaliar probabilidade, impacto, prioridade, tratamento e risco residual | Registro R01–R15 da Etapa 2 | Riscos altos e críticos devem possuir tratamento proposto e rastreabilidade | Documentado |
-| Requisitos e arquitetura | Transformar riscos em requisitos e decisões arquiteturais de segurança | RS01–RS09, V01–V09, DA01–DA09 e diagrama da Etapa 3 | Riscos prioritários devem possuir requisito ou decisão correspondente | Documentado |
-| Implementação segura | Aplicar práticas de código seguro definidas na Etapa 4 | CS01–CS10, pseudocódigo e CT01–CT10 | Código deve implementar os controles antes de ser apresentado como mitigação | Planejado |
-| Testes de segurança | Executar os casos CT01–CT10 sobre o VitaLink | Casos de teste definidos, sem execução sobre o sistema | Nenhum controle deve ser considerado comprovado sem teste executável correspondente | Pendente de implementação |
-| Verificação dinâmica | Executar DAST em ambiente controlado | Relatórios reais do ZAP produzidos na Etapa 5 sobre o OWASP Juice Shop | Achados relevantes devem ser analisados; quando o VitaLink existir, a verificação deverá ser repetida diretamente sobre ele | Executado em ambiente didático |
-| Revisão de configuração e segredos | Verificar configuração, credenciais, dependências e artefatos antes da integração | Critérios definidos nas etapas anteriores | Nenhum segredo ou dado médico real deve ser versionado; achados críticos não podem permanecer sem análise | Planejado |
-| Integração e entrega | Integrar somente alterações revisadas e rastreáveis | Histórico Git e pull requests | Alterações devem passar pelas verificações aplicáveis antes de chegar à branch de integração | Processo de projeto |
-| Monitoramento | Gerar eventos e aplicar D01–D08 | Regras e roteiro da Etapa 6 | Eventos críticos devem possuir fonte de dados, regra e resposta inicial | Planejado |
-| Resposta e recuperação | Triar, conter, investigar, corrigir e recuperar | Roteiro da Etapa 6 | Incidentes confirmados devem possuir tratamento, registro e acompanhamento | Planejado |
+| Momento                            | Atividade de segurança                                                                  | Evidência atual                                                                                               | Condição para avançar                                                                                                       | Estado                         |
+| ---------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Planejamento                       | Definir escopo, ativos, perfis, CIA, casos de abuso e modelagem STRIDE                  | Documentação das Etapas 1 e artefatos de apoio                                                                | Ativos, atores, ameaças e casos de abuso devem estar consistentes e rastreáveis                                             | Documentado                    |
+| Análise de risco                   | Avaliar probabilidade, impacto, prioridade, tratamento e risco residual                 | Registro R01–R15 da Etapa 2                                                                                   | Riscos altos e críticos devem possuir tratamento proposto e rastreabilidade                                                 | Documentado                    |
+| Requisitos e arquitetura           | Transformar riscos em requisitos e decisões arquiteturais de segurança                  | RS01–RS09, V01–V09, DA01–DA09 e diagrama da Etapa 3                                                           | Riscos prioritários devem possuir requisito ou decisão correspondente                                                       | Documentado                    |
+| Implementação segura               | Aplicar práticas de código seguro definidas na Etapa 4 e o plano TDD da primeira versão | CS01–CS10, pseudocódigo, CT01–CT10 e [plano de implementação](../docs/plano-implementacao-primeira-versao.md) | Código deve implementar os controles antes de ser apresentado como mitigação                                                | Planejado                      |
+| Testes de segurança                | Executar CT01–CT10 e TS01–TS10 sobre o VitaLink                                         | Casos e suítes definidos, sem execução sobre o sistema integrado                                              | Nenhum controle deve ser considerado comprovado sem teste executável correspondente                                         | Pendente de implementação      |
+| Verificação dinâmica               | Executar DAST em ambiente controlado                                                    | Relatórios reais do ZAP produzidos na Etapa 5 sobre o OWASP Juice Shop                                        | Achados relevantes devem ser analisados; quando o VitaLink existir, a verificação deverá ser repetida diretamente sobre ele | Executado em ambiente didático |
+| Revisão de configuração e segredos | Verificar configuração, credenciais, dependências e artefatos antes da integração       | Critérios definidos nas etapas anteriores                                                                     | Nenhum segredo ou dado médico real deve ser versionado; achados críticos não podem permanecer sem análise                   | Planejado                      |
+| Integração e entrega               | Integrar somente alterações revisadas e rastreáveis                                     | Histórico Git e pull requests                                                                                 | Alterações devem passar pelas verificações aplicáveis antes de chegar à branch de integração                                | Processo de projeto            |
+| Monitoramento                      | Gerar eventos e aplicar D01–D08                                                         | Regras e roteiro da Etapa 6                                                                                   | Eventos críticos devem possuir fonte de dados, regra e resposta inicial                                                     | Planejado                      |
+| Resposta e recuperação             | Triar, conter, investigar, corrigir e recuperar                                         | Roteiro da Etapa 6                                                                                            | Incidentes confirmados devem possuir tratamento, registro e acompanhamento                                                  | Planejado                      |
 
 ## Gates de segurança
 
@@ -59,7 +59,7 @@ Verificação de formatação e qualidade
 Testes funcionais
         |
         v
-Testes de segurança CT01–CT10
+Testes de segurança CT01–CT10 e TS01–TS10
         |
         v
 Análise de dependências
@@ -107,16 +107,16 @@ Esses números descrevem somente o ambiente didático analisado e não podem ser
 
 ## Correspondência entre as etapas
 
-| Etapa | Tema | Artefatos principais |
-| --- | --- | --- |
-| Base | Escopo e sistema | [escopo](../docs/escopo-problema-justificativa.md), [componentes](../docs/componentes-do-sistema.md), [pontos de interação](../docs/pontos-de-interacao.md) |
-| Etapa 1 | Ameaças, STRIDE e casos de abuso | [modelagem](../docs/etapa1-modelagem-de-ameacas.md), [casos de abuso](../docs/casos-de-abuso.md) |
-| Etapa 2 | Avaliação e tratamento de riscos | [riscos](../docs/etapa2-riscos-e-tratamento.md), [critérios](../docs/etapa2-criterios-e-risco-residual.md) |
-| Etapa 3 | Arquitetura segura | [arquitetura](../docs/etapa3-arquitetura-segura.md), [diagrama](../docs/diagramas/arquitetura-segura.mmd) |
-| Etapa 4 | Código seguro | [práticas e testes planejados](../docs/etapa4-codigo-seguro.md) |
-| Etapa 5 | Verificação de segurança | [análise](../docs/etapa5-verificacao-de-seguranca.md), [evidências](../evidencias/etapa-5/) |
-| Etapa 6 | Detecção e resposta | [monitoramento e resposta](etapa-6-deteccao-de-intrusoes.md) |
-| Etapa 7 | DevSecOps e apresentação | Este documento |
+| Etapa   | Tema                             | Artefatos principais                                                                                                                                        |
+| ------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base    | Escopo e sistema                 | [escopo](../docs/escopo-problema-justificativa.md), [componentes](../docs/componentes-do-sistema.md), [pontos de interação](../docs/pontos-de-interacao.md) |
+| Etapa 1 | Ameaças, STRIDE e casos de abuso | [modelagem](../docs/etapa1-modelagem-de-ameacas.md), [casos de abuso](../docs/casos-de-abuso.md)                                                            |
+| Etapa 2 | Avaliação e tratamento de riscos | [riscos](../docs/etapa2-riscos-e-tratamento.md), [critérios](../docs/etapa2-criterios-e-risco-residual.md)                                                  |
+| Etapa 3 | Arquitetura segura               | [arquitetura](../docs/etapa3-arquitetura-segura.md), [diagrama](../docs/diagramas/arquitetura-segura.mmd)                                                   |
+| Etapa 4 | Código seguro                    | [práticas e testes planejados](../docs/etapa4-codigo-seguro.md)                                                                                             |
+| Etapa 5 | Verificação de segurança         | [análise](../docs/etapa5-verificacao-de-seguranca.md), [evidências](../evidencias/etapa-5/)                                                                 |
+| Etapa 6 | Detecção e resposta              | [monitoramento e resposta](etapa-6-deteccao-de-intrusoes.md)                                                                                                |
+| Etapa 7 | DevSecOps e apresentação         | Este documento                                                                                                                                              |
 
 # Roteiro do vídeo final
 
@@ -132,18 +132,18 @@ Duração alvo: **5 a 8 minutos**.
 
 ## Estrutura sugerida
 
-| Tempo aproximado | Bloco | Conteúdo |
-| --- | --- | --- |
-| 0:00–0:40 | Apresentação | Nome VitaLink, problema tratado, objetivo e escopo acadêmico |
-| 0:40–1:30 | Sistema e ativos | Paciente, profissional, ativos A01–A12, dados médicos e pontos de interação |
-| 1:30–2:40 | Etapa 1 | STRIDE, casos de abuso CA01–CA10 e exemplos de ameaças T01–T15 |
-| 2:40–3:40 | Etapa 2 | Método de avaliação, matriz de risco e riscos prioritários |
-| 3:40–4:50 | Etapa 3 | Requisitos RS01–RS09, principais decisões arquiteturais e diagrama |
-| 4:50–5:50 | Etapa 4 | Práticas CS01–CS10, exemplos de pseudocódigo e testes CT01–CT10 |
-| 5:50–7:00 | Etapa 5 | OWASP Juice Shop, OWASP ZAP, execução real e três achados analisados |
-| 7:00–8:00 | Etapa 6 | Regras D01–D08, monitoramento e fluxo de resposta a incidentes |
-| 8:00–9:00 | Etapa 7 | Pipeline DevSecOps, gates de segurança e integração das etapas |
-| 9:00–10:00 | Encerramento | Limitações, aprendizados, participação e próximos passos |
+| Tempo aproximado | Bloco            | Conteúdo                                                                    |
+| ---------------- | ---------------- | --------------------------------------------------------------------------- |
+| 0:00–0:40        | Apresentação     | Nome VitaLink, problema tratado, objetivo e escopo acadêmico                |
+| 0:40–1:30        | Sistema e ativos | Paciente, profissional, ativos A01–A12, dados médicos e pontos de interação |
+| 1:30–2:40        | Etapa 1          | STRIDE, casos de abuso CA01–CA10 e exemplos de ameaças T01–T15              |
+| 2:40–3:40        | Etapa 2          | Método de avaliação, matriz de risco e riscos prioritários                  |
+| 3:40–4:50        | Etapa 3          | Requisitos RS01–RS09, principais decisões arquiteturais e diagrama          |
+| 4:50–5:50        | Etapa 4          | Práticas CS01–CS10, exemplos de pseudocódigo e testes CT01–CT10             |
+| 5:50–7:00        | Etapa 5          | OWASP Juice Shop, OWASP ZAP, execução real e três achados analisados        |
+| 7:00–8:00        | Etapa 6          | Regras D01–D08, monitoramento e fluxo de resposta a incidentes              |
+| 8:00–9:00        | Etapa 7          | Pipeline DevSecOps, gates de segurança e integração das etapas              |
+| 9:00–10:00       | Encerramento     | Limitações, aprendizados, participação e próximos passos                    |
 
 ## Conteúdo mínimo de cada bloco
 
@@ -155,7 +155,7 @@ Apresentar:
 - objetivo do VitaLink;
 - atores Paciente e Profissional de Saúde;
 - natureza acadêmica do projeto;
-- ausência atual de aplicação executável.
+- existência apenas do frontend de referência, sem backend ou integração funcional.
 
 Evitar afirmar que o VitaLink já é um sistema implantado ou operacional.
 
@@ -237,7 +237,7 @@ Apresentar exemplos como:
 
 - D01 — repetição de negações de autorização;
 - D03 — sobrecarga de requisição ou upload;
-- D05 — uso de link expirado ou revogado;
+- D05 — tentativa de acesso público ou sem autorização a documento;
 - D06 — possível extração em massa;
 - D07 — tentativa de alteração ou exclusão indevida;
 - D08 — falha de auditoria.
@@ -310,7 +310,7 @@ O link não deve ser inventado ou preenchido antes da publicação efetiva.
 
 ## Limitações finais
 
-- não há aplicação executável do VitaLink;
+- há apenas o frontend de referência; não há sistema integrado executável do VitaLink;
 - não há testes CT01–CT10 executados sobre o VitaLink;
 - não há pipeline CI/CD executável versionado;
 - não há monitoramento D01–D08 ativo;

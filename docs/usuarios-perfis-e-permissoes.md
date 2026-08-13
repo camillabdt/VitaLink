@@ -1,6 +1,6 @@
 # Usuários, perfis e permissões
 
-Este documento detalha os perfis já apresentados no [README](../README.md) e as permissões necessárias para as funcionalidades documentadas do VitaLink. A matriz usa como referência o [inventário de ativos](inventario-de-ativos.md) e não define funcionalidades do MVP que ainda não foram descritas.
+Este documento detalha os perfis já apresentados no [README](../README.md) e as permissões necessárias para as funcionalidades documentadas do VitaLink. A matriz usa como referência o [inventário de ativos](inventario-de-ativos.md) e é complementada pelo [plano de implementação da primeira versão](plano-implementacao-primeira-versao.md).
 
 ## Termos usados
 
@@ -13,32 +13,34 @@ Estar autenticado não concede, por si só, acesso a dados médicos ou a operaç
 
 ## Usuários e responsabilidades
 
-| Perfil                   | Responsabilidades documentadas                                                                                                                                                                           | Limite de atuação                                                                                                                                |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Paciente                 | Manter o próprio perfil e histórico, anexar documentos, registrar consultas, visualizar o histórico, compartilhar informações, conceder ou revogar acesso e consultar o histórico de acessos.            | Atua sobre os próprios dados e sobre as autorizações que concede. Não administra contas de terceiros nem altera dados médicos de outro paciente. |
-| Profissional de Saúde    | Manter o próprio cadastro profissional, solicitar acesso, registrar atendimentos, adicionar documentos, consultar pacientes autorizados e atualizar informações médicas conforme a autorização recebida. | Atua somente sobre pacientes, dados e operações incluídos em uma autorização ativa. Não concede autorização em nome do paciente.                 |
-| Administrador ou Suporte | Fora do escopo atual, conforme DS01 das [decisões de segurança](decisoes-de-seguranca.md). | Não recebe permissões. Qualquer inclusão exige decisão registrada e atualização desta matriz. |
+| Perfil                   | Responsabilidades documentadas                                                                                                                                                                           | Limite de atuação                                                                                                                                       |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Paciente                 | Manter o próprio perfil, registrar observações pessoais, anexar documentos, visualizar o histórico, controlar autorizações e consultar o histórico de acessos.                                           | Atua sobre os próprios dados e autorizações. Não cria consulta profissional, administra contas de terceiros nem altera dados médicos de outro paciente. |
+| Profissional de Saúde    | Manter o próprio cadastro profissional, solicitar acesso, registrar atendimentos, adicionar documentos, consultar pacientes autorizados e atualizar informações médicas conforme a autorização recebida. | Atua somente sobre pacientes, dados e operações incluídos em uma autorização ativa. Não concede autorização em nome do paciente.                        |
+| Administrador ou Suporte | Fora do escopo atual, conforme DS01 das [decisões de segurança](decisoes-de-seguranca.md).                                                                                                               | Não recebe permissões. Qualquer inclusão exige decisão registrada e atualização desta matriz.                                                           |
 
 ## Matriz de permissões
 
 As permissões abaixo são limitadas pelo recurso indicado e pela autorização do paciente quando a operação envolve dados médicos. “Próprio” significa o cadastro ou os dados do usuário autenticado. “Autorizado” significa que existe uma autorização ativa, não expirada e não revogada para o paciente e o escopo da operação.
 
-| Funcionalidade                            | Paciente                                             | Profissional de Saúde                                                   | Administrador ou Suporte |
-| ----------------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------ |
-| Criar conta de paciente                   | Permitido para a própria conta                       | Proibido                                                                | Fora do escopo           |
-| Criar conta profissional                  | Proibido                                             | Permitido para a própria conta, pendente de validação DS02              | Fora do escopo           |
-| Fazer login                               | Permitido na própria conta                           | Permitido na própria conta                                              | Fora do escopo           |
-| Editar perfil                             | Permitido no próprio perfil                          | Permitido no próprio perfil profissional                                | Fora do escopo           |
-| Anexar exames, receitas, laudos e imagens | Permitido nos próprios registros                     | Permitido dentro da autorização ativa e da operação `anexar`            | Fora do escopo           |
-| Registrar consulta                        | Permitido no próprio histórico                       | Permitido dentro da autorização ativa e da operação `anexar`            | Fora do escopo           |
-| Visualizar histórico médico               | Permitido no próprio histórico                       | Permitido dentro da autorização ativa e da operação `consultar`         | Fora do escopo           |
-| Compartilhar informações                  | Permitido, dentro do próprio controle de autorização | Proibido conceder acesso em nome do paciente                            | Fora do escopo           |
-| Solicitar acesso a paciente               | Proibido como profissional                           | Permitido após validação da conta profissional                           | Fora do escopo           |
-| Consultar paciente                        | Permitido nos próprios dados                         | Permitido somente para paciente autorizado                              | Fora do escopo           |
-| Atualizar informações médicas             | Permitido apenas em dados criados pelo próprio paciente | Permitido dentro da autorização ativa e da operação `atualizar`       | Fora do escopo           |
-| Revogar acesso de profissional            | Permitido para autorizações do próprio paciente      | Proibido                                                                | Fora do escopo           |
-| Consultar histórico de acessos            | Permitido no próprio histórico                       | Proibido consultar o histórico de outro usuário                         | Fora do escopo           |
-| Alterar perfis ou permissões de terceiros | Proibido                                             | Proibido                                                                | Fora do escopo           |
+| Funcionalidade                            | Paciente                                                | Profissional de Saúde                                             | Administrador ou Suporte |
+| ----------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------ |
+| Criar conta de paciente                   | Permitido para a própria conta                          | Proibido                                                          | Fora do escopo           |
+| Criar conta profissional                  | Proibido                                                | Permitido para a própria conta, pendente de validação DS02        | Fora do escopo           |
+| Fazer login                               | Permitido na própria conta                              | Permitido na própria conta                                        | Fora do escopo           |
+| Editar perfil                             | Permitido no próprio perfil                             | Permitido no próprio perfil profissional                          | Fora do escopo           |
+| Anexar exames, receitas, laudos e imagens | Permitido nos próprios registros                        | Permitido dentro da autorização ativa e da operação `anexar`      | Fora do escopo           |
+| Registrar observação pessoal              | Permitido no próprio histórico                          | Proibido consultar ou alterar                                     | Fora do escopo           |
+| Registrar consulta clínica                | Proibido como paciente                                  | Permitido dentro da autorização ativa e da operação `anexar`      | Fora do escopo           |
+| Visualizar histórico médico               | Permitido no próprio histórico                          | Permitido dentro da autorização ativa e da operação `consultar`   | Fora do escopo           |
+| Compartilhar informações                  | Permitido, dentro do próprio controle de autorização    | Proibido conceder acesso em nome do paciente                      | Fora do escopo           |
+| Solicitar acesso a paciente               | Proibido como profissional                              | Permitido após validação da conta profissional                    | Fora do escopo           |
+| Consultar paciente                        | Permitido nos próprios dados                            | Permitido somente para paciente autorizado                        | Fora do escopo           |
+| Atualizar informações médicas             | Permitido apenas em dados criados pelo próprio paciente | Permitido dentro da autorização ativa e da operação `atualizar`   | Fora do escopo           |
+| Trocar mensagens clínicas                 | Proibido                                                | Permitido quando ambos possuem autorização ativa para `mensagens` | Fora do escopo           |
+| Revogar acesso de profissional            | Permitido para autorizações do próprio paciente         | Proibido                                                          | Fora do escopo           |
+| Consultar histórico de acessos            | Permitido no próprio histórico                          | Proibido consultar o histórico de outro usuário                   | Fora do escopo           |
+| Alterar perfis ou permissões de terceiros | Proibido                                                | Proibido                                                          | Fora do escopo           |
 
 ### Restrições por ativo
 
@@ -63,4 +65,4 @@ As verificações devem ocorrer no componente que controla o recurso. Ocultar um
 
 ## Decisões aplicadas
 
-DS01–DS07 das [decisões de segurança](decisoes-de-seguranca.md) resolvem o escopo administrativo, a atualização pelo paciente, a granularidade de autorização, a validação profissional e a recuperação de conta. A implementação dessas decisões ainda exige código e evidência.
+DS01–DS26 das [decisões de segurança](decisoes-de-seguranca.md) resolvem o escopo administrativo, a atualização pelo paciente, a granularidade de autorização, a validação profissional, a recuperação de conta, a auditoria e os controles executáveis. A implementação dessas decisões ainda exige código, testes e evidência.

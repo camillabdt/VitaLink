@@ -6,15 +6,16 @@ O fluxo complementa a definição de perfis e permissões do VitaLink, o [invent
 
 ## Fluxo textual
 
-1. O profissional autentica a própria conta e solicita acesso a um paciente identificado pelo sistema.
-2. O sistema registra a solicitação como `Solicitada` e não libera dados médicos enquanto não houver decisão do paciente.
-3. O paciente autenticado consulta quem solicitou o acesso e decide entre recusar ou conceder a autorização.
-4. Ao recusar, o sistema registra `Recusada` e mantém o profissional sem acesso. Uma nova solicitação deverá ser feita se o profissional ainda precisar consultar os dados.
-5. Ao conceder, o paciente define ou confirma o escopo e o período da autorização. O sistema registra `Ativa` somente se essas condições forem válidas.
-6. Enquanto estiver `Ativa`, cada consulta ou atualização deve verificar novamente o paciente, o profissional, a operação, o recurso e a validade temporal da autorização.
-7. O paciente pode reduzir o escopo ou revogar a autorização. A revogação muda o estado para `Revogada` e impede novos acessos a partir dessa decisão.
-8. Quando o fim do período for alcançado, a autorização muda para `Expirada` e deixa de permitir novos acessos sem depender de uma ação manual do paciente.
-9. Após `Revogada` ou `Expirada`, o profissional deverá solicitar uma nova autorização para voltar a acessar os dados. O histórico da autorização anterior permanece para auditoria.
+1. O paciente autenticado gera um código de acesso temporário, de uso único, válido por 24 horas e revogável.
+2. O profissional autenticado e validado usa o código para identificar o paciente e criar uma solicitação com justificativa. O código não revela conteúdo clínico nem concede acesso.
+3. O sistema registra a solicitação como `Solicitada` e não libera dados médicos enquanto não houver decisão do paciente.
+4. O paciente autenticado consulta quem solicitou o acesso e decide entre recusar ou conceder a autorização.
+5. Ao recusar, o sistema registra `Recusada` e mantém o profissional sem acesso. Uma nova solicitação deverá ser feita se o profissional ainda precisar consultar os dados.
+6. Ao conceder, o paciente define ou confirma o escopo e o período, confirma a ação com TOTP adicional e o sistema registra `Ativa` somente se todas as condições forem válidas.
+7. Enquanto estiver `Ativa`, cada consulta ou atualização deve verificar novamente o paciente, o profissional, a operação, o recurso e a validade temporal da autorização.
+8. O paciente pode reduzir o escopo ou revogar a autorização com TOTP adicional. A revogação muda o estado para `Revogada` e impede novos acessos a partir dessa decisão.
+9. Quando o fim do período for alcançado, a autorização muda para `Expirada` e deixa de permitir novos acessos sem depender de uma ação manual do paciente.
+10. Após `Revogada` ou `Expirada`, o profissional deverá solicitar uma nova autorização para voltar a acessar os dados. O histórico da autorização anterior permanece para auditoria.
 
 ## Estados da autorização
 
@@ -40,7 +41,7 @@ Uma autorização ativa deve identificar, no mínimo:
 - o início e o fim do período autorizado;
 - o estado atual e o momento da última mudança.
 
-O escopo respeita DS04 das [decisões de segurança](decisoes-de-seguranca.md): a autorização lista categorias de dado e operações `consultar`, `anexar` ou `atualizar`. Exclusão não é concedida a profissionais.
+O escopo respeita DS04 das [decisões de segurança](decisoes-de-seguranca.md): a autorização lista categorias de dado e operações `consultar`, `anexar` ou `atualizar`. O mapeamento normativo de cada recurso está no [plano de implementação](plano-implementacao-primeira-versao.md#matriz-normativa-de-recurso-e-autorização). Uma categoria nunca satisfaz outra, e exclusão não é concedida a profissionais.
 
 A duração é um intervalo temporal obrigatório. Conforme DS05, o padrão é 30 dias e o paciente pode escolher prazo entre 1 e 90 dias. Uma autorização sem fim definido não é válida para acesso profissional.
 
@@ -48,6 +49,8 @@ A duração é um intervalo temporal obrigatório. Conforme DS05, o padrão é 3
 
 - Somente um paciente autenticado pode conceder, limitar ou revogar autorização sobre os próprios dados.
 - Somente um profissional autenticado pode solicitar acesso em seu próprio nome.
+- O profissional só pode solicitar acesso após validação manual e mediante código temporário válido compartilhado pelo paciente.
+- O código temporário é de uso único, expira após 24 horas e pode ser revogado pelo paciente; ele não substitui a autorização.
 - Uma solicitação pendente, recusada, revogada ou expirada não autoriza consulta, inclusão, alteração, download ou compartilhamento de dados médicos.
 - O profissional não pode conceder autorização para si mesmo, alterar o paciente-alvo ou ampliar o escopo enviado pelo paciente.
 - A autenticação identifica a pessoa, mas cada operação deve passar por autorização completa do recurso e do escopo.
@@ -85,4 +88,4 @@ Tokens completos, senhas e o conteúdo integral de documentos não devem ser reg
 
 ## Decisões aplicadas
 
-O paciente pode revogar ou alterar escopo sem confirmação adicional. Renovação exige nova solicitação e nova decisão explícita do paciente. A equipe de Segurança revisa autorizações e registros em incidentes, conforme DS09.
+O paciente deve confirmar com TOTP adicional a concessão, a redução de escopo e a revogação. Renovação exige nova solicitação e nova decisão explícita do paciente. A equipe de Segurança revisa autorizações e registros em incidentes, conforme DS09.

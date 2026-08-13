@@ -8,11 +8,11 @@ As matrizes de origem derivam diretamente das ameaças T10, T11 e T12 mapeadas a
 
 ## Registro de riscos
 
-| ID | Risco | Ameaça | Probabilidade | Impacto | Pontuação | Nível |
-| --- | --- | --- | --- | --- | --- | --- |
-| R10 | Documento é exposto por link | T10 | 3 | 4 | 12 | Crítico |
-| R11 | Dados são extraídos em massa | T11 | 2 | 4 | 8 | Alto |
-| R12 | Compartilhamento ou consulta sensível não possui rastreabilidade suficiente | T12 | 3 | 3 | 9 | Alto |
+| ID  | Risco                                                                       | Ameaça | Probabilidade | Impacto | Pontuação | Nível   |
+| --- | --------------------------------------------------------------------------- | ------ | ------------- | ------- | --------- | ------- |
+| R10 | Documento é exposto por link                                                | T10    | 3             | 4       | 12        | Crítico |
+| R11 | Dados são extraídos em massa                                                | T11    | 2             | 4       | 8         | Alto    |
+| R12 | Compartilhamento ou consulta sensível não possui rastreabilidade suficiente | T12    | 3             | 3       | 9         | Alto    |
 
 ## R10 — Documento é exposto por link
 
@@ -23,7 +23,7 @@ As matrizes de origem derivam diretamente das ameaças T10, T11 e T12 mapeadas a
 **Ativos principais:** A03, A04, A05, A09 e A12.
 
 **Probabilidade — 3 (Média-alta)**
-A geração de links para compartilhamento de exames é uma funcionalidade ativa e comum. Sem controles de tempo de expiração curtos, senhas ou identificadores imprevisíveis, o vazamento ou adivinhação do link torna o acesso indevido altamente provável ao longo do tempo.
+A geração de links públicos seria um caminho plausível de exposição caso o recurso fosse mantido. Sem autenticação e autorização reavaliadas, o vazamento ou a adivinhação do identificador permitiria acesso indevido ao longo do tempo.
 
 A exploração depende principalmente de erros humanos ao compartilhar o link ou de identificadores fracos. Por isso, a ocorrência é considerada plausível em um sistema sem defesas adicionais no compartilhamento de anexos.
 
@@ -36,7 +36,7 @@ Além da grave quebra de confidencialidade da intimidade do usuário, o incident
 3 × 4 = 12 — Crítico
 
 **Estratégia de tratamento**
-Reduzir. O recurso de compartilhamento facilita a colaboração e não pode ser removido. Portanto, o sistema deve incorporar controles (como senhas e validade) que limitem drasticamente a janela e a facilidade de exploração, reduzindo a probabilidade.
+Evitar na primeira versão. O compartilhamento público por link foi removido; documentos são entregues somente a sessão autenticada depois de autorização reavaliada pela API. A suíte deve comprovar a ausência de rota pública e negar acesso sem sessão, inclusive quando o identificador do documento for conhecido.
 
 ## R11 — Dados são extraídos em massa
 
@@ -47,7 +47,7 @@ Reduzir. O recurso de compartilhamento facilita a colaboração e não pode ser 
 **Ativos principais:** A01, A03, A08, A09 e A10.
 
 **Probabilidade — 2 (Média-baixa)**
-A execução de um ataque de extração massiva depende de conhecimentos de automação (uso de scripts/bots) e da exploração de falhas como IDOR combinadas com a ausência de *rate limiting*.
+A execução de um ataque de extração massiva depende de conhecimentos de automação (uso de scripts/bots) e da exploração de falhas como IDOR combinadas com a ausência de _rate limiting_.
 
 A exploração exige condições e ferramentas específicas, e um ataque volumoso pode apresentar falhas ou interrupções naturais de rede. Por isso, sua probabilidade inicial é classificada como média-baixa.
 
@@ -90,25 +90,25 @@ Os registros devem identificar ator, recurso, operação, resultado e horário, 
 
 ## Plano de tratamento
 
-| Risco | Controle proposto | Função NIST CSF 2.0 | Responsável | Evidência esperada |
-| --- | --- | --- | --- | --- |
-| R10 | Gerar rotas de anexos usando identificadores únicos e imprevisíveis (UUIDv4) | Protect | Desenvolvimento API | Testes de penetração atestando impossibilidade de força-bruta |
-| R10 | Implementar tempo de expiração e proteção por senha | Protect | Arquitetura | Falha intencional retornada ao acessar um link expirado |
-| R11 | Configurar políticas de *Rate Limiting* nas consultas à API | Protect | Infraestrutura | Relatórios de bloqueio (*HTTP 429*) em testes de carga |
-| R11 | Desenvolver alertas para tráfego anômalo e leitura fora do padrão | Detect | Segurança / Monitoramento | Alertas gerados após requisições massivas seguidas |
-| R11 | Validar a autorização de cada ID solicitado (IDOR) | Protect | Desenvolvimento API | Testes confirmando acesso negado ao tentar manipular o *ID* de pacientes |
-| R12 | Sanitizar os registros de auditoria para evitar segredos ou conteúdo médico desnecessário | Protect | Desenvolvimento Backend | Logs sem senhas, *tokens* completos ou conteúdo integral de documentos médicos |
-| R12 | Garantir trilha íntegra em consultas e compartilhamentos | Detect | Administração de Banco de Dados | Registros contendo ator, recurso, operação, resultado e horário |
+| Risco | Controle proposto                                                                             | Função NIST CSF 2.0 | Responsável                     | Evidência esperada                                                             |
+| ----- | --------------------------------------------------------------------------------------------- | ------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| R10   | Remover compartilhamento público e exigir sessão e autorização reavaliada para cada documento | Protect             | Desenvolvimento API             | Testes comprovando ausência de rota pública e negação sem sessão ou escopo     |
+| R10   | Usar identificadores imprevisíveis sem tratá-los como autorização                             | Protect             | Desenvolvimento API             | Teste de acesso negado mesmo conhecendo o identificador de outro documento     |
+| R11   | Configurar políticas de _Rate Limiting_ nas consultas à API                                   | Protect             | Infraestrutura                  | Relatórios de bloqueio (_HTTP 429_) em testes de carga                         |
+| R11   | Desenvolver alertas para tráfego anômalo e leitura fora do padrão                             | Detect              | Segurança / Monitoramento       | Alertas gerados após requisições massivas seguidas                             |
+| R11   | Validar a autorização de cada ID solicitado (IDOR)                                            | Protect             | Desenvolvimento API             | Testes confirmando acesso negado ao tentar manipular o _ID_ de pacientes       |
+| R12   | Sanitizar os registros de auditoria para evitar segredos ou conteúdo médico desnecessário     | Protect             | Desenvolvimento Backend         | Logs sem senhas, _tokens_ completos ou conteúdo integral de documentos médicos |
+| R12   | Garantir trilha íntegra em consultas e compartilhamentos                                      | Detect              | Administração de Banco de Dados | Registros contendo ator, recurso, operação, resultado e horário                |
 
 ## Relação complementar com o Framework NIST CSF 2.0
 
 Além das funções relacionadas aos controles, as medidas adotadas para tratar esses riscos de privacidade envolvem:
 
-- **Govern:** definição de políticas sobre retenção de links, limites de uso da API e regras de privacidade e mascaramento;
+- **Govern:** definição da proibição de links públicos, limites de uso da API e regras de privacidade e minimização;
 - **Identify:** mapeamento dos ativos expostos por link e processos de log;
 - **Protect:** aplicação técnica de limites de taxa, validação de autorização e ofuscação;
 - **Detect:** monitoramento de alertas de extração e revisão de trilhas;
-- **Respond:** revogação de acessos, derrubada emergencial de links ou bloqueio de IPs atacantes.
+- **Respond:** revogação de acessos, encerramento de sessões comprometidas ou bloqueio de origens atacantes.
 - **Recover:** recuperar a integridade dos serviços e notificar autoridades e envolvidos conforme legislações de proteção de dados.
 
 ## Estimativa de risco residual
@@ -116,12 +116,12 @@ Além das funções relacionadas aos controles, as medidas adotadas para tratar 
 A projeção abaixo indica o patamar de segurança esperado ao implementar os controles sugeridos corretamente.
 
 | Risco | Nível inicial | Probabilidade residual | Impacto residual | Pontuação residual | Nível residual |
-| --- | --- | --- | --- | --- | --- |
-| R10 | Crítico (12) | 1 | 4 | 4 | Médio |
-| R11 | Alto (8) | 1 | 4 | 4 | Médio |
-| R12 | Alto (9) | 1 | 3 | 3 | Baixo |
+| ----- | ------------- | ---------------------- | ---------------- | ------------------ | -------------- |
+| R10   | Crítico (12)  | 1                      | 4                | 4                  | Médio          |
+| R11   | Alto (8)      | 1                      | 4                | 4                  | Médio          |
+| R12   | Alto (9)      | 1                      | 3                | 3                  | Baixo          |
 
-*Nota sobre a redução:* O impacto financeiro, moral ou legal (pontuação de impacto) não diminui, pois o valor do dado médico vazado continua altíssimo em qualquer cenário. O que despenca para níveis aceitáveis é a probabilidade (reduzida para 1) de o atacante conseguir concluir a extração ou obter o arquivo sem a devida autorização técnica.
+_Nota sobre a redução:_ O impacto financeiro, moral ou legal (pontuação de impacto) não diminui, pois o valor do dado médico vazado continua altíssimo em qualquer cenário. O que despenca para níveis aceitáveis é a probabilidade (reduzida para 1) de o atacante conseguir concluir a extração ou obter o arquivo sem a devida autorização técnica.
 
 ## Condições para aceite do risco residual
 

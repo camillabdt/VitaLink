@@ -7,17 +7,18 @@ Este documento registra as ameaças relacionadas ao vazamento, compartilhamento 
 A proteção da privacidade exige que dados sensíveis não sejam expostos além do necessário e que o acesso seja restrito àqueles explicitamente autorizados.
 
 As premissas usadas nesta análise são:
-- links de compartilhamento devem ter acesso restrito e controlado;
+
+- a primeira versão proíbe link público; T10 permanece como cenário de regressão caso uma rota entregue documento pelo conhecimento da URL;
 - APIs devem implementar limite de taxa e proteção contra varreduras massivas;
 - o compartilhamento de informações deve manter a rastreabilidade por meio de logs de auditoria detalhados e imutáveis.
 
 ## Ameaças identificadas
 
-| ID | Categoria STRIDE | Componente ou ativo | Ameaça concreta | Permissão violada e impacto |
-| --- | --- | --- | --- | --- |
-| T10 | Information Disclosure | API, armazenamento de documentos e A03, A04, A05, A12 | Um documento acessível por link indevido é visualizado por terceiro não autorizado. | Viola a confidencialidade dos dados do paciente e expõe histórico, exames, receitas, laudos e imagens. Causa perda direta de privacidade e danos à reputação. |
-| T11 | Information Disclosure e Repudiation | API, banco de dados, A03, A09 e A10 | Um atacante realiza extração em massa pela API de dados de múltiplos pacientes explorando falta de controle de taxa. | Viola o acesso restrito e extrai grandes volumes de dados. Compromete confidencialidade sistêmica, afeta A10 e causa impactos regulatórios severos. |
-| T12 | Repudiation e Information Disclosure | API, banco de dados, registros de auditoria (A08) | Um compartilhamento de dados ocorre sem rastreabilidade devido à ausência ou modificação de logs de auditoria detalhados. | Viola a integridade da auditoria. Impede a responsabilização sobre acessos e compartilhamentos, resultando em exposições não detectáveis de A03 a A05. |
+| ID  | Categoria STRIDE                     | Componente ou ativo                                   | Ameaça concreta                                                                                                           | Permissão violada e impacto                                                                                                                                   |
+| --- | ------------------------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T10 | Information Disclosure               | API, armazenamento de documentos e A03, A04, A05, A12 | Um documento acessível por link indevido é visualizado por terceiro não autorizado.                                       | Viola a confidencialidade dos dados do paciente e expõe histórico, exames, receitas, laudos e imagens. Causa perda direta de privacidade e danos à reputação. |
+| T11 | Information Disclosure e Repudiation | API, banco de dados, A03, A09 e A10                   | Um atacante realiza extração em massa pela API de dados de múltiplos pacientes explorando falta de controle de taxa.      | Viola o acesso restrito e extrai grandes volumes de dados. Compromete confidencialidade sistêmica, afeta A10 e causa impactos regulatórios severos.           |
+| T12 | Repudiation e Information Disclosure | API, banco de dados, registros de auditoria (A08)     | Um compartilhamento de dados ocorre sem rastreabilidade devido à ausência ou modificação de logs de auditoria detalhados. | Viola a integridade da auditoria. Impede a responsabilização sobre acessos e compartilhamentos, resultando em exposições não detectáveis de A03 a A05.        |
 
 ## Análise por ameaça
 
@@ -28,12 +29,13 @@ As premissas usadas nesta análise são:
 **Objetivo:** acessar informações médicas confidenciais de um paciente através do link sem possuir autorização.
 
 **Sequência possível:**
-1. O sistema gera um link de compartilhamento de um documento sem prazo de validade estrito ou sem proteção por senha.
+
+1. Uma implementação introduz ou mantém indevidamente uma rota que entrega documento pelo conhecimento da URL.
 2. O link é divulgado, interceptado ou adivinhado (se possuir um identificador enumerável).
 3. O ator acessa o link.
 4. A API ou o armazenamento entrega o arquivo sem confirmar a autorização do leitor.
 
-**Condição ou vulnerabilidade:** ausência de controle de acesso adequado no link compartilhado, uso de identificadores previsíveis, ou inexistência de proteção adicional e prazo de expiração. A implementação dessas proteções fica [A confirmar].
+**Condição ou vulnerabilidade:** existência de rota pública, ausência de autenticação e autorização por documento ou uso do identificador como autoridade. A primeira versão trata o risco evitando o recurso; a ausência real da rota fica [A confirmar] até o teste.
 
 **Caso de abuso relacionado:** CA07 — Compartilhamento público de documento médico, situação a ser detalhada na Issue #14.
 
@@ -44,6 +46,7 @@ As premissas usadas nesta análise são:
 **Objetivo:** coletar o máximo de informações médicas e dados pessoais do banco de dados explorando falhas de acesso na API.
 
 **Sequência possível:**
+
 1. O ator mapeia a estrutura dos identificadores da API (ex: requisições por ID sequencial).
 2. O ator configura um script automatizado de requisições.
 3. A API responde rapidamente a milhares de consultas sem impor limite de taxa (rate limiting).
@@ -60,6 +63,7 @@ As premissas usadas nesta análise são:
 **Objetivo:** visualizar ou compartilhar dados sem deixar um rastro auditável confiável que o identifique.
 
 **Sequência possível:**
+
 1. O ator acessa ou compartilha dados sensíveis utilizando o sistema.
 2. O sistema não registra o evento adequadamente no log, ou o ator apaga/modifica o registro existente.
 3. O evento de compartilhamento ocorre e dados são expostos.
@@ -77,10 +81,10 @@ As premissas usadas nesta análise são:
 
 ## Rastreabilidade
 
-| Ameaça | Caso de abuso | Ativos principais | Risco a registrar posteriormente |
-| --- | --- | --- | --- |
-| T10 | CA07 | A03, A04, A05, A09, A12 | R10 — documento médico é exposto por link indevido. |
-| T11 | CA08 | A03, A09, A10 | R11 — dados de múltiplos pacientes são extraídos pela API. |
-| T12 | CA07, CA08 | A03, A04, A05, A08, A09, A10 | R12 — compartilhamento ou consulta sensível não possui rastreabilidade suficiente. |
+| Ameaça | Caso de abuso | Ativos principais            | Risco a registrar posteriormente                                                   |
+| ------ | ------------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| T10    | CA07          | A03, A04, A05, A09, A12      | R10 — documento médico é exposto por link indevido.                                |
+| T11    | CA08          | A03, A09, A10                | R11 — dados de múltiplos pacientes são extraídos pela API.                         |
+| T12    | CA07, CA08    | A03, A04, A05, A08, A09, A10 | R12 — compartilhamento ou consulta sensível não possui rastreabilidade suficiente. |
 
 Os casos de abuso CA07 e CA08 e os riscos R10, R11 e R12 já estão consolidados na documentação atual do VitaLink.

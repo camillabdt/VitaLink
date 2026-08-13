@@ -16,7 +16,7 @@ O monitoramento proposto deve permitir:
 2. detectar uso de autorização revogada ou expirada;
 3. identificar sinais de comprometimento de conta ou sessão;
 4. observar alterações ou exclusões indevidas de informação clínica;
-5. detectar abuso de links de compartilhamento;
+5. detectar tentativas de acesso público ou sem autorização a documentos;
 6. identificar padrões de extração anormal de dados;
 7. observar sobrecarga da API e pressão sobre armazenamento;
 8. preservar evidência suficiente para investigação e resposta;
@@ -38,7 +38,7 @@ Com base em DS08, os eventos de segurança devem registrar, quando aplicável:
 - criação, concessão, recusa, revogação e expiração de autorização;
 - consulta, criação e atualização de informação clínica;
 - tentativa de exclusão quando a operação não for permitida;
-- criação, utilização, revogação e expiração de link de compartilhamento;
+- tentativa de acesso a documento sem sessão ou autorização vigente;
 - volume de consultas à API;
 - tamanho e resultado de operações de upload;
 - falhas na geração, envio ou persistência dos próprios registros de auditoria.
@@ -49,32 +49,33 @@ Não devem ser registrados em logs:
 - tokens completos;
 - segredos de autenticação;
 - conteúdo integral de documentos médicos;
+- nome, e-mail, CPF, áudio ou texto clínico;
 - informações clínicas além das estritamente necessárias à identificação do evento.
 
 ## Fontes de dados propostas
 
-| Fonte | Eventos principais | Uso |
-| --- | --- | --- |
-| Autenticação e sessão | login, falha de login, recuperação de conta, criação e invalidação de sessão | Detectar possível comprometimento de conta |
-| API | requisições, resposta, negação de autorização, volume e rota | Detectar abuso de acesso, enumeração e sobrecarga |
-| Autorização | concessão, recusa, revogação e expiração | Correlacionar acesso com consentimento |
-| Dados clínicos | criação, atualização e tentativa de exclusão | Investigar alterações indevidas |
-| Compartilhamento | criação, utilização, expiração e revogação de links | Detectar abuso de compartilhamento |
-| Upload e armazenamento | tamanho, tipo, resultado e uso de quota | Detectar pressão de capacidade |
-| Auditoria | criação e persistência de eventos | Detectar falha de rastreabilidade |
+| Fonte                  | Eventos principais                                                           | Uso                                                           |
+| ---------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Autenticação e sessão  | login, falha de login, recuperação de conta, criação e invalidação de sessão | Detectar possível comprometimento de conta                    |
+| API                    | requisições, resposta, negação de autorização, volume e rota                 | Detectar abuso de acesso, enumeração e sobrecarga             |
+| Autorização            | concessão, recusa, revogação e expiração                                     | Correlacionar acesso com consentimento                        |
+| Dados clínicos         | criação, atualização e tentativa de exclusão                                 | Investigar alterações indevidas                               |
+| Documentos             | visualização, download e negação de acesso                                   | Detectar rota pública, IDOR ou acesso sem autorização vigente |
+| Upload e armazenamento | tamanho, tipo, resultado e uso de quota                                      | Detectar pressão de capacidade                                |
+| Auditoria              | criação e persistência de eventos                                            | Detectar falha de rastreabilidade                             |
 
 ## Regras de detecção propostas
 
-| ID | Evento observado | Condição de acionamento | Destino | Ação inicial | Risco |
-| --- | --- | --- | --- | --- | --- |
-| D01 | Tentativa de consulta ou alteração de dado médico | Cinco negações de autorização para a mesma conta em 10 minutos | Segurança | Registrar, investigar contexto e avaliar bloqueio temporário | R04–R06 |
-| D02 | Uso de sessão após alteração de autorização | Qualquer acesso negado após revogação ou expiração para o mesmo paciente-profissional | Segurança | Preservar evidência e investigar tentativa de reutilização da autorização | R05 |
-| D03 | Envio de documento ou volume de requisições à API | Mais de 20 requisições por minuto ou arquivo acima de 20 MB | Infraestrutura | Aplicar limitação correspondente, registrar e verificar disponibilidade/capacidade | R13–R14 |
-| D04 | Autenticação ou recuperação de conta | Cinco falhas de autenticação para a mesma conta em 10 minutos, ou tentativa de reutilização de sessão invalidada após recuperação da conta | Segurança | Proteger a conta, invalidar sessão quando aplicável e investigar possível comprometimento | R02 |
-| D05 | Uso de link de compartilhamento | Qualquer tentativa de utilizar link expirado ou revogado, ou tentativa de acessar recurso diferente do autorizado pelo link | Segurança | Negar acesso, registrar origem e verificar repetição ou exposição | R10 |
-| D06 | Consulta de dados médicos em volume anormal | Uma conta consulta quantidade de pacientes ou documentos significativamente acima do padrão esperado para seu perfil | Segurança | Restringir temporariamente a atividade quando necessário e investigar possível extração em massa | R11 |
-| D07 | Alteração ou exclusão de informação clínica | Tentativa de operação sem permissão correspondente ou tentativa de exclusão de registro clínico por perfil não autorizado | Segurança | Negar operação, preservar evento e verificar possível adulteração | R07, R08, R15 |
-| D08 | Falha de auditoria | Uma operação crítica esperada ocorre sem o respectivo evento de auditoria, ou o mecanismo de persistência de logs apresenta falha | Segurança | Tratar como perda de rastreabilidade, preservar fontes alternativas e investigar o mecanismo de auditoria | R09, R12 |
+| ID  | Evento observado                                  | Condição de acionamento                                                                                                                           | Destino        | Ação inicial                                                                                              | Risco         |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------- | ------------- |
+| D01 | Tentativa de consulta ou alteração de dado médico | Cinco negações de autorização para a mesma conta em 10 minutos                                                                                    | Segurança      | Registrar, investigar contexto e avaliar bloqueio temporário                                              | R04–R06       |
+| D02 | Uso de sessão após alteração de autorização       | Qualquer acesso negado após revogação ou expiração para o mesmo paciente-profissional                                                             | Segurança      | Preservar evidência e investigar tentativa de reutilização da autorização                                 | R05           |
+| D03 | Envio de documento ou volume de requisições à API | Mais de 20 requisições por minuto ou arquivo acima de 20 MB                                                                                       | Infraestrutura | Aplicar limitação correspondente, registrar e verificar disponibilidade/capacidade                        | R13–R14       |
+| D04 | Autenticação ou recuperação de conta              | Cinco falhas de autenticação para a mesma conta em 10 minutos, ou tentativa de reutilização de sessão invalidada após recuperação da conta        | Segurança      | Proteger a conta, invalidar sessão quando aplicável e investigar possível comprometimento                 | R02           |
+| D05 | Acesso indevido a documento                       | Qualquer tentativa de acessar documento sem sessão e autorização vigentes, inclusive por rota pública ou URL permanente introduzida por regressão | Segurança      | Negar acesso, registrar metadados mínimos e verificar repetição ou exposição                              | R10           |
+| D06 | Consulta de dados médicos em volume anormal       | Uma conta consulta quantidade de pacientes ou documentos significativamente acima do padrão esperado para seu perfil                              | Segurança      | Restringir temporariamente a atividade quando necessário e investigar possível extração em massa          | R11           |
+| D07 | Alteração ou exclusão de informação clínica       | Tentativa de operação sem permissão correspondente ou tentativa de exclusão de registro clínico por perfil não autorizado                         | Segurança      | Negar operação, preservar evento e verificar possível adulteração                                         | R07, R08, R15 |
+| D08 | Falha de auditoria                                | Uma operação crítica esperada ocorre sem o respectivo evento de auditoria, ou o mecanismo de persistência de logs apresenta falha                 | Segurança      | Tratar como perda de rastreabilidade, preservar fontes alternativas e investigar o mecanismo de auditoria | R09, R12      |
 
 Os limiares numéricos de D01, D02 e D03 seguem DS10. O limiar numérico de D04 utiliza a mesma janela inicial de observação de dez minutos e deverá ser calibrado com dados reais antes da implantação.
 
@@ -82,16 +83,16 @@ D06 depende de uma linha de base de uso ainda inexistente. Portanto, a expressã
 
 ## Severidade inicial dos alertas
 
-| Regra | Severidade inicial | Justificativa |
-| --- | --- | --- |
-| D01 | Alta | Pode indicar tentativa sistemática de acesso fora do escopo |
-| D02 | Alta | Indica tentativa de reutilização após revogação ou expiração |
-| D03 | Alta | Pode afetar disponibilidade da API ou capacidade de armazenamento |
-| D04 | Alta | Pode representar tentativa de comprometimento de conta |
-| D05 | Alta | Envolve tentativa de acesso a documento compartilhado fora das condições válidas |
-| D06 | Alta | Pode indicar extração em massa de dados médicos |
-| D07 | Crítica | Pode envolver alteração ou remoção indevida de informação clínica |
-| D08 | Alta | A perda de rastreabilidade prejudica investigação e responsabilização |
+| Regra | Severidade inicial | Justificativa                                                                |
+| ----- | ------------------ | ---------------------------------------------------------------------------- |
+| D01   | Alta               | Pode indicar tentativa sistemática de acesso fora do escopo                  |
+| D02   | Alta               | Indica tentativa de reutilização após revogação ou expiração                 |
+| D03   | Alta               | Pode afetar disponibilidade da API ou capacidade de armazenamento            |
+| D04   | Alta               | Pode representar tentativa de comprometimento de conta                       |
+| D05   | Alta               | Envolve tentativa de acesso a documento fora de sessão ou autorização válida |
+| D06   | Alta               | Pode indicar extração em massa de dados médicos                              |
+| D07   | Crítica            | Pode envolver alteração ou remoção indevida de informação clínica            |
+| D08   | Alta               | A perda de rastreabilidade prejudica investigação e responsabilização        |
 
 A severidade deverá ser reavaliada durante a triagem considerando contexto, impacto real, repetição e confirmação do evento.
 
@@ -124,7 +125,6 @@ A contenção deve ser proporcional ao risco e pode incluir:
 - bloquear temporariamente requisições;
 - invalidar sessão;
 - revogar autorização;
-- revogar link de compartilhamento;
 - suspender temporariamente operação de upload;
 - restringir acesso a recurso específico;
 - aplicar limitação de requisições;
@@ -185,11 +185,11 @@ Após o encerramento:
 
 ## Responsabilidades
 
-| Papel | Responsabilidade principal |
-| --- | --- |
-| Segurança | Receber alertas, realizar triagem, coordenar investigação e acompanhar resposta |
-| Desenvolvimento | Corrigir controles, lógica de aplicação e mecanismos de segurança no software |
-| Infraestrutura | Conter indisponibilidade, tratar capacidade, armazenamento e recuperação de serviço |
+| Papel           | Responsabilidade principal                                                          |
+| --------------- | ----------------------------------------------------------------------------------- |
+| Segurança       | Receber alertas, realizar triagem, coordenar investigação e acompanhar resposta     |
+| Desenvolvimento | Corrigir controles, lógica de aplicação e mecanismos de segurança no software       |
+| Infraestrutura  | Conter indisponibilidade, tratar capacidade, armazenamento e recuperação de serviço |
 
 Os responsáveis nominais ainda dependem da organização da equipe na implantação. Os papéis acima correspondem à divisão funcional estabelecida em DS09.
 
@@ -197,16 +197,16 @@ Os responsáveis nominais ainda dependem da organização da equipe na implanta�
 
 Quando o VitaLink possuir implementação executável, cada regra deverá possuir um teste controlado.
 
-| Regra | Teste planejado | Evidência esperada |
-| --- | --- | --- |
-| D01 | Produzir cinco negações autorizacionais em 10 minutos | Alerta D01 com conta e janela temporal |
-| D02 | Revogar autorização e tentar reutilizá-la | Negação registrada e alerta D02 |
-| D03 | Exceder limite de requisição ou upload configurado em ambiente de teste | Restrição da operação e alerta D03 |
-| D04 | Realizar sequência controlada de falhas de autenticação | Alerta D04 sem exposição de senha |
-| D05 | Utilizar link revogado ou expirado | Negação e alerta D05 |
-| D06 | Simular padrão de leitura acima da linha de base definida | Alerta D06 e registro do volume observado |
-| D07 | Tentar alteração ou exclusão sem operação autorizada | Negação e alerta D07 |
-| D08 | Simular indisponibilidade controlada do mecanismo de auditoria | Alerta D08 por falha de rastreabilidade |
+| Regra | Teste planejado                                                                         | Evidência esperada                        |
+| ----- | --------------------------------------------------------------------------------------- | ----------------------------------------- |
+| D01   | Produzir cinco negações autorizacionais em 10 minutos                                   | Alerta D01 com conta e janela temporal    |
+| D02   | Revogar autorização e tentar reutilizá-la                                               | Negação registrada e alerta D02           |
+| D03   | Exceder limite de requisição ou upload configurado em ambiente de teste                 | Restrição da operação e alerta D03        |
+| D04   | Realizar sequência controlada de falhas de autenticação                                 | Alerta D04 sem exposição de senha         |
+| D05   | Tentar acessar documento sem sessão ou autorização, inclusive por possível rota pública | Negação e alerta D05                      |
+| D06   | Simular padrão de leitura acima da linha de base definida                               | Alerta D06 e registro do volume observado |
+| D07   | Tentar alteração ou exclusão sem operação autorizada                                    | Negação e alerta D07                      |
+| D08   | Simular indisponibilidade controlada do mecanismo de auditoria                          | Alerta D08 por falha de rastreabilidade   |
 
 Nenhum desses testes foi executado sobre o VitaLink até o momento. A tabela define **critérios de validação futura**, não resultados obtidos.
 

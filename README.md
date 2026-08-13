@@ -10,7 +10,7 @@ _Sua saúde. Seus dados. Seu controle._
 
 ## Escopo e estado atual
 
-O VitaLink é uma proposta acadêmica de sistema para gerenciamento seguro de informações médicas. Pacientes mantêm o próprio histórico e decidem quando profissionais de saúde podem acessá-lo. O repositório contém a análise e o planejamento de segurança. Ele **não contém uma implementação executável do sistema, pipeline, testes de segurança ou verificação de segurança real**.
+O VitaLink é uma proposta acadêmica de sistema para gerenciamento seguro de informações médicas. Pacientes mantêm o próprio histórico e decidem quando profissionais de saúde podem acessá-lo. O repositório contém a análise e o planejamento de segurança e o frontend de referência exportado do Figma Make. Esse frontend é um protótipo executável com dados simulados; ele **não comprova a implementação do sistema, do backend, do pipeline ou dos controles de segurança planejados**.
 
 Nesta documentação, os termos têm significado explícito:
 
@@ -21,26 +21,27 @@ Nesta documentação, os termos têm significado explícito:
 
 ## Perfis e ativos principais
 
-| Perfil | Papel documentado |
-| --- | --- |
-| Paciente | Mantém dados próprios, compartilha informações e concede ou revoga acesso. |
-| Profissional de Saúde | Solicita acesso e atua apenas no escopo de autorização ativa. |
-| Administrador ou Suporte | Fora do escopo atual; não recebe permissão. |
+| Perfil                   | Papel documentado                                                          |
+| ------------------------ | -------------------------------------------------------------------------- |
+| Paciente                 | Mantém dados próprios, compartilha informações e concede ou revoga acesso. |
+| Profissional de Saúde    | Solicita acesso e atua apenas no escopo de autorização ativa.              |
+| Administrador ou Suporte | Fora do escopo atual; não recebe permissão.                                |
 
 Os ativos incluem dados pessoais (A01–A02), dados e documentos médicos (A03–A05 e A12), credenciais e tokens (A06–A07), auditoria (A08) e componentes internos (A09–A11). Consulte o [inventário](docs/inventario-de-ativos.md) e a [classificação CIA](docs/classificacao-cia-dos-ativos.md).
 
 ## Navegação por etapa
 
-| Etapa | Status documental | Artefatos locais |
-| --- | --- | --- |
-| Base | Documentada | [Perfis e permissões](docs/usuarios-perfis-e-permissoes.md), [autorização e revogação](docs/fluxo-autorizacao-revogacao.md) |
-| 1. Ameaças e casos de abuso | Documentada, com lacunas de implementação marcadas | [Índice STRIDE e casos de abuso](docs/etapa1-modelagem-de-ameacas.md), [identidade](docs/ameacas-identidade-autenticacao-privilegios.md), [consentimento](docs/ameacas-consentimento-acesso-indevido.md), [integridade](docs/casos-de-abuso-integridade.md), [disponibilidade](docs/ameacas-disponibilidade.md) |
-| 2. Riscos e NIST CSF 2.0 | Planejada e documentada; residual apenas estimado | [Critérios](docs/etapa2-criterios-e-risco-residual.md), [registro e tratamento](docs/etapa2-riscos-e-tratamento.md) |
-| 3. Arquitetura segura | Proposta; sem implementação verificável | [Requisitos e decisões](docs/etapa3-arquitetura-segura.md), [diagrama-fonte Mermaid](docs/diagramas/arquitetura-segura.mmd), [diagrama de contexto](docs/diagrama-contexto.md) |
-| 4. Código seguro | Pendente de código e evidência executável | [Registro da lacuna](docs/etapa4-codigo-seguro.md) |
-| 5. Verificação de segurança | Pendente de execução real e relatório | [Registro da lacuna](docs/etapa5-verificacao-de-seguranca.md) |
-| 6. Monitoramento e detecção | Roteiro e regras propostos; sem monitoramento ativo | [Monitoramento e detecção](roteiros/etapa-6-deteccao-de-intrusoes.md) |
-| 7. DevSecOps e vídeo | Pipeline DevSecOps proposto; vídeo final pendente | [DevSecOps e vídeo](roteiros/etapa-7-devsecops-e-video-final.md) |
+| Etapa                       | Status documental                                            | Artefatos locais                                                                                                                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base                        | Documentada                                                  | [Perfis e permissões](docs/usuarios-perfis-e-permissoes.md), [autorização e revogação](docs/fluxo-autorizacao-revogacao.md)                                                                                                                                                                                     |
+| 1. Ameaças e casos de abuso | Documentada, com lacunas de implementação marcadas           | [Índice STRIDE e casos de abuso](docs/etapa1-modelagem-de-ameacas.md), [identidade](docs/ameacas-identidade-autenticacao-privilegios.md), [consentimento](docs/ameacas-consentimento-acesso-indevido.md), [integridade](docs/casos-de-abuso-integridade.md), [disponibilidade](docs/ameacas-disponibilidade.md) |
+| 2. Riscos e NIST CSF 2.0    | Planejada e documentada; residual apenas estimado            | [Critérios](docs/etapa2-criterios-e-risco-residual.md), [registro e tratamento](docs/etapa2-riscos-e-tratamento.md)                                                                                                                                                                                             |
+| 3. Arquitetura segura       | Proposta; sem implementação verificável                      | [Requisitos e decisões](docs/etapa3-arquitetura-segura.md), [diagrama-fonte Mermaid](docs/diagramas/arquitetura-segura.mmd), [diagrama de contexto](docs/diagrama-contexto.md)                                                                                                                                  |
+| Implementação               | Primeira versão planejada; frontend de referência disponível | [Plano de implementação](docs/plano-implementacao-primeira-versao.md), [inventário da interface](docs/inventario-interface-primeira-versao.md), [`VitaLink Health Management App/`](VitaLink%20Health%20Management%20App/)                                                                                      |
+| 4. Código seguro            | Pendente de código e evidência executável                    | [Registro da lacuna](docs/etapa4-codigo-seguro.md)                                                                                                                                                                                                                                                              |
+| 5. Verificação de segurança | Pendente de execução real e relatório                        | [Registro da lacuna](docs/etapa5-verificacao-de-seguranca.md)                                                                                                                                                                                                                                                   |
+| 6. Monitoramento e detecção | Roteiro e regras propostos; sem monitoramento ativo          | [Monitoramento e detecção](roteiros/etapa-6-deteccao-de-intrusoes.md)                                                                                                                                                                                                                                           |
+| 7. DevSecOps e vídeo        | Pipeline DevSecOps proposto; vídeo final pendente            | [DevSecOps e vídeo](roteiros/etapa-7-devsecops-e-video-final.md)                                                                                                                                                                                                                                                |
 
 ## Rastreabilidade central
 
@@ -65,4 +66,4 @@ O histórico do projeto contém contribuições associadas a Amanda, Camilla, Lu
 
 ## Ambiente local
 
-O projeto declara Python 3.12 e `uv` em [pyproject.toml](pyproject.toml). Não há aplicação executável definida. Quando houver código, execute os comandos definidos pelo próprio projeto com `uv run` e versionem as evidências necessárias.
+O projeto declara Python 3.12 e `uv` em [pyproject.toml](pyproject.toml). O frontend de referência possui comandos próprios em [`package.json`](VitaLink%20Health%20Management%20App/package.json). Ele não deve ser tratado como implementação funcional ou evidência dos controles até que cada fluxo seja conectado ao backend e coberto pelos testes planejados.

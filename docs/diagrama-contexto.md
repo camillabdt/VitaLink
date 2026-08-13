@@ -34,9 +34,9 @@ Armazena dados estruturados, incluindo cadastros, perfis, dados médicos, histó
 
 Mantém arquivos médicos protegidos, como exames, laudos, receitas e imagens. O acesso ocorre por intermédio da API REST.
 
-### Serviço de Autenticação
+### Módulo de Autenticação
 
-Gerencia o ciclo de vida das identidades, incluindo login, sessões, validação de tokens e recuperação de contas. A API utiliza esse serviço para validar a identidade do solicitante.
+Módulo interno da API que gerencia o ciclo de vida das identidades, incluindo login, sessões opacas no servidor e recuperação de contas. Ele não representa um serviço separado nem valida token assinado nesta versão.
 
 ## Serviço externo
 
@@ -51,7 +51,7 @@ Serviço externo utilizado para envio de confirmações e alertas de segurança,
 3. A Aplicação Web encaminha as operações para a API REST por requisições HTTPS.
 4. A API REST lê e grava dados estruturados no Banco de Dados Relacional.
 5. A API REST realiza upload, recuperação e remoção de arquivos no Armazenamento de Documentos.
-6. A API REST consulta o Serviço de Autenticação para validar identidade, sessão e tokens.
+6. A API REST usa o módulo interno de autenticação para resolver o cookie de sessão opaca e validar identidade, estado e expirações no servidor.
 7. A API REST aciona o Serviço de Notificações para confirmações e alertas de segurança.
 
 ## Fronteira de segurança
