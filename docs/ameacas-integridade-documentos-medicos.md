@@ -6,7 +6,7 @@ Este documento analisa ameaças de criação indevida, alteração e exclusão d
 
 São consideradas as operações de criação, alteração e exclusão de consultas, exames, laudos, receitas, prescrições e imagens médicas.
 
-A descrição definitiva dos componentes e pontos de interação depende da Issue #4. Enquanto ela não for integrada à `develop`, esta análise utiliza somente os componentes já presentes no inventário: API (A09), banco de dados (A10), servidor da aplicação (A11) e armazenamento de documentos (A12).
+Os componentes e pontos de interação utilizados nesta análise estão consolidados na documentação atual do VitaLink. Para T07 e T08, são considerados principalmente a API (A09), o banco de dados (A10), o servidor da aplicação (A11) e o armazenamento de documentos (A12).
 
 ## Ameaças identificadas
 
@@ -35,7 +35,7 @@ A descrição definitiva dos componentes e pontos de interação depende da Issu
 
 **Impacto clínico e de confiança:** um resultado, laudo, registro de consulta, receita ou prescrição falso ou adulterado pode orientar diagnóstico, medicamento ou procedimento inadequado. Mesmo quando a irregularidade é descoberta, a falta de evidências sobre a origem ou de uma versão íntegra anterior reduz a confiança no restante do prontuário.
 
-**Caso de abuso relacionado:** `CA05 — Alteração maliciosa de exame`, previsto pela Issue #13.
+**Caso de abuso relacionado:** `CA05 — Alteração maliciosa de exame`, consolidado na Etapa 1.
 
 ## T08 — Exclusão de laudo, receita ou consulta
 
@@ -57,7 +57,7 @@ A descrição definitiva dos componentes e pontos de interação depende da Issu
 
 **Impacto clínico e operacional:** profissionais podem desconhecer resultados, prescrições ou atendimentos relevantes e tomar decisões com histórico incompleto. Pacientes podem precisar repetir exames ou perder a continuidade de um tratamento.
 
-**Caso de abuso relacionado:** `CA06 — Exclusão de registro para ocultar uma ação`, previsto pela Issue #13.
+**Caso de abuso relacionado:** `CA06 — Exclusão de registro para ocultar uma ação`, consolidado na Etapa 1.
 
 ## Rastreabilidade
 
@@ -66,4 +66,4 @@ A descrição definitiva dos componentes e pontos de interação depende da Issu
 | T07 | Tampering | CA05 | A03, A04, A05, A08, A09, A10 e A12 | R07 — exame é alterado |
 | T08 | Tampering | CA06 | A03, A04, A05, A08, A09, A10 e A12 | R08 — registro é excluído |
 
-Os casos de abuso CA05 e CA06 serão detalhados na Issue #13, e os riscos R07 e R08 serão avaliados na Issue #18.
+Os casos de abuso CA05 e CA06 estão consolidados na Etapa 1, e os riscos R07 e R08 estão registrados e avaliados na Etapa 2.

@@ -6,7 +6,7 @@ Este documento analisa a ameaça de negação de ações realizadas sobre docume
 
 São considerados os registros de auditoria e o histórico de versões necessários para identificar o autor, o momento e o conteúdo de operações de criação, alteração e exclusão.
 
-A descrição definitiva dos pontos de interação depende da Issue #4. Enquanto ela não for integrada à `develop`, esta análise utiliza somente os componentes já presentes no inventário: API (A09), banco de dados (A10) e servidor da aplicação (A11).
+Os pontos de interação utilizados nesta análise estão consolidados na documentação atual do VitaLink. Para T09, são considerados principalmente a API (A09), o banco de dados (A10), os registros de auditoria (A08) e o servidor da aplicação (A11).
 
 ## Ameaça identificada
 
@@ -34,7 +34,7 @@ A descrição definitiva dos pontos de interação depende da Issue #4. Enquanto
 
 **Impacto sobre a rastreabilidade:** o VitaLink perde a capacidade de demonstrar quem fez o quê e quando. Isso impede corrigir o histórico com segurança, responsabilizar o autor e distinguir erro, fraude e comprometimento de conta.
 
-**Caso de abuso relacionado:** `CA06 — Exclusão de registro para ocultar uma ação`, previsto pela Issue #13.
+**Caso de abuso relacionado:** `CA06 — Exclusão de registro para ocultar uma ação`, consolidado na Etapa 1.
 
 ## Evidências necessárias para rastreabilidade
 
@@ -47,7 +47,7 @@ Para que uma ação possa ser investigada, o registro de auditoria deve permitir
 - o recurso e o paciente afetados;
 - o resultado da operação, inclusive tentativas negadas;
 - a versão anterior e a nova versão quando houver alteração;
-- a origem ou o ponto de interação relevante, a confirmar com a Issue #4.
+- a origem ou o ponto de interação relevante, conforme os pontos de interação documentados para o sistema.
 
 O histórico de versões e o registro de auditoria têm funções diferentes: o primeiro permite comparar e recuperar o conteúdo; o segundo atribui eventos a identidades e contextos. A ausência de um deles reduz a capacidade de detectar adulteração ou contestar uma negação de autoria.
 
@@ -57,4 +57,4 @@ O histórico de versões e o registro de auditoria têm funções diferentes: o 
 | --- | --- | --- | --- | --- |
 | T09 | Repudiation | CA06 | A03 a A05, A08, A09 e A10 | R09 — ação não pode ser atribuída ao autor |
 
-O caso de abuso CA06 será detalhado na Issue #13, e o risco R09 será avaliado na Issue #18.
+O caso de abuso CA06 está consolidado na Etapa 1, e o risco R09 está registrado e avaliado na Etapa 2.
