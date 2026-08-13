@@ -21,6 +21,6 @@ Segurança coordena e recebe os alertas; Desenvolvimento corrige controles; Infr
 | --- | --- | --- | --- | --- | --- |
 | D01 | Tentativa de consulta/alteração de dado médico. | Cinco negações de autorização para a mesma conta em 10 minutos. | Segurança | Bloquear, registrar e investigar repetição ou impacto. | R04–R06 |
 | D02 | Uso de sessão após alteração de autorização. | Qualquer acesso negado após revogação ou expiração para o mesmo paciente-profissional. | Segurança | Bloquear e investigar. | R05 |
-| D03 | Envio de documento ou requisição à API. | Mais de 20 requisições por minuto ou arquivo acima de 20 MB. | Infraestrutura | Limitar a operação, registrar e verificar disponibilidade. | R07–R08 |
+| D03 | Envio de documento ou requisição à API. | Mais de 20 requisições por minuto ou arquivo acima de 20 MB. | Infraestrutura | Limitar a operação, registrar e verificar disponibilidade. | R13–R14 |
 
 Os limiares são decisões iniciais de DS10 e devem ser reavaliados com métricas reais. Eventos seguem DS08; a retenção de logs será definida antes da implantação.
