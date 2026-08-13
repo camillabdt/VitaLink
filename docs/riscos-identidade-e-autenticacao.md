@@ -2,12 +2,12 @@ Registro de Riscos e Plano de Tratamento: Identidade e Autenticação (NIST CSF 
 Este arquivo traduz as ameaças de identidade, autenticação e privilégios em riscos de negócio para o VitaLink, avaliando probabilidade e impacto (escala de 1 a 4), e definindo controles alinhados ao NIST Cybersecurity Framework 2.0.
 1. Registro e Avaliação de Riscos
 ID	Descrição do Risco	Ameaças / Abusos Base	Prob. (1-4)	Impacto (1-4)	Pontuação	Nível	Justificativas (Probabilidade e Impacto)
-R01	Falso profissional obtém acesso indevido por meio de cadastro fraudulento.	T01, CA01	3	4	12	Crítico	Probabilidade: Sem validação automatizada de registro profissional (ex: CRM), a facilidade de criar contas falsas é alta (3).
-Impacto: Quebra total de confiança. Pacientes expõem dados sensíveis a golpistas, gerando passivo legal (4).
+R01	Falso profissional obtém acesso autorizado pelo paciente.	T01, CA01	2	4	8	Alto	Probabilidade: O cenário depende da criação de uma identidade profissional fraudulenta e de validação insuficiente antes de a conta poder solicitar acesso. Por exigir essas condições específicas, a probabilidade é média-baixa (2).
+Impacto: Um paciente pode conceder acesso a informações médicas a uma identidade profissional falsa, causando exposição de dados sensíveis e quebra de confiança (4).
 R02	Conta de paciente é comprometida por roubo de credenciais/sessão.	T02, CA02	3	4	12	Crítico	Probabilidade: Ataques de phishing e vazamento de senhas são comuns. Sem MFA, o roubo de conta é muito provável (3).
 Impacto: Acesso completo e irrestrito ao histórico médico do paciente e possibilidade de ações fraudulentas em seu nome (4).
-R03	Usuário obtém privilégios superiores ou acessa dados de terceiros.	T03, CA01, CA02	2	4	8	Alto	Probabilidade: Exige conhecimento técnico para manipular requisições na API (IDOR/BOLA), diminuindo a facilidade de exploração em massa (2).
-Impacto: Acesso cruzado a dados de múltiplos pacientes ou obtenção de funções administrativas compromete o sistema inteiro (4).
+R03	Perfil, paciente, recurso ou operação fora do privilégio é alcançado.	T03, CA01, CA02, CA04	3	4	12	Crítico	Probabilidade: A manipulação de identificadores, recursos ou parâmetros de requisições é plausível com ferramentas comuns quando a API não aplica autorização completa no servidor, justificando probabilidade média-alta (3).
+Impacto: O acesso cruzado a dados de pacientes ou a operações fora do escopo autorizado pode expor ou alterar informações médicas sensíveis (4).
 *(Cálculo da Pontuação: Probabilidade × Impacto. Escala de Níveis: 1–3 = Baixo	4–7 = Médio	8–11 = Alto	12–16 = Crítico)*				
 2. Plano de Tratamento e Controles (NIST CSF 2.0)
 
