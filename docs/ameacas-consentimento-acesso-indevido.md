@@ -43,7 +43,7 @@ A granularidade, duração e revogação seguem DS04–DS06. A implementação d
 
 **Condição ou vulnerabilidade:** ausência de implementação de DS04 e DS06, concessão implícita baseada apenas no perfil profissional ou confiança em identificadores fornecidos pelo cliente.
 
-**Caso de abuso relacionado:** [CA04 — Consulta ou alteração fora do escopo autorizado](etapa1-modelagem-de-ameacas.md#ca04--consulta-ou-alteração-fora-do-escopo-autorizado).
+**Caso de abuso relacionado:** [CA04 — Consulta a prontuário sem autorização](casos-de-abuso.md#ca04--consulta-a-prontuário-sem-autorização).
 
 ### T05 — Uso de autorização revogada ou expirada
 
@@ -61,7 +61,7 @@ A granularidade, duração e revogação seguem DS04–DS06. A implementação d
 
 **Condição ou vulnerabilidade:** verificação feita somente no momento da emissão do token, cache de autorização desatualizado, sessão que não é reavaliada ou ausência de contenção após revogação e expiração. DS06 exige reavaliação no acesso e bloqueio imediato de novo acesso.
 
-**Caso de abuso relacionado:** [CA03 — Reuso de autorização revogada ou expirada](etapa1-modelagem-de-ameacas.md#ca03--reuso-de-autorização-revogada-ou-expirada).
+**Caso de abuso relacionado:** [CA03 — Uso de autorização revogada](casos-de-abuso.md#ca03--uso-de-autorização-revogada).
 
 ### T06 — Ampliação indevida da permissão
 
@@ -78,7 +78,7 @@ A granularidade, duração e revogação seguem DS04–DS06. A implementação d
 
 **Condição ou vulnerabilidade:** escopo amplo ou implícito, autorização incompleta por recurso e operação, confiança em parâmetros do cliente ou possibilidade de alterar uma autorização sem decisão do paciente. DS04 define a granularidade exigida.
 
-**Caso de abuso relacionado:** [CA04 — Consulta ou alteração fora do escopo autorizado](etapa1-modelagem-de-ameacas.md#ca04--consulta-ou-alteração-fora-do-escopo-autorizado), quando uma autorização limitada é usada para alcançar outro paciente, recurso ou operação.
+**Caso de abuso relacionado:** [CA04 — Consulta a prontuário sem autorização](casos-de-abuso.md#ca04--consulta-a-prontuário-sem-autorização), quando uma autorização limitada é usada para alcançar outro paciente, recurso ou operação.
 
 ## Permissões explicitamente violadas
 
@@ -92,8 +92,8 @@ A granularidade, duração e revogação seguem DS04–DS06. A implementação d
 
 | Ameaça | Caso de abuso | Ativos principais                  | Risco a registrar posteriormente                                |
 | ------ | ------------- | ---------------------------------- | --------------------------------------------------------------- |
-| T04    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | [R04](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — acesso a dados sem consentimento ativo.   |
-| T05    | CA03          | A03 a A08, A09 e A10               | [R05](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — uso de autorização revogada ou expirada.  |
-| T06    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | [R06](etapa2-riscos-e-tratamento.md#registro-cálculo-e-justificativas) — ampliação indevida de escopo ou operação. |
+| T04    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | [R04](etapa2-riscos-e-tratamento.md#registro-consolidado) — acesso a dados sem consentimento ativo.   |
+| T05    | CA03          | A03 a A08, A09 e A10               | [R05](etapa2-riscos-e-tratamento.md#registro-consolidado) — uso de autorização revogada ou expirada.  |
+| T06    | CA04          | A03, A04, A05, A08, A09, A10 e A12 | [R06](etapa2-riscos-e-tratamento.md#registro-consolidado) — ampliação indevida de escopo ou operação. |
 
 As probabilidades, impactos, classificações, controles propostos e estimativas residuais estão no [registro da Etapa 2](etapa2-riscos-e-tratamento.md). Elas continuam sendo planejamento, não evidência de controles implementados. Nesta etapa, a relação direta com o NIST CSF 2.0 é **Identify**, por registrar consentimento, escopo, estados, ativos e ameaças; a implementação de Protect, Detect e Respond permanece **[A confirmar]**.

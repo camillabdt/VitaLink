@@ -16,7 +16,7 @@ Este índice consolida a modelagem STRIDE do VitaLink. As ameaças são cenário
 | T06 | Elevation of Privilege; Information Disclosure | Autorização limitada é ampliada. | A03–A05, A08–A10, A12 | CA04 | [Consentimento](ameacas-consentimento-acesso-indevido.md) |
 | T07 | Tampering | Documento ou registro médico é criado ou alterado sem autorização. | A03–A05, A08–A10, A12 | CA05 | [Integridade](ameacas-integridade-documentos-medicos.md) |
 | T08 | Tampering | Documento, registro ou referência é excluído indevidamente. | A03–A05, A08–A10, A12 | CA06 | [Integridade](ameacas-integridade-documentos-medicos.md) |
-| T09 | Repudiation | Ação crítica não pode ser atribuída ao autor. | A08–A10 | CA06 | [Rastreabilidade](ameacas-repudio-ausencia-rastreabilidade.md) |
+| T09 | Repudiation | Ação crítica não pode ser atribuída ao autor. | A03–A05, A08–A10 | CA05, CA06 | [Rastreabilidade](ameacas-repudio-ausencia-rastreabilidade.md) |
 | T10 | Information Disclosure | Documento é exposto por link indevido. | A03–A05, A09, A12 | CA07 | [Privacidade](ameacas-exposicao-de-dados.md) |
 | T11 | Information Disclosure; Repudiation | API permite extração em massa de dados. | A01, A03, A08–A10 | CA08 | [Privacidade](ameacas-exposicao-de-dados.md) |
 | T12 | Repudiation; Information Disclosure | Compartilhamento ocorre sem rastreabilidade suficiente. | A03–A05, A08–A10 | CA07, CA08 | [Privacidade](ameacas-exposicao-de-dados.md) |
@@ -32,9 +32,9 @@ Todas as seis categorias STRIDE são cobertas. Os IDs T01–T15 são únicos e c
 | --- | --- | --- | --- | --- |
 | CA01 | Cadastro de falso profissional | Ator cria perfil profissional fraudulento para obter confiança e acesso. | T01, T03 | [Identidade](casos-de-abuso-identidade.md) |
 | CA02 | Roubo da conta de um paciente | Ator usa credencial ou sessão da vítima para agir em seu nome. | T02, T03 | [Identidade](casos-de-abuso-identidade.md) |
-| CA03 | Uso de autorização revogada | Profissional ou atacante mantém acesso após revogação. | T05 | [Catálogo](casos-de-abuso.md) |
+| CA03 | Uso de autorização revogada | Profissional ou atacante mantém acesso após revogação. | T04, T05 | [Catálogo](casos-de-abuso.md) |
 | CA04 | Consulta a prontuário sem autorização | Ator consulta recurso fora de paciente, operação ou escopo permitido. | T04, T06 | [Catálogo](casos-de-abuso.md) |
-| CA05 | Alteração maliciosa de exame | Ator cria ou altera informação clínica sem autorização. | T07, T15 | [Integridade](ameacas-integridade-documentos-medicos.md) |
+| CA05 | Alteração maliciosa de exame | Ator cria ou altera informação clínica sem autorização. | T07, T09, T15 | [Integridade](casos-de-abuso-integridade.md) |
 | CA06 | Exclusão de registro | Ator remove dado ou referência para ocultar ação ou causar perda. | T08, T09, T15 | [Integridade](ameacas-integridade-documentos-medicos.md) |
 | CA07 | Compartilhamento público de documento | Terceiro usa link exposto para obter dado médico. | T10, T12 | [Privacidade](casos-de-abuso-privacidade.md) |
 | CA08 | Extração em massa de informações | Ator automatiza consultas para exfiltrar dados de muitos pacientes. | T11, T12 | [Privacidade](casos-de-abuso-privacidade.md) |
@@ -45,4 +45,4 @@ Os documentos vinculados descrevem ator, objetivo, condições, fluxo, impacto e
 
 ## Considerações finais
 
-Os ativos prioritários são os dados e documentos médicos, seguidos por autorização, auditoria, API e armazenamento. O maior impacto esperado decorre de acesso indevido, alteração de informação clínica, vazamento em massa e indisponibilidade durante atendimento. A principal limitação é não haver implementação executável para confirmar ou refutar as condições de exploração.
+Os ativos prioritários são os dados e documentos médicos, seguidos por autorização, auditoria, API e armazenamento. O maior impacto esperado decorre de acesso indevido, alteração de informação clínica, vazamento em massa e indisponibilidade durante atendimento. A principal dificuldade documental foi manter IDs e relações consistentes entre contribuições separadas. A principal limitação é não haver implementação executável para confirmar ou refutar as condições de exploração.

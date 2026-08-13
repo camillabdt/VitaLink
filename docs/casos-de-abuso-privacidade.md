@@ -88,5 +88,5 @@ Vazamento em massa da base de dados do sistema, expondo centenas ou milhares de 
 
 | Caso de abuso | Ameaças relacionadas | Categoria STRIDE principal | Ativos principais |
 | --- | --- | --- | --- |
-| CA07 — Compartilhamento público de documento médico | T10 | Information Disclosure | A03, A04, A05, A09, A12 |
-| CA08 — Extração em massa de informações | T11 | Information Disclosure | A01, A03, A08, A09, A10 |
+| CA07 — Compartilhamento público de documento médico | T10 e T12 | Information Disclosure e Repudiation | A03, A04, A05, A08, A09, A10, A12 |
+| CA08 — Extração em massa de informações | T11 e T12 | Information Disclosure e Repudiation | A01, A03, A08, A09, A10 |

@@ -16,7 +16,7 @@ As premissas usadas nesta análise são:
 | ID | Categoria STRIDE | Componente ou ativo | Ameaça concreta | Permissão violada e impacto |
 | --- | --- | --- | --- | --- |
 | T10 | Information Disclosure | API, armazenamento de documentos e A03, A04, A05, A12 | Um documento acessível por link indevido é visualizado por terceiro não autorizado. | Viola a confidencialidade dos dados do paciente e expõe histórico, exames, receitas, laudos e imagens. Causa perda direta de privacidade e danos à reputação. |
-| T11 | Information Disclosure e Repudiation | API, banco de dados, A03, A09 e A10 | Um atacante realiza extração em massa pela API de dados de múltiplos pacientes explorando falta de controle de taxa. | Viola o acesso restrito e extrai grandes volumes de dados. Compromete confidencialidade sistêmica, afeta A10 e causa impactos regulatórios severos. |
+| T11 | Information Disclosure e Repudiation | API, banco de dados, A01, A03, A08, A09 e A10 | Um atacante realiza extração em massa pela API de dados de múltiplos pacientes explorando falta de controle de taxa. | Viola o acesso restrito e extrai grandes volumes de dados. Compromete confidencialidade sistêmica, afeta A10 e causa impactos regulatórios severos. |
 | T12 | Repudiation e Information Disclosure | API, banco de dados, registros de auditoria (A08) | Um compartilhamento de dados ocorre sem rastreabilidade devido à ausência ou modificação de logs de auditoria detalhados. | Viola a integridade da auditoria. Impede a responsabilização sobre acessos e compartilhamentos, resultando em exposições não detectáveis de A03 a A05. |
 
 ## Análise por ameaça
@@ -35,7 +35,7 @@ As premissas usadas nesta análise são:
 
 **Condição ou vulnerabilidade:** ausência de controle de acesso adequado no link compartilhado, uso de identificadores previsíveis, ou inexistência de proteção adicional e prazo de expiração. A implementação dessas proteções fica [A confirmar].
 
-**Caso de abuso relacionado:** CA07 — Compartilhamento público de documento médico, situação a ser detalhada na Issue #14.
+**Caso de abuso relacionado:** [CA07 — Compartilhamento público de documento médico](casos-de-abuso-privacidade.md#ca07--compartilhamento-público-de-documento-médico).
 
 ### T11 — Extração em massa pela API
 
@@ -51,7 +51,7 @@ As premissas usadas nesta análise são:
 
 **Condição ou vulnerabilidade:** ausência de limitação de requisições (rate limit) por IP ou sessão, falha de autorização (IDOR - Insecure Direct Object References) permitindo leitura fora do escopo, ou falta de alertas de uso anômalo. A configuração dessas proteções permanece [A confirmar].
 
-**Caso de abuso relacionado:** CA08 — Extração em massa de informações, situação a ser detalhada na Issue #14.
+**Caso de abuso relacionado:** [CA08 — Extração em massa de informações](casos-de-abuso-privacidade.md#ca08--extração-em-massa-de-informações).
 
 ### T12 — Compartilhamento sem rastreabilidade
 
@@ -80,7 +80,7 @@ As premissas usadas nesta análise são:
 | Ameaça | Caso de abuso | Ativos principais | Risco a registrar posteriormente |
 | --- | --- | --- | --- |
 | T10 | CA07 | A03, A04, A05, A09, A12 | R10 — documento médico é exposto por link indevido. |
-| T11 | CA08 | A03, A09, A10 | R11 — dados de múltiplos pacientes são extraídos pela API. |
+| T11 | CA08 | A01, A03, A08, A09, A10 | R11 — dados de múltiplos pacientes são extraídos pela API. |
 | T12 | CA07, CA08 | A03, A04, A05, A08, A09, A10 | R12 — compartilhamento ou consulta sensível não possui rastreabilidade suficiente. |
 
 Os casos de abuso CA07 e CA08 e os riscos R10, R11 e R12 já estão consolidados na documentação atual do VitaLink.

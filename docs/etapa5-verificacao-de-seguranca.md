@@ -112,7 +112,7 @@ O relatório JSON também apresenta detalhes relacionados a `Cross-Origin-Opener
 
 Foram selecionados três resultados por apresentarem relação mais clara com práticas relevantes ao desenvolvimento seguro de uma aplicação que manipula informações sensíveis.
 
-### A01 — Content Security Policy Header Not Set
+### ZAP01 — Content Security Policy Header Not Set
 
 **Regra ZAP:** `10038`
 **Risco informado pelo ZAP:** Medium
@@ -127,7 +127,7 @@ A Content Security Policy constitui uma camada adicional de proteção do navega
 
 **Relação com o VitaLink:** esse achado não possui correspondência direta com um único risco já catalogado no VitaLink. Entretanto, representa defesa em profundidade relevante para uma aplicação web que trata informações médicas. Em uma futura implementação, a configuração dos cabeçalhos de segurança deverá integrar a verificação técnica da aplicação.
 
-### A02 — Cross-Domain Misconfiguration
+### ZAP02 — Cross-Domain Misconfiguration
 
 **Regra ZAP:** `10098`
 **Risco informado pelo ZAP:** Medium
@@ -148,7 +148,7 @@ O impacto concreto depende do tipo de recurso, das credenciais utilizadas e da e
 
 **Relação com o VitaLink:** caso uma configuração equivalente fosse aplicada a endpoints de dados médicos, ela poderia ampliar situações relacionadas à exposição ou extração indevida de informações, aproximando-se dos riscos **R10 e R11**. A arquitetura proposta do VitaLink exige que acesso e compartilhamento permaneçam mediados pela API e sujeitos a controles de autorização.
 
-### A03 — Dangerous JS Functions
+### ZAP03 — Dangerous JS Functions
 
 **Regra ZAP:** `10110`
 **Risco informado pelo ZAP:** Low
@@ -202,7 +202,7 @@ A verificação prática reforça alguns princípios já definidos para o VitaLi
 | Uso de função JavaScript que contorna sanitização | Evitar APIs perigosas e validar dados antes da composição de conteúdo no navegador. |
 | Alertas relacionados a políticas de navegador | Incorporar configuração segura de cabeçalhos à revisão da aplicação implantada. |
 
-O achado A02 possui relação potencial com os riscos de exposição e extração indevida de dados **R10 e R11**. A01 e A03 são preocupações complementares que deverão ser consideradas na implementação mesmo sem correspondência direta com um risco específico do catálogo atual.
+O achado ZAP02 possui relação potencial com os riscos de exposição e extração indevida de dados **R10 e R11**. ZAP01 e ZAP03 são preocupações complementares que deverão ser consideradas na implementação mesmo sem correspondência direta com um risco específico do catálogo atual. O prefixo `ZAPxx` distingue achados da ferramenta dos ativos `Axx` do VitaLink.
 
 ## Limitações
 

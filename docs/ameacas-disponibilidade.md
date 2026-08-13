@@ -34,10 +34,48 @@ O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade
   * **Profissionais de Saúde:** Deparam-se com exames ou laudos corrompidos que não abrem, impedindo a interpretação correta de diagnósticos passados e podendo induzir a um diagnóstico equivocado caso informações estejam parcialmente corrompidas.
   * **Pacientes:** Perda definitiva e irrecuperável de documentos históricos (laudos, receitas e exames antigos), comprometendo todo o histórico médico acumulado no VitaLink e exigindo que o paciente refaça exames invasivos ou dispendiosos.
 
+## CA09 — Sobrecarga da API
+
+**Ator:** pessoa externa ou conta autenticada que automatiza grande volume de requisições.
+
+**Objetivo:** esgotar a capacidade da API ou do banco para impedir consultas e operações legítimas.
+
+**Condições necessárias:** endpoints acessíveis; ausência ou insuficiência de limites por ator e origem; capacidade finita de processamento e conexões.
+
+**Fluxo de abuso:**
+
+1. O ator identifica um endpoint de consulta, autenticação ou upload.
+2. O ator automatiza requisições simultâneas ou repetidas.
+3. A aplicação continua processando o volume sem restringir a origem.
+4. Recursos da API ou do banco se esgotam e as solicitações legítimas atrasam ou falham.
+
+**Impacto:** pacientes e profissionais podem ficar sem acesso a documentos e histórico durante um atendimento. A disponibilidade de A09, A10 e A11 é comprometida.
+
+**Ameaça e categoria:** T13; Denial of Service.
+
+## CA10 — Esgotamento do armazenamento
+
+**Ator:** pessoa externa ou conta autenticada capaz de enviar arquivos.
+
+**Objetivo:** consumir a capacidade de armazenamento para impedir novos documentos ou degradar o serviço.
+
+**Condições necessárias:** rota de upload acessível; limites de tamanho, tipo ou quota ausentes ou insuficientes; armazenamento compartilhado com os documentos legítimos.
+
+**Fluxo de abuso:**
+
+1. O ator automatiza uploads grandes ou numerosos.
+2. A aplicação aceita os arquivos sem aplicar todos os limites necessários.
+3. O volume acumulado ocupa a capacidade disponível.
+4. Novos documentos deixam de ser gravados ou outras operações falham.
+
+**Impacto:** pacientes deixam de anexar exames e profissionais deixam de registrar documentos, comprometendo A04, A11 e A12.
+
+**Ameaça e categoria:** T14; Denial of Service.
+
 ## Rastreabilidade
 
 | Ameaça | Caso de abuso | Risco |
 | --- | --- | --- |
-| T13 | [CA09 — Sobrecarga da API](etapa1-modelagem-de-ameacas.md#ca09--sobrecarga-da-api) | [R13](etapa2-riscos-e-tratamento.md#registro-consolidado) |
-| T14 | [CA10 — Esgotamento do armazenamento](etapa1-modelagem-de-ameacas.md#ca10--esgotamento-do-armazenamento) | [R14](etapa2-riscos-e-tratamento.md#registro-consolidado) |
-| T15 | [CA05 — Alteração maliciosa de exame](etapa1-modelagem-de-ameacas.md#ca05--alteração-maliciosa-de-exame) e [CA06 — Exclusão de registro](etapa1-modelagem-de-ameacas.md#ca06--exclusão-de-registro) | [R15](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T13 | [CA09 — Sobrecarga da API](#ca09--sobrecarga-da-api) | [R13](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T14 | [CA10 — Esgotamento do armazenamento](#ca10--esgotamento-do-armazenamento) | [R14](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T15 | [CA05 — Alteração maliciosa de exame](casos-de-abuso-integridade.md#ca05--alteração-maliciosa-de-exame) e [CA06 — Exclusão de registro](casos-de-abuso-integridade.md#ca06--exclusão-de-registro-para-ocultar-uma-ação) | [R15](etapa2-riscos-e-tratamento.md#registro-consolidado) |

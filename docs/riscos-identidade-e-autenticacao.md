@@ -1,19 +1,13 @@
-Registro de Riscos e Plano de Tratamento: Identidade e Autenticação (NIST CSF 2.0)
-Este arquivo traduz as ameaças de identidade, autenticação e privilégios em riscos de negócio para o VitaLink, avaliando probabilidade e impacto (escala de 1 a 4), e definindo controles alinhados ao NIST Cybersecurity Framework 2.0.
-1. Registro e Avaliação de Riscos
-ID	Descrição do Risco	Ameaças / Abusos Base	Prob. (1-4)	Impacto (1-4)	Pontuação	Nível	Justificativas (Probabilidade e Impacto)
-R01	Falso profissional obtém acesso autorizado pelo paciente.	T01, CA01	2	4	8	Alto	Probabilidade: O cenário depende da criação de uma identidade profissional fraudulenta e de validação insuficiente antes de a conta poder solicitar acesso. Por exigir essas condições específicas, a probabilidade é média-baixa (2).
-Impacto: Um paciente pode conceder acesso a informações médicas a uma identidade profissional falsa, causando exposição de dados sensíveis e quebra de confiança (4).
-R02	Conta de paciente é comprometida por roubo de credenciais/sessão.	T02, CA02	3	4	12	Crítico	Probabilidade: Ataques de phishing e vazamento de senhas são comuns. Sem MFA, o roubo de conta é muito provável (3).
-Impacto: Acesso completo e irrestrito ao histórico médico do paciente e possibilidade de ações fraudulentas em seu nome (4).
-R03	Perfil, paciente, recurso ou operação fora do privilégio é alcançado.	T03, CA01, CA02, CA04	3	4	12	Crítico	Probabilidade: A manipulação de identificadores, recursos ou parâmetros de requisições é plausível com ferramentas comuns quando a API não aplica autorização completa no servidor, justificando probabilidade média-alta (3).
-Impacto: O acesso cruzado a dados de pacientes ou a operações fora do escopo autorizado pode expor ou alterar informações médicas sensíveis (4).
-*(Cálculo da Pontuação: Probabilidade × Impacto. Escala de Níveis: 1–3 = Baixo	4–7 = Médio	8–11 = Alto	12–16 = Crítico)*				
-2. Plano de Tratamento e Controles (NIST CSF 2.0)
+# Riscos de identidade e autenticação
 
-| Risco | Estratégia | Controles Propostos | Função NIST CSF 2.0 | Responsável | Evidências de Implementação | Risco Residual (Estimativa) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| R01 | Mitigar | 1. Integração com API de conselhos de classe (ex: CFM) para verificação automática de registro profissional.<br>2. Validação de identidade (documento com foto / KYC) na integração da conta (Onboarding). | Proteger (PR)<br>Proteger (PR) | Equipe de Produto / Backend | Logs de consultas na API do conselho de classe; Status de conta "Verificada" exigido no banco de dados para liberar acessos médicos. | Médio (4)<br>(Prob. 1 × Imp. 4)* |
-| R02 | Mitigar | 1. Implementar Autenticação Multifator (MFA) obrigatória.<br>2. Alertas de login por e-mail para novos dispositivos ou locais suspeitos.<br>3. Gestão segura de sessão (timeout de inatividade e revogação de tokens JWT). | Proteger (PR)<br>Detectar (DE)<br>Proteger (PR) | Equipe de Segurança / Backend | Configuração de MFA ativa nos perfis; E-mails automáticos disparados; Tokens de sessão expirando em tempo hábil (ex: 30 min). | Médio (4)<br>(Prob. 1 × Imp. 4)* |
-| R03 | Mitigar | 1. Autorização rigorosa no backend baseada no token (RBAC/ABAC), não confiando em IDs enviados na URL pelo cliente.<br>2. Aplicação do Princípio do Menor Privilégio em todos os perfis. | Proteger (PR)<br>Proteger (PR) | Equipe de Backend / QA | Casos de teste automatizados falhando em tentativas de acesso cruzado (IDOR); Revisão de código exigindo validação de escopo em rotas sensíveis. | Médio (4)<br>(Prob. 1 × Imp. 4)* |
-* Nota: Como se tratam de dados de saúde altamente sensíveis (PHI), o impacto em caso de falha sistêmica de identidade ou vazamento de dados sempre se mantém em 4. Os controles aplicados derrubam a probabilidade para 1, resultando no menor risco residual possível: 4, classificado como Médio pela escala oficial.
+## Status do documento
+
+Este arquivo preserva o tema da contribuição sobre R01–R03, mas o conteúdo canônico foi consolidado na [Etapa 2](etapa2-riscos-e-tratamento.md). A consolidação evita estratégias, controles e estimativas residuais divergentes.
+
+Os riscos abrangidos são:
+
+- R01: falso profissional obtém acesso autorizado pelo paciente;
+- R02: conta ou sessão comprometida é usada em nome da vítima;
+- R03: perfil, paciente, recurso ou operação fora do privilégio é alcançado.
+
+Probabilidade, impacto, condição, estratégia `Reduzir`, controles propostos, NIST CSF 2.0, evidências e condição de aceite estão registrados individualmente no documento canônico. Nenhum controle ou risco residual é apresentado como comprovado.

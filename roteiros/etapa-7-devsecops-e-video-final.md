@@ -128,7 +128,7 @@ A distribuição nominal das falas deve respeitar a autoria e a participação r
 
 ## Duração sugerida
 
-Duração alvo: **5 a 8 minutos**.
+Duração alvo: **8 a 10 minutos**.
 
 ## Estrutura sugerida
 
@@ -223,9 +223,9 @@ Apresentar:
 - 59 PASS;
 - 8 WARN-NEW;
 - 0 FAIL-NEW;
-- A01 — CSP Header Not Set;
-- A02 — Cross-Domain Misconfiguration;
-- A03 — Dangerous JS Functions.
+- ZAP01 — CSP Header Not Set;
+- ZAP02 — Cross-Domain Misconfiguration;
+- ZAP03 — Dangerous JS Functions.
 
 Deixar explícito:
 

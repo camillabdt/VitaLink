@@ -16,7 +16,7 @@ A revisão considera os arquivos versionados, o histórico Git e contribuições
 | Arquitetura segura | Há documentação de requisitos e decisões arquiteturais e uma fonte Mermaid em `docs/diagramas/arquitetura-segura.mmd`. | Presente como proposta |
 | Código executável do VitaLink | Não foi identificada implementação executável do sistema entre os artefatos atuais da entrega. | Ausente |
 | Testes automatizados do VitaLink | Não foram identificados testes executáveis da aplicação entre os artefatos atuais da entrega. | Ausente |
-| Verificação prática de segurança | Ainda não há relatório versionado de execução de ferramenta ou teste prático de segurança. | Pendente |
+| Verificação prática de segurança | Há uma execução didática do OWASP ZAP contra o OWASP Juice Shop, com relatórios versionados; ainda não há verificação dinâmica do VitaLink. | Evidência didática presente; VitaLink pendente |
 | Pipeline de CI/CD | Ainda não há pipeline executável versionado para o VitaLink. | Pendente |
 | Vídeo final | A evidência do vídeo final ainda deverá ser registrada quando a entrega audiovisual estiver concluída. | Pendente |
 
@@ -38,4 +38,4 @@ O histórico pode apresentar variações de nome ou e-mail para uma mesma pessoa
 - Commits, pull requests e arquivos demonstram participação versionada, mas não medem isoladamente a qualidade ou a relevância acadêmica da contribuição.
 - Controles descritos como propostos não devem ser apresentados como implementados sem código, teste ou evidência técnica correspondente.
 - Artefatos que estejam somente em branches ou pull requests ainda não integrados não são considerados parte da versão consolidada da `develop`.
-- As evidências de verificação prática, pipeline e vídeo devem ser atualizadas quando essas atividades forem efetivamente realizadas.
+- A verificação prática deve ser atualizada quando houver aplicação executável do VitaLink; pipeline e vídeo ainda dependem de execução e publicação.

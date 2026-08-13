@@ -100,4 +100,4 @@ Os critérios de probabilidade, impacto e risco residual servirão de base metod
 - **Respond (Responder):** o nível de impacto ajuda a definir a proporcionalidade da resposta necessária caso o risco se concretize.
 - **Recover (Recuperar):** riscos classificados como críticos ou altos indicam a necessidade de planos de recuperação mais bem definidos.
 
-O detalhamento de controles específicos e o mapeamento formal entre cada risco do VitaLink e as funções do NIST CSF 2.0 serão desenvolvidos nas etapas posteriores, a partir dos riscos concretos levantados pelo grupo.
+O detalhamento de controles específicos e o mapeamento formal de cada risco para as funções do NIST CSF 2.0 estão no [registro consolidado da Etapa 2](etapa2-riscos-e-tratamento.md).

@@ -10,7 +10,7 @@ _Sua saúde. Seus dados. Seu controle._
 
 ## Escopo e estado atual
 
-O VitaLink é uma proposta acadêmica de sistema para gerenciamento seguro de informações médicas. Pacientes mantêm o próprio histórico e decidem quando profissionais de saúde podem acessá-lo. O repositório contém a análise e o planejamento de segurança. Ele **não contém uma implementação executável do sistema, pipeline, testes de segurança ou verificação de segurança real**.
+O VitaLink é uma proposta acadêmica de sistema para gerenciamento seguro de informações médicas. Pacientes mantêm o próprio histórico e decidem quando profissionais de saúde podem acessá-lo. O repositório contém a análise e o planejamento de segurança. Ele **não contém uma implementação executável do sistema, pipeline, testes automatizados ou verificação dinâmica do próprio VitaLink**. A Etapa 5 contém somente uma execução didática contra o OWASP Juice Shop.
 
 Nesta documentação, os termos têm significado explícito:
 
@@ -38,13 +38,13 @@ Os ativos incluem dados pessoais (A01–A02), dados e documentos médicos (A03�
 | 2. Riscos e NIST CSF 2.0 | Planejada e documentada; residual apenas estimado | [Critérios](docs/etapa2-criterios-e-risco-residual.md), [registro e tratamento](docs/etapa2-riscos-e-tratamento.md) |
 | 3. Arquitetura segura | Proposta; sem implementação verificável | [Requisitos e decisões](docs/etapa3-arquitetura-segura.md), [diagrama-fonte Mermaid](docs/diagramas/arquitetura-segura.mmd), [diagrama de contexto](docs/diagrama-contexto.md) |
 | 4. Código seguro | Pendente de código e evidência executável | [Registro da lacuna](docs/etapa4-codigo-seguro.md) |
-| 5. Verificação de segurança | Pendente de execução real e relatório | [Registro da lacuna](docs/etapa5-verificacao-de-seguranca.md) |
+| 5. Verificação de segurança | Evidência didática presente; verificação do VitaLink pendente | [Execução e limitações](docs/etapa5-verificacao-de-seguranca.md) |
 | 6. Monitoramento e detecção | Roteiro e regras propostos; sem monitoramento ativo | [Monitoramento e detecção](roteiros/etapa-6-deteccao-de-intrusoes.md) |
 | 7. DevSecOps e vídeo | Pipeline DevSecOps proposto; vídeo final pendente | [DevSecOps e vídeo](roteiros/etapa-7-devsecops-e-video-final.md) |
 
 ## Rastreabilidade central
 
-Os identificadores estáveis são `Axx` (ativos), `Txx` (ameaças), `CAxx` (casos de abuso), `Rxx` (riscos), `RSxx` (requisitos), `Vxx` (vulnerabilidades candidatas), `DAxx` (decisões arquiteturais) e `Dxx` (regras de detecção). A [Etapa 1](docs/etapa1-modelagem-de-ameacas.md) liga ativos, ameaças e abusos. A [Etapa 2](docs/etapa2-riscos-e-tratamento.md) liga ameaças, riscos, NIST CSF 2.0, controles propostos, responsáveis propostos e verificação necessária. A [Etapa 3](docs/etapa3-arquitetura-segura.md) liga riscos a requisitos, vulnerabilidades candidatas e decisões.
+Os identificadores estáveis são `Axx` (ativos), `Txx` (ameaças), `CAxx` (casos de abuso), `Rxx` (riscos), `RSxx` (requisitos), `Vxx` (vulnerabilidades candidatas), `DAxx` (decisões arquiteturais), `CSxx` (práticas de código seguro), `CTxx` (casos de teste), `ZAPxx` (achados da verificação didática) e `Dxx` (regras de detecção). A [Etapa 1](docs/etapa1-modelagem-de-ameacas.md) liga ativos, ameaças e abusos. A [Etapa 2](docs/etapa2-riscos-e-tratamento.md) liga ameaças, riscos, NIST CSF 2.0, controles propostos, responsáveis propostos e verificação necessária. A [Etapa 3](docs/etapa3-arquitetura-segura.md) liga riscos a requisitos, vulnerabilidades candidatas e decisões.
 
 As decisões de escopo, autorização, sessão, auditoria e detecção estão em [decisões de segurança propostas](docs/decisoes-de-seguranca.md).
 

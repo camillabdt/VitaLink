@@ -2,6 +2,8 @@
 
 Este documento detalha as interações de entrada e saída do VitaLink, além de definir as fronteiras onde a segurança é aplicada.
 
+Os pontos e fluxos abaixo representam o modelo proposto e não comprovam comportamento implementado.
+
 ## 1. Pontos de Entrada de Dados
 
 | Ponto de Interação | Fluxo de Dados e Componentes Envolvidos |

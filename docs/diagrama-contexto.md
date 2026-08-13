@@ -4,6 +4,8 @@
 
 O diagrama de contexto apresenta os principais atores, componentes internos, fronteiras de confiança e serviço externo associados ao VitaLink. A representação segue a arquitetura documentada para o projeto e evidencia que decisões de autenticação e autorização não são realizadas pela interface, mas aplicadas na API REST antes do acesso aos recursos protegidos.
 
+O diagrama representa a arquitetura proposta e não constitui evidência de implementação.
+
 ![Diagrama de contexto do VitaLink](../diagramas/diagrama-contexto.png)
 
 ## Atores externos

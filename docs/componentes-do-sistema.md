@@ -2,6 +2,8 @@
 
 Este documento descreve os principais elementos técnicos envolvidos no VitaLink, fundamentais para a análise e modelagem de ameaças.
 
+Os componentes e fluxos abaixo formam uma **arquitetura proposta**. Eles não constituem evidência de implementação.
+
 ## 1. Componentes do Sistema
 
 ### 1.1 Componentes Internos
@@ -9,7 +11,7 @@ Este documento descreve os principais elementos técnicos envolvidos no VitaLink
 | --- | --- |
 | **Aplicação Web (Frontend)** | Interface onde usuários (pacientes e profissionais de saúde) interagem. É responsável por renderizar as informações e coletar as entradas iniciais, mas não toma decisões de segurança. |
 | **API REST (Backend)** | Núcleo de processamento e principal fronteira de confiança. Recebe as requisições da Aplicação Web, valida regras de negócio e aplica rigorosamente o controle de acesso. |
-| **Banco de Dados Relacional** | Armazena dados estruturados: cadastros (pacientes e profissionais), perfis, histórico de autorizações (consentimentos concedidos/revogados) e registros de auditoria (logs imutáveis). |
+| **Banco de Dados Relacional** | Deve armazenar dados estruturados: cadastros, perfis, histórico de autorizações e registros de auditoria protegidos contra alteração indevida. |
 | **Armazenamento de Documentos (Storage)** | Serviço dedicado para armazenar arquivos físicos de forma protegida (imagens médicas, laudos, exames laboratoriais e receitas prescritas). |
 | **Serviço de Autenticação** | Módulo responsável pelo ciclo de vida das identidades: gerencia login seguro, emissão, validação de tokens de sessão e recuperação de contas. |
 

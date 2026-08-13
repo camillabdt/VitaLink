@@ -6,20 +6,18 @@ As condições descritas representam situações necessárias para que o abuso s
 
 ## Catálogo
 
-| ID   | Caso de abuso                                | Tema                    | Issue responsável pelo detalhamento |
-| ---- | -------------------------------------------- | ----------------------- | ----------------------------------- |
-| CA01 | Cadastro de falso profissional               | Identidade              | #11                                 |
-| CA02 | Roubo da conta de um paciente                | Identidade              | #11                                 |
-| CA03 | Uso de autorização revogada                  | Consentimento           | #12                                 |
-| CA04 | Consulta a prontuário sem autorização        | Consentimento           | #12                                 |
-| CA05 | Alteração maliciosa de exame                 | Integridade             | #13                                 |
-| CA06 | Exclusão de registro para ocultar uma ação   | Integridade e auditoria | #13                                 |
-| CA07 | Compartilhamento público de documento médico | Privacidade             | #14                                 |
-| CA08 | Extração em massa de informações             | Privacidade             | #14                                 |
-| CA09 | Sobrecarga da API                            | Disponibilidade         | #15                                 |
-| CA10 | Esgotamento do armazenamento                 | Disponibilidade         | #15                                 |
-
-Nesta contribuição, somente CA03 e CA04 são detalhados. Os demais identificadores ficam reservados para as issues indicadas no catálogo.
+| ID | Caso de abuso | Tema | Detalhamento |
+| --- | --- | --- | --- |
+| CA01 | Cadastro de falso profissional | Identidade | [Caso completo](casos-de-abuso-identidade.md#ca01--cadastro-de-falso-profissional) |
+| CA02 | Roubo da conta de um paciente | Identidade | [Caso completo](casos-de-abuso-identidade.md#ca02--roubo-da-conta-de-um-paciente) |
+| CA03 | Uso de autorização revogada | Consentimento | [Caso completo](#ca03--uso-de-autorização-revogada) |
+| CA04 | Consulta a prontuário sem autorização | Consentimento | [Caso completo](#ca04--consulta-a-prontuário-sem-autorização) |
+| CA05 | Alteração maliciosa de exame | Integridade | [Caso completo](casos-de-abuso-integridade.md#ca05--alteração-maliciosa-de-exame) |
+| CA06 | Exclusão de registro para ocultar uma ação | Integridade e auditoria | [Caso completo](casos-de-abuso-integridade.md#ca06--exclusão-de-registro-para-ocultar-uma-ação) |
+| CA07 | Compartilhamento público de documento médico | Privacidade | [Caso completo](casos-de-abuso-privacidade.md#ca07--compartilhamento-público-de-documento-médico) |
+| CA08 | Extração em massa de informações | Privacidade | [Caso completo](casos-de-abuso-privacidade.md#ca08--extração-em-massa-de-informações) |
+| CA09 | Sobrecarga da API | Disponibilidade | [Caso completo](ameacas-disponibilidade.md#ca09--sobrecarga-da-api) |
+| CA10 | Esgotamento do armazenamento | Disponibilidade | [Caso completo](ameacas-disponibilidade.md#ca10--esgotamento-do-armazenamento) |
 
 ## CA03 — Uso de autorização revogada
 

@@ -4,6 +4,8 @@
 
 **Nome:** VitaLink
 **Disciplina:** Engenharia de Software Seguro
+**Repositório:** <https://github.com/camillabdt/VitaLink>
+**Integrantes:** Amanda Dias, Camilla Borchhardt, Luiza Figueiredo, Milena Castro, Rafaela Nunes e Tauani Sauceda.
 
 O VitaLink é uma proposta de sistema para gerenciamento seguro de informações médicas. O sistema tem como objetivo permitir que pacientes mantenham um histórico digital de saúde, reunindo exames, consultas, receitas, laudos e imagens médicas em um único ambiente.
 

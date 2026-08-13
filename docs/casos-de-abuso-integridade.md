@@ -111,7 +111,7 @@ Profissionais podem tomar decisões com um histórico incompleto, pacientes pode
 
 | Caso de abuso | Ameaças relacionadas | Categorias STRIDE principais | Ativos principais | Riscos relacionados |
 | --- | --- | --- | --- | --- |
-| CA05 — Alteração maliciosa de exame | T07 e T09 | Tampering e Repudiation | A03, A04, A08, A09, A10 e A12 | R07 e R09 |
+| CA05 — Alteração maliciosa de exame | T07, T09 e T15 | Tampering, Repudiation e Denial of Service | A03, A04, A08, A09, A10 e A12 | R07, R09 e R15 |
 | CA06 — Exclusão de registro para ocultar uma ação | T08 e T09 | Tampering e Repudiation | A03, A04, A05, A08, A09, A10 e A12 | R08 e R09 |
 
 Os controles e riscos residuais relacionados são tratados na [Etapa 2](etapa2-riscos-e-tratamento.md). A existência de controles efetivos ainda depende de implementação e evidências técnicas.
