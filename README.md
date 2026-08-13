@@ -34,7 +34,7 @@ Os ativos incluem dados pessoais (A01–A02), dados e documentos médicos (A03�
 | Etapa | Status documental | Artefatos locais |
 | --- | --- | --- |
 | Base | Documentada | [Perfis e permissões](docs/usuarios-perfis-e-permissoes.md), [autorização e revogação](docs/fluxo-autorizacao-revogacao.md) |
-| 1. Ameaças e casos de abuso | Documentada, com lacunas de implementação marcadas | [Índice STRIDE e casos de abuso](docs/etapa1-modelagem-de-ameacas.md), [identidade](docs/ameacas-identidade-autenticacao-privilegios.md), [consentimento](docs/ameacas-consentimento-acesso-indevido.md), [disponibilidade](docs/ameacas-disponibilidade.md) |
+| 1. Ameaças e casos de abuso | Documentada, com lacunas de implementação marcadas | [Índice STRIDE e casos de abuso](docs/etapa1-modelagem-de-ameacas.md), [identidade](docs/ameacas-identidade-autenticacao-privilegios.md), [consentimento](docs/ameacas-consentimento-acesso-indevido.md), [integridade](docs/casos-de-abuso-integridade.md), [disponibilidade](docs/ameacas-disponibilidade.md) |
 | 2. Riscos e NIST CSF 2.0 | Planejada e documentada; residual apenas estimado | [Critérios](docs/etapa2-criterios-e-risco-residual.md), [registro e tratamento](docs/etapa2-riscos-e-tratamento.md) |
 | 3. Arquitetura segura | Proposta; sem implementação verificável | [Requisitos e decisões](docs/etapa3-arquitetura-segura.md), [diagrama-fonte Mermaid](docs/diagramas/arquitetura-segura.mmd), [diagrama de contexto](docs/diagrama-contexto.md) |
 | 4. Código seguro | Pendente de código e evidência executável | [Registro da lacuna](docs/etapa4-codigo-seguro.md) |
