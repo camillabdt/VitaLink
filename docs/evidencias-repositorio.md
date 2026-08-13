@@ -1,35 +1,41 @@
 # Evidências do repositório e participação
 
-## Escopo da inspeção
+## Escopo da revisão
 
-Esta auditoria foi feita no checkout local em 11 de agosto de 2026, antes de criar um novo commit para esta documentação. Foram inspecionados os arquivos rastreados, `git log` e `git shortlog`. O resultado descreve o histórico local disponível, não confirma o estado remoto no GitHub.
+Este documento registra evidências observáveis no histórico do projeto VitaLink até 13 de agosto de 2026.
 
-## Evidências encontradas
+A revisão considera os arquivos versionados, o histórico Git e contribuições integradas ao repositório. A existência de autoria ou de um artefato não substitui a avaliação da qualidade da contribuição realizada por cada integrante.
 
-| Item | Evidência local | Situação |
+## Evidências documentais
+
+| Item | Evidência | Situação |
 | --- | --- | --- |
-| Documentos Markdown de segurança | `docs/` contém inventário, CIA, perfis, fluxo, ameaças, riscos e etapas complementares. | Presente localmente |
-| Diagrama versionado | [arquitetura-segura.mmd](diagramas/arquitetura-segura.mmd) foi adicionado como fonte Mermaid. | Presente localmente, pendente de push |
-| Código e testes do VitaLink | Não encontrados entre arquivos rastreados. | Ausente |
-| Verificação de segurança real | Nenhum relatório, comando executado ou achado foi encontrado. | Ausente |
-| Pipeline | Nenhuma configuração de CI foi encontrada entre arquivos rastreados. | Ausente |
-| Vídeo final | Não encontrado entre arquivos rastreados. | Ausente |
+| Documentação de segurança | O diretório `docs/` contém escopo, ativos, perfis, ameaças, casos de abuso, riscos e artefatos das etapas do trabalho. | Presente |
+| Modelagem STRIDE | A Etapa 1 consolida T01–T15 e sua relação com ativos e casos de abuso. | Presente |
+| Registro de riscos | A Etapa 2 consolida R01–R15, tratamento proposto, NIST CSF 2.0 e estimativas de risco residual. | Presente |
+| Arquitetura segura | Há documentação de requisitos e decisões arquiteturais e uma fonte Mermaid em `docs/diagramas/arquitetura-segura.mmd`. | Presente como proposta |
+| Código executável do VitaLink | Não foi identificada implementação executável do sistema entre os artefatos atuais da entrega. | Ausente |
+| Testes automatizados do VitaLink | Não foram identificados testes executáveis da aplicação entre os artefatos atuais da entrega. | Ausente |
+| Verificação prática de segurança | Ainda não há relatório versionado de execução de ferramenta ou teste prático de segurança. | Pendente |
+| Pipeline de CI/CD | Ainda não há pipeline executável versionado para o VitaLink. | Pendente |
+| Vídeo final | A evidência do vídeo final ainda deverá ser registrada quando a entrega audiovisual estiver concluída. | Pendente |
 
-## Participação no histórico local
+## Participação identificada
 
-| Integrante listado no README | Autoria encontrada no histórico local | Situação |
+| Integrante | Identidade observada no histórico/repositório | Situação |
 | --- | --- | --- |
-| Amanda Dias | `amandadiasdev` e `Amanda Dias` | Encontrada |
-| Camilla Borchhardt | `Camilla Borchhardt` e `Camillabdt` | Encontrada; há duas identidades de e-mail a confirmar |
-| Luiza Figueiredo | `Luizavfig` e `luizavfig` | Encontrada; a associação da identidade ao nome foi informada pela equipe e deve ser conferida no GitHub |
-| Milena Castro | `MilenaCastroo` | Encontrada |
-| Tauani Sauceda | `Tauani Sauceda` | Encontrada |
-| Rafela Nunes | Nenhuma autoria correspondente identificada na inspeção local. | **[A confirmar]** |
+| Amanda Dias | `amandadiasdev` / Amanda Dias | Contribuição identificada |
+| Camilla Borchhardt | `camillabdt` / Camilla Borchhardt | Contribuição identificada |
+| Luiza Figueiredo | `Luizavfig` / `luizavfig` | Contribuição identificada |
+| Milena Castro | `MilenaCastroo` | Contribuição identificada |
+| Rafaela Nunes | `rafaelapnunes` | Contribuição identificada; PR #40 integrado à `develop` |
+| Tauani Sauceda | Tauani Sauceda | Contribuição identificada |
 
-As identidades de autoria de Camilla e Luiza aparecem com mais de uma forma no histórico. A associação de cada identidade à conta GitHub correta permanece **[A confirmar]** até a conferência no remoto.
+O histórico pode apresentar variações de nome ou e-mail para uma mesma pessoa. Essas diferenças de assinatura Git não devem ser interpretadas como ausência de contribuição quando a autoria correspondente pode ser relacionada ao integrante.
 
-## Limitações
+## Limitações da evidência
 
-- O checkout tinha uma alteração de imagem e o diretório `dev-docs/` não rastreado; não foram alterados nesta auditoria.
-- Links externos, associação de contas GitHub e a existência dos novos arquivos no remoto não foram verificados aqui.
-- A presença de commits demonstra autoria no histórico, mas a avaliação de contribuição efetiva cabe à disciplina.
+- Commits, pull requests e arquivos demonstram participação versionada, mas não medem isoladamente a qualidade ou a relevância acadêmica da contribuição.
+- Controles descritos como propostos não devem ser apresentados como implementados sem código, teste ou evidência técnica correspondente.
+- Artefatos que estejam somente em branches ou pull requests ainda não integrados não são considerados parte da versão consolidada da `develop`.
+- As evidências de verificação prática, pipeline e vídeo devem ser atualizadas quando essas atividades forem efetivamente realizadas.

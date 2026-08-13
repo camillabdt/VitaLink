@@ -58,10 +58,10 @@ A [auditoria de evidências do repositório](docs/evidencias-repositorio.md) reg
 - Camilla Borchhardt
 - Luiza Figueiredo
 - Milena Castro
-- Rafela Nunes
+- Rafaela Nunes
 - Tauani Sauceda
 
-O histórico local contém autoria associada a Amanda, Camilla, Luiza, Milena e Tauani. A ausência de contribuição identificada para Rafela e a associação entre identidades de autoria estão registradas como **[A confirmar]** em [evidências](docs/evidencias-repositorio.md).
+O histórico do projeto contém contribuições associadas a Amanda, Camilla, Luiza, Milena, Rafaela e Tauani. A documentação de participação e as limitações da inspeção estão registradas em [evidências](docs/evidencias-repositorio.md).
 
 ## Ambiente local
 
