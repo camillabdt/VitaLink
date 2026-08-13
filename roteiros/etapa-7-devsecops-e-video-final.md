@@ -99,7 +99,7 @@ Foram versionados:
 - [relatório HTML do OWASP ZAP](../evidencias/etapa-5/zap-report.html);
 - [relatório JSON do OWASP ZAP](../evidencias/etapa-5/zap-report.json);
 - configuração auxiliar `zap.yaml`;
-- análise dos principais resultados em [Etapa 5](etapa5-verificacao-de-seguranca.md).
+- análise dos principais resultados em [Etapa 5](../docs/etapa5-verificacao-de-seguranca.md).
 
 A execução observou 88 URLs no OWASP Juice Shop e produziu 59 verificações classificadas como PASS e 8 categorias WARN-NEW, sem FAIL-NEW na execução do baseline.
 
@@ -109,13 +109,13 @@ Esses números descrevem somente o ambiente didático analisado e não podem ser
 
 | Etapa | Tema | Artefatos principais |
 | --- | --- | --- |
-| Base | Escopo e sistema | [escopo](escopo-problema-justificativa.md), [componentes](componentes-do-sistema.md), [pontos de interação](pontos-de-interacao.md) |
-| Etapa 1 | Ameaças, STRIDE e casos de abuso | [modelagem](etapa1-modelagem-de-ameacas.md), [casos de abuso](casos-de-abuso.md) |
-| Etapa 2 | Avaliação e tratamento de riscos | [riscos](etapa2-riscos-e-tratamento.md), [critérios](etapa2-criterios-e-risco-residual.md) |
-| Etapa 3 | Arquitetura segura | [arquitetura](etapa3-arquitetura-segura.md), [diagrama](diagramas/arquitetura-segura.mmd) |
-| Etapa 4 | Código seguro | [práticas e testes planejados](etapa4-codigo-seguro.md) |
-| Etapa 5 | Verificação de segurança | [análise](etapa5-verificacao-de-seguranca.md), [evidências](../evidencias/etapa-5/) |
-| Etapa 6 | Detecção e resposta | [monitoramento e resposta](etapa6-resposta-e-deteccao.md) |
+| Base | Escopo e sistema | [escopo](../docs/escopo-problema-justificativa.md), [componentes](../docs/componentes-do-sistema.md), [pontos de interação](../docs/pontos-de-interacao.md) |
+| Etapa 1 | Ameaças, STRIDE e casos de abuso | [modelagem](../docs/etapa1-modelagem-de-ameacas.md), [casos de abuso](../docs/casos-de-abuso.md) |
+| Etapa 2 | Avaliação e tratamento de riscos | [riscos](../docs/etapa2-riscos-e-tratamento.md), [critérios](../docs/etapa2-criterios-e-risco-residual.md) |
+| Etapa 3 | Arquitetura segura | [arquitetura](../docs/etapa3-arquitetura-segura.md), [diagrama](../docs/diagramas/arquitetura-segura.mmd) |
+| Etapa 4 | Código seguro | [práticas e testes planejados](../docs/etapa4-codigo-seguro.md) |
+| Etapa 5 | Verificação de segurança | [análise](../docs/etapa5-verificacao-de-seguranca.md), [evidências](../evidencias/etapa-5/) |
+| Etapa 6 | Detecção e resposta | [monitoramento e resposta](etapa-6-deteccao-de-intrusoes.md) |
 | Etapa 7 | DevSecOps e apresentação | Este documento |
 
 # Roteiro do vídeo final
@@ -128,7 +128,7 @@ A distribuição nominal das falas deve respeitar a autoria e a participação r
 
 ## Duração sugerida
 
-Duração alvo: **7 a 10 minutos**.
+Duração alvo: **5 a 8 minutos**.
 
 ## Estrutura sugerida
 
