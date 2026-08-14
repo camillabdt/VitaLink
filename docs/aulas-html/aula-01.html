@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Segurança em todo o ciclo de vida · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Fundamentos · Aula 01 de 17</p>
+        <h1>Segurança em todo o ciclo de vida</h1>
+        <p>
+          Segurança é uma preocupação de engenharia presente desde a conversa
+          inicial até a operação do sistema.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong>Em que momento a segurança começa?</strong>
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="1-1" /><span
+              >Distinguir ativos, ameaças, vulnerabilidades e ataques.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="1-2" /><span
+              >Relacionar segurança aos requisitos não funcionais.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="1-3" /><span
+              >Reconhecer as etapas de um ciclo de desenvolvimento seguro.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Ativo e propriedades</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Ativo é tudo que tem valor para o negócio. Confidencialidade,
+                integridade e disponibilidade orientam o que precisa ser
+                protegido.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Pergunte: qual dado, operação
+                ou recurso causa dano se for exposto, alterado ou ficar
+                indisponível?
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Ameaça, vulnerabilidade e ataque</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                A ameaça é uma possibilidade de dano. A vulnerabilidade é a
+                fraqueza explorável. O ataque é a exploração efetiva dessa
+                fraqueza.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Não trate os três termos como
+                sinônimos ao documentar um risco.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Segurança contínua</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Requisitos, modelagem de ameaças, arquitetura, implementação,
+                testes e operação precisam preservar as decisões de segurança.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> SAST analisa código; DAST testa
+                o sistema em execução.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>
+              1. Uma vulnerabilidade já torna um sistema inseguro?
+            </legend>
+            <label
+              ><input type="radio" name="q1-1" value="0" /><span
+                >Não, são necessárias várias.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q1-1" value="1" /><span
+                >Sim, ela pode ser explorada.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q1-1" value="2" /><span
+                >Somente se houver ataque confirmado.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Uma única vulnerabilidade pode comprometer a confiança no sistema.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="2">
+            <legend>2. Qual sequência está correta?</legend>
+            <label
+              ><input type="radio" name="q1-2" value="0" /><span
+                >Ataque → ameaça → vulnerabilidade</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q1-2" value="1" /><span
+                >Vulnerabilidade → ativo → requisito</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q1-2" value="2" /><span
+                >Ameaça → vulnerabilidade → ataque</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              A ameaça existe como possibilidade; a vulnerabilidade permite a
+              exploração; o ataque a concretiza.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="1">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Quando você estuda pela primeira vez a disciplina de algoritmos e
+            programação você aprende que o algoritmo é uma sequência de passos
+            que serve para codificar através de um software alguma
+            funcionalidade algum processo que anteriormente era feito de maneira
+            manual por exemplo quando você estuda engenheiro e software você
+            aprende que para fazer um bom software há uma sequência de passos
+            que você precisa seguir o primeiro passo a seguir para fazer um
+            software é entender o domínio ou seja você vai ter que conversar com
+            os stakeholders ou seja as partes interessadas porém é aí que a
+            disciplina começa a dialogar com vocês de uma maneira um pouco
+            diferente quando eu falo começa é literalmente começa porque em todo
+            o ciclo de vida de software nós vamos ter que pensar na segurança
+            mas nos limitando ao início dessa história quando nós vamos ter a
+            primeira conversa com o cliente por exemplo.
+          </p>
+          <p>
+            quantas vezes você já se imaginou perguntando alguma coisa
+            especificamente relacionada à segurança do software ao invés de
+            focar exclusivamente nas funcionalidades do software na engenharia
+            do software existem o que nós chamamos de requisitos funcionais e
+            requisitos não funcionais os requitos funcionais são aquilo que
+            geralmente fica explícito pro usuário quando ele pede para você
+            fazer por exemplo um aplicativo de delivery ele esperando que você
+            faça um aplicativo que seja possível realizar pedidos seja possível
+            cadastrar funcionários e assim por diante todos esses requisitos
+            funcionais eles traduzem funcionalidades esperadas no sistema o que
+            muitas vezes o usuário não para para pensar e muito menos para falar
+            para você é que por trás dessas funcionalidades existem muitas
+            coisas que devem ser consideradas não adianta por exemplo eu ficar o
+            ano todo desenvolvendo um software por exemplo.
+          </p>
+          <p>
+            o aplicativo de delivery para no final quando esse software estiver
+            pronto ele ter problemas como usabilidade que os usuários vão acabar
+            adotando e vão baixar o aplicativo vizinho ou por exemplo o
+            desempenho que limita o experiência do usuário ou seja o aplicativo
+            não vai funcionar naquela velocidade que você espera e mais
+            importante a segurança por que que eu falo mais importante é porque
+            todas essas outras situações que também fazem parte do que nós
+            chamamos de equitos não funcionais elas podem limitar a adoção pode
+            fazer você perder um usuário mas elas não abalam a confiança já a
+            segurança ela abala a confiança não só naquele software mas também
+            numa marca numa empresa então é por isso que essa disciplina está
+            sendo proposta para vocês eu sou formado em engenheiro software mas
+            meu TCC foi na área de segurança e muitas vezes as pessoas viam como
+            área desconexas você vai fazer um TCC.
+          </p>
+          <p>
+            na área de segurança mas você não fazendo o curso de engenheiro de
+            software e para mim isso nunca desceu porque qual é o sentido de eu
+            fazer um software que não passa confiança pro usuário que ele não
+            vai usar aquele software com aquela certeza ou pelo menos com aquela
+            segurança de que os dados dele estão seguros estão a salvos que ele
+            passou uma noite toda lançando nota fiscal por exemplo e que no dia
+            seguinte aquilo não vai ser perdido porque aconteceu uma falha
+            catastrófica no sistema que aquelas informações sensíveis dele não
+            vai estar nas mãos de um atacante de uma outra pessoa que um pedido
+            no delivery por exemplo não vai ser alterado para que seja cobrado
+            um valor indevido no cartão de crédito do cliente que o cartão de
+            crédito do teu cliente não seja exposto para outros usuários da
+            internet por exemplo quantas vezes já aconteceu isso se vocês
+            acessarem por exemplo a dark web a.
+          </p>
+          <p>
+            deep web vocês vão perceber que tem muita informação sendo vendida
+            lá entre essas informações estão por exemplo cartões de créditos da
+            onde surge essas informações muitas vezes é de softwares não seguros
+            é por isso que eu não me contentei fazendo apenas o TCC na área de
+            segurança mas eu fui para área de mestrado também explorando a
+            detecção de intrusões que também faz parte da segurança e meu
+            doutorado também e olha que legal quando eu acabei o mestrado
+            doutorado eu dei aula por um ano e 4 meses na Universidade Federal
+            de Uberlândia onde eu fui convidado no primeiro dia de aula pelo
+            coordenador a propor uma disciplina adivinha qual disciplina que eu
+            propus detecção de inusões olha que legal então eu já consegui
+            amarrar tudo que eu fazia na meu mestrado no meu doutorado pro
+            sistema de pro curso de sistemas de informação passou 1 ano e 4
+            meses eu voltei para Unipampa a Unipampa é a.
+          </p>
+          <p>
+            instituição onde eu me formei e aí eu fui proposto novamente pelo
+            meu coordenador na Unipampa que na época era o professor Williamson
+            que hoje não mais conosco eu fui proposto a fui desafiado a propor
+            uma nova disciplina e aí eu liguei todos os pontinhos desde o meu
+            primeiro dia de aula onde eu aprendi lá no primeiro semestre análise
+            de requisitos sim na minha época era no primeiro semestre que nós
+            estudávamos isso na disciplina de resolução de problemas hoje também
+            nós temos em RP na engenharia de software no primeiro semestre a
+            esse conhecimento do domínio depois tínhamos a disciplina de análise
+            de software na época que também foi parte do segundo semestre eu
+            lembrei de tudo isso e lembrei que muitas vezes o que eu fazia como
+            aluno e muitas vezes até os professores ensinavam coloca aí que o
+            SEMA vai ser seguro esse é um requist não funcional mas na hora de
+            implementar como é que eu.
+          </p>
+          <p>
+            implemento um sistema seguro o que que é ser seguro é pôr um fil na
+            rede é fazer uma autenticação é uma autenticação de dois fatores
+            quando que eu preciso ter que nível de segurança e fazendo toda essa
+            ligação de todos esses pontos a primeira disciplina que eu propus
+            quando eu entrei no curso de engenheiro de software com o professor
+            foi a disciplina de engenharia do software seguro e agora que vocês
+            já sabem a história da disciplina eu vou contar para vocês o que que
+            essa disciplina aborda a ideia da disciplina é que vocês tenham um
+            olhar diferenciado para a engenharia de software uma pessoa que
+            implementa um programador ele simplesmente executa passos o
+            engenheiro de software ele pensa um pouquinho antes de fazer isso
+            ele faz um projeto ele define metodologias ferramentas arquiteturas
+            testa depois que foi implementado e esse software e assim por diante
+            a pessoa que faz a disciplina de.
+          </p>
+          <p>
+            engenheiro de software seguro ela vai fazer esse pipeline de forma
+            organizada mas com a segurança em todo esse pipeline em todas as
+            etapas desse pipeline o que que na prática isso significa significa
+            que vocês vão ter uma mentalidade de segurança desde a primeira
+            conversa com o cliente de vocês isso significa por exemplo entender
+            que todo software ele vai envolver ativos o que que é um ativo ativo
+            é tudo que tem valor pro cliente de vocês então ativos são por
+            exemplo informações são por exemplo dispositivos que vão ser
+            manipulados pelo software de vocês imagina um software por exemplo
+            que tem sensores e atuadores nem todo software é só crude nem todo
+            software ele apenas armazena informações o software ele pode fazer
+            com que o avião se mantenha dirigindo no piloto automático dirigindo
+            não pilotando no piloto automático ele pode fazer com que um carro
+            autônomo um veículo autônomo ele siga.
+          </p>
+          <p>
+            a rota correta então percebam que quando nós falamos de ativos não é
+            só informação mas sim informação e tudo que faz parte do sistema de
+            vocês se é um sistema de delivery um ativo pode ser por exemplo o
+            próprio pedido quando nós falamos de ativos começa a fazer mais
+            sentido essa conversa entre você e o cliente final sobre riscos todo
+            ativo ele pode estar suscetível a alguns riscos uma vez que você
+            consegue mensurar qual é o risco que está associado a um ativo você
+            começa a identificar ameaças o que que é uma ameaça é quando um dos
+            seus ativos ele está suscetível a alguma coisa que viole alguma
+            propriedade de segurança na informação as três principais os três
+            pilares em termos de propriedade de segurança informação são a
+            confidencialidade ou seja aquele ativo tem informações confidenciais
+            ou você saber quem está operando e somente quem deve operar consegue
+            fazer e você não deixa vazar.
+          </p>
+          <p>
+            nenhuma informação então isso é confidencialidade temos também a
+            integridade que é você garantir que toda alteração numa informação
+            por exemplo ou no comportamento no sistema aconteça de forma
+            autorizada então somente pessoal autorizado consegue modificar ou
+            fazer determinadas operações isso é um sistema que respeita a
+            integridade e a disponibilidade é o terceiro pilar da segurança da
+            informação que é você garantir que o sistema está sempre disponível
+            quando ele precisa estar disponível o que que isso significa se é o
+            sistema feito para funcionar só de dia não precisa funcionar de
+            madrugada porque ele disponível quando o cliente precisa que é de
+            dia agora se o sistema ele foi operado foi desenvolvido para operar
+            24x7 é esperado que ele opere em 24x7 não necessariamente ele vai
+            operar 100% disponível e é justamente assim que a gente mede a
+            disponibilidade nós verificamos qual que é a.
+          </p>
+          <p>
+            porção do tempo que ele está disponível em relação ao que ele
+            deveria estar disponível é assim que a gente classifica ele com
+            baixa disponibilidade autois disponibilidade e assim por diante
+            então quando você olha para essas três principais propriedades da
+            segurança da informação junto com outras que é por exemplo a
+            capacidade de você identificar quem fez uma alteração auditabilidade
+            não repúdio você não negar quem fez aquela alteração e mais outras
+            propriedades de segurança informação quando você pensa nisso junto
+            com os ativos você começa a pensar em maneiras de violar essas
+            propriedades e pôr o seu sistema em ameaça percebe que uma ameaça
+            ainda não é um ataque uma ameaça não significa que o sistema está
+            vulnerável ameaça é apenas a possibilidade de alguma coisa dar
+            errado com as propriedades que mantém o sistema seguro depois que
+            você modela ameaças você precisa implementar mecanismos.
+          </p>
+          <p>
+            para que essas ameaças fiquem protegidas uma ameaça num sistema de
+            delivery por exemplo pode ser o sistema liberar informações de forma
+            indevida como por exemplo endereços de de clientes imagina que um
+            sistema de delivery começa a vazar endereço de clientes isso poderia
+            ser usado para várias coisas indevidas então essa é uma ameaça de
+            sistema por exemplo um sistema lá de agendamento de consultas
+            poderia vazar informações conferenciais dados sensíveis sobre a
+            saúde dos pacientes então essas são as ameaças dos sistemas percebam
+            que você já tem o ativo que é por exemplo os dados os dados do
+            paciente dados do seu cliente do delivery e você já conseguiu
+            identificar ameaças a esses ativos quando é que um atacante consegue
+            acessar essas informações ou fazer uma operação indevida quando ele
+            encontra uma vulnerabilidade então perceba ameaça é o fato de
+            existir uma ameaça a vulnerabilidade é.
+          </p>
+          <p>
+            quando você não tem um controle para impedir que aquela ameaça seja
+            explorada então a vulnerabilidade ela parte de uma ameaça que já
+            existe mas ela permite que alguém mal intencionado consiga
+            operacionalizar consumar o ato de explorar aquela vulnerabilidade
+            então vulnerabilidade é a ausência de um mecanismo de segurança por
+            exemplo que permite aquela ameaça se concretizar percebam então que
+            são coisas diferentes agora um sistema estar vulnerável não
+            significa que ele vai ser atacado é por isso que vulnerabilidade
+            ameaça são coisas diferentes de ataque um ataque é quando um
+            atacante descobre uma vulnerabilidade e a partir dessa descoberta
+            ele vai lá e faz o ataque então aí sim nós já estamos falando de
+            ataques cibernéticos então percebam que nós partimos desde do
+            conhecimento do domínio dos ativos das ameaças das vulnerabilidades
+            e depois da forma de atacar que são os ataques ao longo.
+          </p>
+          <p>
+            dessa disciplina nós vamos estudar como proteger todos os sistemas
+            pensando nessas sequências de passos que nós falamos agora falando
+            de ameaça por exemplo nós temos frameworks como por exemplo o stride
+            que serve para fazer justamente a modelagem de ameaças a partir de
+            um sistema qualquer o stride ele vai ajudar você você não precisa
+            pensar sozinho em todo tipo de ameaça o stride é um catálogo que vai
+            ajudar você a identificar ameaças e sistemas certo a mesma coisa
+            serve para você categorizar por exemplo as vulnerabilidades você tem
+            acesso a uma série de vulnerabilidades existentes em outros sistemas
+            então quando você já conhece vulnerabilidades sabe que elas existem
+            em outros sistemas você pode evitar de incorporar essas
+            vulnerabilidades no seu sistema especialmente quando você usa por
+            exemplo libes de terceiros se você tem um sistema totalmente seguro
+            mas ele tem uma libulável volta a.
+          </p>
+          <p>
+            pergunta que eu fiz no início da aula quantas vulnerabilidades um
+            sistema precisa para ele ter para ele ser considerado inseguro esse
+            sistema precisa ter apenas uma vulnerabilidade para ser considerado
+            um seguro se ele é vulnerável ele é vulnerável ele não é seguro
+            então é por isso que é importante que vocês cuidem inclusive os
+            serviços de terceiros que o sistema de vocês usam então nós vamos
+            estudar isso tem por exemplo o NIST que é um framework também é um
+            órgão na verdade o NIST que tem frameworks para categorizar
+            vulnerabilidades nós vamos perceber também que além de você fazer
+            essa modelagem de ameaças já na etapa de modelagem então perceba nós
+            começamos na entrevista com o usuário lá na licitação de requisitos
+            partimos para etapa de modelagem que já entrou também modelagem de
+            ameaças quando for começar a implementar o sistema já tendo em mente
+            quais são esses riscos que nós.
+          </p>
+          <p>
+            precisamos mitigar quais são os controles para que essas
+            vulnerabilidades não sejam disponibilizadas na versão que você vai
+            lançar no seu sistema você pode começar a pensar inclusive em testes
+            e você pode pensar em testes para validar se você desenvolvendo um
+            software seguro você pode pensar em TDD tudo isso pode ser pensado
+            junto com software seguro td é o test driven development para quem
+            ainda não conhece mas podemos ir além disso na hora de você projetar
+            o software você não precisa pensar em todas as soluções para que
+            você resolva aquelas vulnerabilidades em potencial que podem existir
+            no teu software você pode também usar frameworks que já catalogam
+            boas práticas tem princípios de segurança por exemplo princípio da
+            defesa em profundidade princípio do design seguro por exemplo
+            Security by Design que você vai ter a segurança desde o projeto e
+            você vai ter também depois na hora de.
+          </p>
+          <p>
+            implementar uma série de frameworks que tem boas práticas de
+            codificação segura você vai aprender desde fazer essação de dados
+            por exemplo quando você tem um acesso externo por exemplo a
+            possibilidade de injeção de dados SQL você pode mitigar isso com
+            sanitização quem já trabalha um pouquinho aí com sistemas web por
+            exemplo acostumado a ou fazer sanitização ou usar um framework que
+            já faz então quando você começa a pensar nesse pipeline como um todo
+            você consegue perceber que a segurança ela presente o tempo todo ela
+            é unipresente e quando você vai fazer teste de sistema lá no final
+            você não precisa simplesmente fazer teste de funcionalidades você
+            pode também fazer testes justamente relacionados à segurança como
+            por exemplo usando ferramentas DASS e SAST das tem o D de dinâmico
+            ou seja você testa o software enquanto ele rodando você testa
+            funcionalidades para tentar quebrar o software.
+          </p>
+          <p>
+            de uma maneira ou de outra geralmente pensando em testes maliciosos
+            para você tentar explorar vulnerabilidades é isso que é um DAS fácil
+            e tem ferramentas automatizadas para isso pessoal como por exemplo o
+            ASPZP tem também o SAST que tem o S que ao invés de dinâmico que tem
+            o D ele tem um S de estático que é o oposto que que é estático ele
+            não precisa rodar o software ele olha pro seu código fonte para
+            identificar vulnerabilidades então tanto o SAS quanto o DAST eles
+            fazem parte do suporte que você tem durante a implementação para
+            você fazer implementação segura você não apenas vai conhecer formas
+            de implementar de forma segura mas vai conhecer ferramentas que
+            ajudam você identificar quando você implementar de forma insegura
+            certo depois nós temos os testes de penetração que também acompanham
+            a junto que inclusive está totalmente relacionado com o que a gente
+            acabou de falar de SAS DAS.
+          </p>
+          <p>
+            o teste de penetração é justamente como o próprio nome diz ele tenta
+            penetrar um sistema que existe e aí existem várias ferramentas
+            automatizadas também tem o Burber Street tem o do ASP Zap que eu
+            acabei de mencionar nós vamos falar do OASP inclusive que é uma
+            fundação que tem uma série de frameworks e coisas legais que você
+            pode usar para você aprender como fazer um software seguro e como
+            descobrir vulnerabilidades no software então essa disciplina não vai
+            servir apenas para quem vai fazer um software seguro ela vai servir
+            também para quem quer verificar se o software que já existe está ou
+            não está seguro certo então basicamente é esse o roteiro esse é o
+            roadmap da nossa disciplina vamos falar um pouquinho também sobre
+            Dev Secops que é a segurança de operações de um sistema então você
+            talvez já tenha ouvido falar de devops que é a mistura aí de
+            operations com development.
+          </p>
+          <p>
+            desenvolvimento e operações tem o Dev Secops que é desenvolvimento
+            de operações junto com a segurança então você vai ter isso tudo
+            pensando também em segurança estudo de abordar na disciplina como é
+            que vai funcionar a avaliação da disciplina é importante que vocês
+            percebam que cada uma das aulas ela vai ter um quiz associado vocês
+            devem assistir todos os vídeos para vocês terem a presença na
+            disciplina então a presença é medida com os vídeos serem completos o
+            codiflio ele tem esse controle de quem fez ou não fez o vídeo e além
+            do vídeo vocês precisam também fazer os quizes então enquanto
+            assistir o vídeo computa a presença fazer o quiz vai computar parte
+            da nota de vocês 30% da nota de vocês da disciplina vai ser fazer
+            quizes após assistir o vídeo todas as respostas pros quizes estarão
+            nos vídeos não procurem usar IA porque pode ser que em alguns
+            momentos algumas perguntas sejam.
+          </p>
+          <p>
+            especialmente associadas ao que nós falamos no vídeo por mais que
+            você jogue na IA ela jogue uma resposta que seja plausível se não
+            foi exatamente aquele tópico que nós abordamos no vídeo você vai
+            errar o quiz o quiz foi feito pensando nas aulas justamente para
+            garantir que vocês assistam essas aulas que eu tô aqui agora são
+            1:53 da manhã tô gravando a primeira aula de vocês e eu não vou
+            medir esforço para fazer boas aulas sempre que eu puder se precisar
+            entrar madrugada dentro eu vou entrar madrugada dentro mas eu espero
+            no mínimo que vocês assistam essas aulas é por isso que os quizes
+            eles servem para garantir isso que vocês estão assistindo as aulas
+            certo logo de cara logo a partir da aula de hoje vocês já podem
+            pensar no projeto que vocês vão executar vocês podem fazer esse
+            projeto em em grupos eu preferiria grupo de três pessoas porque eu
+            sei que quando tem mais de três a.
+          </p>
+          <p>
+            probabilidade do quarto membro não trabalhar aumenta mas essa
+            disciplina tem mais de 100 pessoas então vocês podem fazer até cinco
+            pessoas no máximo de três a cinco certo quero fazer sozinho aí vocês
+            matam o professor como é que eu vou corrigir cento e poucos
+            trabalhos depois sozinho não dá duplo também não dá é apenas três
+            pessoas aí dá quatro ok desde que vocês trabalham bonitinho dá ou
+            cinco OK aí sim é o limite mais de cinco também não rola porque eu
+            sei que tiver mais de cinco nem todos vão trabalhar que que eu
+            espero de vocês então assistam os vídeos façam os quizes vocês já
+            vão ter a presença assistindo o vídeo e 30% de nota fazendo quizes e
+            o principal desenvolvam o projeto que vai ser passado para vocês mas
+            em suma o Codefil ele vai ter tudo que você precisam de recursos
+            desde os vídeos enunciados de trabalhos e tudo mais o trabalho final
+            ele vai consistir da entrega do.
+          </p>
+          <p>
+            pipeline completo vocês terão um enunciado onde vai ficar mais claro
+            para vocês como que vocês vão desenvolver todo esse pipeline desde a
+            aula um onde vocês vão começar a elicitar requisitos de um sistema
+            fictício e aí se vocês quiserem fazer por exemplo usem uma IA para
+            simular o cliente de vocês ou façam um rodízio entre os membros do
+            grupo onde um faz o a pergunta o outro responde inclusive eu
+            recomendo a segunda opção pessoal embora que essa seja legal também
+            para simular inclusive agora que tem o chatt ali que você consegue
+            falar em voz alta com ele usando o áudio em tempo real mas eu acho
+            mais legal ainda se vocês fizerem entre vocês um membro do grupo
+            simula o cliente outro simula o entrevistador depois vocês invertem
+            os papéis o ponto é eu queria que vocês colocassem em prática essa
+            primeira conversa de licitação de requisitos escolhendo o sistema
+            que vocês preferirem não.
+          </p>
+          <p>
+            importa qual é o domínio desde que seja o mesmo que vocês vão levar
+            até o final da disciplina então escolham com carinho escolham uma
+            coisa que seja legal e que vocês comecem a fazer esse exercício de
+            elicitar requisitos mas não só pensando em funcionalidades pensando
+            em como é que eu garanto que as preocupações desse cliente sejam
+            levadas em conta na hora de eu fazer meu software e que ele se torne
+            um software seguro e não apenas um software qualquer beleza isso vai
+            ser incremental vocês vão ter uma única nota no final da disciplina
+            onde eu espero ver na hora de avaliar que vocês fizeram comits no
+            Git de forma incremental então toda vez que eu passar o enunciado eu
+            espero que vocês façam comits eu não vou olhar semanalmente nem dar
+            feedback o tempo todo se vocês quiserem feedback vocês vão me
+            procurar porque esse trabalho ele é um trabalho único que vai ser
+            enviado e vai ser avaliado.
+          </p>
+          <p>
+            lá no final da disciplina certo então isso já vai ficar claro para
+            vocês não é um RP por exemplo porque você tem checkpoints e
+            feedbacks o tempo todo nós temos a disciplina vocês podem me
+            procurar a hora que vocês quiserem pode pedir feedback a hora que
+            vocês quiserem mas o trabalho ele vai ser avaliado vocês vão ter uma
+            nota lá no final quando tudo tiver entregue e consolidado é um único
+            trabalho não é uma sequência de trabalhos é um trabalho que vale
+            sete pontos na média ok se vocês quiserem feedback vocês podem me
+            procurar a hora que vocês quiserem eu vou deixar disponível para
+            vocês aqui depois o na verdade nem precisa de link geralmente eu
+            usava o WhatsApp mas eu tive problemas e tem alguns de vocês que
+            estão me assistindo que sabem muito bem do que eu tô falando tive
+            problemas com aluno em relação ao WhatsApp então não vai ter
+            WhatsApp nessa disciplina embora eu gostasse muito.
+          </p>
+          <p>
+            porque me aproxima muito dos alunos nós vamos ter um Google Chat
+            quem quiser me chamar no WhatsApp Google Chat e-mail fique à vontade
+            não vou medir esforços para responder vocês a qualquer momento e
+            tirar as dúvidas para garantir que vocês estão no caminho certo para
+            fazer o projeto final da disciplina beleza eu vou fazer um enunciado
+            eu vou colocar aqui no cotfólio talvez amanhã como eu falei para
+            vocês já com as 2as da manhã agora então eu vou colocar esse
+            enunciado já do da definição do trabalho de vocês para que vocês já
+            entendam como é que a disciplina vai ser conduzida então lembrando
+            relembrando três coisas importantes para vocês serem provados
+            primeira coisa assistirem os vídeos vocês vão ter a presença se
+            assistirem os vídeos até o final segunda coisa fazer os quizes
+            fazendo os quizes vocês já garantem 30% da nota desde que vocês
+            acertem mas é difícil é só assistir o vídeo que.
+          </p>
+          <p>
+            vai estar resposta no vídeo então assim passar até o final fazer
+            quanto que assistir o vídeo e não assistir não vai garantir que
+            vocês passem na disciplina o quiz vai ser de única tentativa você
+            não pode repetir o quiz isso é proposital para garantir que vocês
+            assistiram o quiz tomaram not assistiram o vídeo tomaram notas e
+            conseguiram fazer o quiz não vai ter nenhuma pergunta difícil mas
+            vai ter pergunta associada ao vídeo então fazendo isso você tem 30%
+            da disciplina estão aprovados em presença e fazendo um bom projeto
+            vocês tiram uma grande nota dessas então façam um projeto bonitinho
+            como eu falei vai se incrementar o enunciado as aulas vão ajudar
+            vocês a desenvolverem cada uma das etapas começando por cada uma das
+            etapas começando lá pela primeira que é o a listação de requisitos
+            indo até a parte final que vai entrar um pouco de devops para vocês
+            aí também beleza então como eu.
+          </p>
+          <p>
+            falei a entrega vai ser incremental a avaliação vai ser única lá no
+            final qualquer dúvida aproveitem usem o Google chat usem meu e-mail
+            silvinco@gmail gmail não @unipamp.com ou o meu WhatsApp 99959330 é
+            só voltar o vídeo que vocês conseguem anotar caso vocês não tenha
+            anotado beleza é isso aí pessoal então estamos conversado esse é o
+            final da primeira aula de vocês um abraço a todos vamos vamos vamos
+            vamos vamos vamos vamos vamos vamos vamos vamos.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 01.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <span>Início da sequência</span><a href="index.html">Índice das aulas</a
+        ><a href="aula-02.html">Aula 02 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -55,7 +55,7 @@ HTTP 200
 O diretório de evidências foi criado em:
 
 ```text
-evidencias/etapa-5/
+docs/evidencias/etapa-5/
 ```
 
 O Juice Shop foi executado em uma rede Docker dedicada e o ZAP foi conectado à mesma rede.
@@ -65,7 +65,7 @@ O comando utilizado para a varredura foi:
 ```bash
 docker run --rm \
   --network vitalink-security \
-  -v "$(pwd)/evidencias/etapa-5:/zap/wrk/:rw" \
+  -v "$(pwd)/docs/evidencias/etapa-5:/zap/wrk/:rw" \
   -t ghcr.io/zaproxy/zaproxy:stable \
   zap-baseline.py \
   -t http://vitalink-juice-shop:3000 \
@@ -80,8 +80,8 @@ O ZAP Baseline realiza rastreamento da aplicação e análise passiva do tráfeg
 
 A execução gerou os seguintes artefatos:
 
-- [Relatório HTML do ZAP](../evidencias/etapa-5/zap-report.html)
-- [Relatório JSON do ZAP](../evidencias/etapa-5/zap-report.json)
+- [Relatório HTML do ZAP](evidencias/etapa-5/zap-report.html)
+- [Relatório JSON do ZAP](evidencias/etapa-5/zap-report.json)
 
 O diretório também contém o arquivo `zap.yaml` produzido durante a execução do ZAP. Esse arquivo deve ser considerado artefato auxiliar da execução, não resultado de vulnerabilidade.
 

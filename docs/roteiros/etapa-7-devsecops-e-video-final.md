@@ -16,18 +16,18 @@ Há, entretanto, uma diferença importante entre as atividades:
 
 ## Pipeline DevSecOps proposto
 
-| Momento                            | Atividade de segurança                                                                  | Evidência atual                                                                                               | Condição para avançar                                                                                                       | Estado                         |
-| ---------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| Planejamento                       | Definir escopo, ativos, perfis, CIA, casos de abuso e modelagem STRIDE                  | Documentação das Etapas 1 e artefatos de apoio                                                                | Ativos, atores, ameaças e casos de abuso devem estar consistentes e rastreáveis                                             | Documentado                    |
-| Análise de risco                   | Avaliar probabilidade, impacto, prioridade, tratamento e risco residual                 | Registro R01–R15 da Etapa 2                                                                                   | Riscos altos e críticos devem possuir tratamento proposto e rastreabilidade                                                 | Documentado                    |
-| Requisitos e arquitetura           | Transformar riscos em requisitos e decisões arquiteturais de segurança                  | RS01–RS09, V01–V09, DA01–DA09 e diagrama da Etapa 3                                                           | Riscos prioritários devem possuir requisito ou decisão correspondente                                                       | Documentado                    |
-| Implementação segura               | Aplicar práticas de código seguro definidas na Etapa 4 e o plano TDD da primeira versão | CS01–CS10, pseudocódigo, CT01–CT10 e [plano de implementação](../docs/plano-implementacao-primeira-versao.md) | Código deve implementar os controles antes de ser apresentado como mitigação                                                | Planejado                      |
-| Testes de segurança                | Executar CT01–CT10 e TS01–TS10 sobre o VitaLink                                         | Casos e suítes definidos, sem execução sobre o sistema integrado                                              | Nenhum controle deve ser considerado comprovado sem teste executável correspondente                                         | Pendente de implementação      |
-| Verificação dinâmica               | Executar DAST em ambiente controlado                                                    | Relatórios reais do ZAP produzidos na Etapa 5 sobre o OWASP Juice Shop                                        | Achados relevantes devem ser analisados; quando o VitaLink existir, a verificação deverá ser repetida diretamente sobre ele | Executado em ambiente didático |
-| Revisão de configuração e segredos | Verificar configuração, credenciais, dependências e artefatos antes da integração       | Critérios definidos nas etapas anteriores                                                                     | Nenhum segredo ou dado médico real deve ser versionado; achados críticos não podem permanecer sem análise                   | Planejado                      |
-| Integração e entrega               | Integrar somente alterações revisadas e rastreáveis                                     | Histórico Git e pull requests                                                                                 | Alterações devem passar pelas verificações aplicáveis antes de chegar à branch de integração                                | Processo de projeto            |
-| Monitoramento                      | Gerar eventos e aplicar D01–D08                                                         | Regras e roteiro da Etapa 6                                                                                   | Eventos críticos devem possuir fonte de dados, regra e resposta inicial                                                     | Planejado                      |
-| Resposta e recuperação             | Triar, conter, investigar, corrigir e recuperar                                         | Roteiro da Etapa 6                                                                                            | Incidentes confirmados devem possuir tratamento, registro e acompanhamento                                                  | Planejado                      |
+| Momento                            | Atividade de segurança                                                                  | Evidência atual                                                                                          | Condição para avançar                                                                                                       | Estado                         |
+| ---------------------------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| Planejamento                       | Definir escopo, ativos, perfis, CIA, casos de abuso e modelagem STRIDE                  | Documentação das Etapas 1 e artefatos de apoio                                                           | Ativos, atores, ameaças e casos de abuso devem estar consistentes e rastreáveis                                             | Documentado                    |
+| Análise de risco                   | Avaliar probabilidade, impacto, prioridade, tratamento e risco residual                 | Registro R01–R15 da Etapa 2                                                                              | Riscos altos e críticos devem possuir tratamento proposto e rastreabilidade                                                 | Documentado                    |
+| Requisitos e arquitetura           | Transformar riscos em requisitos e decisões arquiteturais de segurança                  | RS01–RS09, V01–V09, DA01–DA09 e diagrama da Etapa 3                                                      | Riscos prioritários devem possuir requisito ou decisão correspondente                                                       | Documentado                    |
+| Implementação segura               | Aplicar práticas de código seguro definidas na Etapa 4 e o plano TDD da primeira versão | CS01–CS10, pseudocódigo, CT01–CT10 e [plano de implementação](../plano-implementacao-primeira-versao.md) | Código deve implementar os controles antes de ser apresentado como mitigação                                                | Planejado                      |
+| Testes de segurança                | Executar CT01–CT10 e TS01–TS10 sobre o VitaLink                                         | Casos e suítes definidos, sem execução sobre o sistema integrado                                         | Nenhum controle deve ser considerado comprovado sem teste executável correspondente                                         | Pendente de implementação      |
+| Verificação dinâmica               | Executar DAST em ambiente controlado                                                    | Relatórios reais do ZAP produzidos na Etapa 5 sobre o OWASP Juice Shop                                   | Achados relevantes devem ser analisados; quando o VitaLink existir, a verificação deverá ser repetida diretamente sobre ele | Executado em ambiente didático |
+| Revisão de configuração e segredos | Verificar configuração, credenciais, dependências e artefatos antes da integração       | Critérios definidos nas etapas anteriores                                                                | Nenhum segredo ou dado médico real deve ser versionado; achados críticos não podem permanecer sem análise                   | Planejado                      |
+| Integração e entrega               | Integrar somente alterações revisadas e rastreáveis                                     | Histórico Git e pull requests                                                                            | Alterações devem passar pelas verificações aplicáveis antes de chegar à branch de integração                                | Processo de projeto            |
+| Monitoramento                      | Gerar eventos e aplicar D01–D08                                                         | Regras e roteiro da Etapa 6                                                                              | Eventos críticos devem possuir fonte de dados, regra e resposta inicial                                                     | Planejado                      |
+| Resposta e recuperação             | Triar, conter, investigar, corrigir e recuperar                                         | Roteiro da Etapa 6                                                                                       | Incidentes confirmados devem possuir tratamento, registro e acompanhamento                                                  | Planejado                      |
 
 ## Gates de segurança
 
@@ -99,7 +99,7 @@ Foram versionados:
 - [relatório HTML do OWASP ZAP](../evidencias/etapa-5/zap-report.html);
 - [relatório JSON do OWASP ZAP](../evidencias/etapa-5/zap-report.json);
 - configuração auxiliar `zap.yaml`;
-- análise dos principais resultados em [Etapa 5](../docs/etapa5-verificacao-de-seguranca.md).
+- análise dos principais resultados em [Etapa 5](../etapa5-verificacao-de-seguranca.md).
 
 A execução observou 88 URLs no OWASP Juice Shop e produziu 59 verificações classificadas como PASS e 8 categorias WARN-NEW, sem FAIL-NEW na execução do baseline.
 
@@ -107,16 +107,16 @@ Esses números descrevem somente o ambiente didático analisado e não podem ser
 
 ## Correspondência entre as etapas
 
-| Etapa   | Tema                             | Artefatos principais                                                                                                                                        |
-| ------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Base    | Escopo e sistema                 | [escopo](../docs/escopo-problema-justificativa.md), [componentes](../docs/componentes-do-sistema.md), [pontos de interação](../docs/pontos-de-interacao.md) |
-| Etapa 1 | Ameaças, STRIDE e casos de abuso | [modelagem](../docs/etapa1-modelagem-de-ameacas.md), [casos de abuso](../docs/casos-de-abuso.md)                                                            |
-| Etapa 2 | Avaliação e tratamento de riscos | [riscos](../docs/etapa2-riscos-e-tratamento.md), [critérios](../docs/etapa2-criterios-e-risco-residual.md)                                                  |
-| Etapa 3 | Arquitetura segura               | [arquitetura](../docs/etapa3-arquitetura-segura.md), [diagrama](../docs/diagramas/arquitetura-segura.mmd)                                                   |
-| Etapa 4 | Código seguro                    | [práticas e testes planejados](../docs/etapa4-codigo-seguro.md)                                                                                             |
-| Etapa 5 | Verificação de segurança         | [análise](../docs/etapa5-verificacao-de-seguranca.md), [evidências](../evidencias/etapa-5/)                                                                 |
-| Etapa 6 | Detecção e resposta              | [monitoramento e resposta](etapa-6-deteccao-de-intrusoes.md)                                                                                                |
-| Etapa 7 | DevSecOps e apresentação         | Este documento                                                                                                                                              |
+| Etapa   | Tema                             | Artefatos principais                                                                                                                         |
+| ------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base    | Escopo e sistema                 | [escopo](../escopo-problema-justificativa.md), [componentes](../componentes-do-sistema.md), [pontos de interação](../pontos-de-interacao.md) |
+| Etapa 1 | Ameaças, STRIDE e casos de abuso | [modelagem](../etapa1-modelagem-de-ameacas.md), [casos de abuso](../casos-de-abuso.md)                                                       |
+| Etapa 2 | Avaliação e tratamento de riscos | [riscos](../etapa2-riscos-e-tratamento.md), [critérios](../etapa2-criterios-e-risco-residual.md)                                             |
+| Etapa 3 | Arquitetura segura               | [arquitetura](../etapa3-arquitetura-segura.md), [diagrama](../diagramas/arquitetura-segura.mmd)                                              |
+| Etapa 4 | Código seguro                    | [práticas e testes planejados](../etapa4-codigo-seguro.md)                                                                                   |
+| Etapa 5 | Verificação de segurança         | [análise](../etapa5-verificacao-de-seguranca.md), [evidências](../evidencias/etapa-5/)                                                       |
+| Etapa 6 | Detecção e resposta              | [monitoramento e resposta](etapa-6-deteccao-de-intrusoes.md)                                                                                 |
+| Etapa 7 | DevSecOps e apresentação         | Este documento                                                                                                                               |
 
 # Roteiro do vídeo final
 
@@ -271,7 +271,7 @@ Explicar que o pipeline completo ainda é proposto porque não existe aplicaçã
 Se houver tempo, a demonstração técnica mais forte disponível é abrir:
 
 1. `docs/etapa5-verificacao-de-seguranca.md`;
-2. `evidencias/etapa-5/zap-report.html`;
+2. `docs/evidencias/etapa-5/zap-report.html`;
 3. um dos alertas analisados;
 4. o diagrama da arquitetura;
 5. o histórico Git com as contribuições do grupo.

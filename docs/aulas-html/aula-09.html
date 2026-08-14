@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Estudo de caso: sistema de matrículas · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Arquitetura aplicada · Aula 09 de 17</p>
+        <h1>Estudo de caso: sistema de matrículas</h1>
+        <p>
+          O estudo de caso separa papéis, serviços, dados e decisões para que a
+          arquitetura deixe explícito quem pode fazer cada operação.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Como distribuir decisões críticas sem perder controle?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="9-1" /><span
+              >Mapear atores, componentes e dados.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="9-2" /><span
+              >Separar responsabilidades críticas.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="9-3" /><span
+              >Distinguir modularização de microsserviços.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Mapa do sistema</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Estudantes, secretaria, coordenação, autenticação, oferta de
+                turmas, matrícula, notificações e auditoria possuem papéis
+                diferentes.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Separação de responsabilidades</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                A arquitetura segura explicita qual componente decide, quais
+                dados consulta e de quem confia.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Não é sobre microsserviços</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Separar responsabilidades não obriga criar muitos serviços. Uma
+                aplicação modular também pode preservar limites claros.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Escolha a forma de implantação
+                depois de definir as responsabilidades.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>
+              1. O principal objetivo de separar responsabilidades é:
+            </legend>
+            <label
+              ><input type="radio" name="q9-1" value="0" /><span
+                >Criar o máximo de serviços possível.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q9-1" value="1" /><span
+                >Tornar visíveis decisões, dados e relações de confiança.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q9-1" value="2" /><span
+                >Eliminar toda comunicação entre componentes.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              A clareza das responsabilidades vem antes da tecnologia.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>2. Auditoria deve registrar:</legend>
+            <label
+              ><input type="radio" name="q9-2" value="0" /><span
+                >Quem fez o quê e o resultado relevante.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q9-2" value="1" /><span
+                >Somente erros de compilação.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q9-2" value="2" /><span
+                >A cor da interface.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Registros apoiam rastreabilidade e investigação.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="9">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Na última aula, vocês aprenderam que enquanto você toma uma decisão
+            arquitetural durante o projeto no software você também tomando uma
+            decisão relacionada à cibersegurança desse software o que acontece é
+            que muitas pessoas que não têm o conhecimento especializado em
+            segurança tomam essas decisões sem entender as consequências sem
+            estar consciente do que significa na perspectiva da segurança aquele
+            tipo de decisão muitas pessoas focam na qualidade na usabilidade na
+            escalabilidade e acabam não percebendo não necessariamente que ela
+            não dá atenção paraa segurança mas às vezes não percebe que
+            determinadas decisões podem impactar a segurança então para
+            materializar todo esse fundamento que nós vimos na aula passada nós
+            vamos continuar com o nosso exemplo do nosso sistema de matrículas
+            vocês já acompanharam nas aulas passadas que nós já identificamos
+            quais são os usuários os atores desse.
+          </p>
+          <p>
+            sistema por exemplo professor o servidor técnico administrativo
+            coordenação acadêmica e todo mundo que então associado ao uso
+            daquele sistema e nas etapas iniciais nós já percebemos que as
+            principais funcionalidades esperadas pelo usuário desse sistema são
+            autenticação de usuários para consulta de oferta daquele semestre
+            corrente então o aluno por exemplo ele consegue verificar quais são
+            as disciplinas sendo ofertadas quais são os horários as turmas se
+            conseguem solicitar a matrícula enfim fazer todas aquelas operações
+            associadas à matrícula do aluno na disciplina e por outro lado nós
+            temos lá o professor e secretaria acadêmica o coordenador que
+            consegue fazer a gestão e consulta do lado deles eles sabem quais
+            são os alunos matriculados em cada disciplina podem deferir podem
+            deferir gerenciar então as ofertas isso tudo então é o básico do
+            nosso sistema e esse tipo de sistema ele é.
+          </p>
+          <p>
+            particularmente interessante para estudar arquitetura segura porque
+            fazer matrícula não é apenas fazer um registro qualquer no banco de
+            dados não é simplesmente lançar num banco de dados registrar o que o
+            estudante está cadastrando no sistema como se fosse uma agenda de
+            contatos na verdade a matrícula ela pode afetar o percurso acadêmico
+            do estudante a carga horária do estudante a possibilidade de
+            concluir ou não o curso no período hábil a culpação de vagas ele
+            pode eventualmente fazer com que um estudante fique sem vagas porque
+            um outro fez uma matrícula indevida e no final das contas nenhum dos
+            dois ã cursarem aquela disciplina porque houve uma falha na hora de
+            alocação de vagas pode afetar a formação de turmas pode ser que
+            aconteça um bug numa turma X que ela não aparece pros alunos e aí o
+            professor que ia ofertar aquela disciplina não tem alunos a
+            disciplina tem que ser cancelada.
+          </p>
+          <p>
+            isso impacta os encargos do professor a distribuição de carga
+            horária docente também é afetada por esse sistema de matrículas
+            relatórios indicadores institucionais são afetados decisões
+            administrativas elas são muitas vezes baseadas nas matrículas no
+            número de alunos que est matriculado então assim uma alteração
+            indevida pode beneficiar uma pessoa ou prejudicar uma ou muitas
+            pessoas e além disso comprometer a confiança nos registros
+            acadêmicos da instituição então a o sistema de matrículas como um
+            todo ele é um ativo muito importante para uma instituição de ensino
+            o sistema também precisa respeitar regras como pré-requisito
+            disponibilidade de vagas conflito de horário limite de carga o
+            professor não pode ter mais do que tantas horas por semanas por
+            exemplo em alguns contextos operações excepcionais podem depender da
+            coordenação da secretaria não sendo permitido diretamente a um.
+          </p>
+          <p>
+            estudante ou ao professor então nesse momento nós temos que pensar
+            que quando a arquitetura vai ser projetada não devemos pensar
+            somente em como registrar uma matrícula isso aí é algo trivial como
+            registrar a matrícula nós temos que pensar também em como garantir
+            que somente o estudante correto solicite uma matrícula nós temos que
+            pensar em como impedir que um estudante ele altere a matrícula de
+            uma outra pessoa temos que pensar também quem e como pode ser feito
+            para que uma nova turma seja aberta ou fechada quem pode aumentar o
+            número de vagas numa disciplina quem pode por exemplo autorizar uma
+            exceção uma matrícula daquele aluno que é formando que ele não
+            conseguiria cursar aquela disciplina aquele semestre mas se ele
+            cursar ele se forma então excepcionalmente será permitido quem que
+            pode fazer isso no sistema e como é que eu comprovo quem fez uma
+            alteração como é que eu comprovo quem.
+          </p>
+          <p>
+            negou quem aceitou a matrícula de um aluno e como é que eu evito que
+            duas pessoas ocupem a mesma vaga simultaneamente ou que uma pessoa
+            acabe ocupando duas vagas conflitantes no mesmo horário mesmo não
+            sendo provável formando o que acontece se o sistema como um todo ele
+            falha durante a configuração se tiver aluno se matriculando o que
+            acontece com aquelas matrículas serão descartadas serão salvas pela
+            metade o aluno que só escolheu três disciplinas e escolher outras
+            três e o sistema caiu no meio dessa escolha o que acontece o sistema
+            vai salvar aquele estado vai conseguir se recuperar depois isso tudo
+            tem que ser pensado eu não tô falando de que o estudante tem que
+            fazer a sua matrícula e eu estou preocupado em como vou armazenar no
+            banco de dados então vai ter uma telinha vai ter um banco de dados
+            ele manda o dadoqui para lá e deu percebe que é muito além disso e
+            vocês percebem que.
+          </p>
+          <p>
+            isso que eu tô falando essas perguntas que eu fiz agora muitas vezes
+            elas não viriam na mente daquela pessoa que preocupada em resolver o
+            problema se ela não tiver esse conhecimento de segurança se ela não
+            pensar nos riscos que pode ter decisões tomadas erradas nesse
+            momento atalhos pegos nessa altura da da modelagem e do projeto da
+            arquitetura podem levar o sistema ao fracasso podem levar a danos
+            severos para a instituição e pode responsabilizar também o
+            responsável pela empresa de software o engenheiro de software que
+            tomando aquelas decisões como é que eu protejo os dados pessoais os
+            históricos registros os registros acadêmicos por exemplo nesse meu
+            software de matrículas como impedir que uma regra acadêmica seja
+            ignorada pelo aplicativo porque uma coisa são as normas o que
+            escrito outra coisa é o que o sistema permite fazer e se o sistema
+            não tiver consistente com essas normas e uma.
+          </p>
+          <p>
+            pessoa conseguir fazer uma coisa que não deveria mas ninguém
+            percebeu porque o sistema permitiu daqui a pouco a secretaria não
+            verificou determinada operação porque ela assume que o sistema ele
+            já verifica o pré-requisito que ele já verifica a carga horária do
+            aluno máxima por exemplo num semestre e se o sistema ele tiver com
+            bug e ignorar isso percebe que todas essas eh esse conjunto de
+            decisões e de pensamentos ele precisa estar presente nessa hora
+            nessa altura do campeonato na hora de projetar arquitetura então é
+            isso que nós vamos estudar na aula de hoje nós estamos vendo esse
+            exemplo com o sistema de matrículas e vocês vão fazer o mesmo esse
+            já é o enunciado que vocês vão entregar mais um dos entregáveis do
+            enunciado final onde vocês vão fazer essas perguntas que eu acabei
+            de fazer para o sistema de vocês e essas perguntas vão gerar
+            decisões arquiteturais vamos imaginar uma.
+          </p>
+          <p>
+            primeira arquitetura simplificada do sistema com estudante portal de
+            matrículas serviço acadêmico e um banco de dados para armazenar as
+            informações além desses elementos o sistema pode incluir um portal
+            administrativo serviço de autenticação institucional serviço de
+            oferta de turmas serviço de validação acadêmica serviço de matrícula
+            serviço de lista de espera sistema de notificações sistema de
+            histórico acadêmico sistema de gestão de pessoas serviço de
+            relatórios logs e auditoria nesse momento o sistema deixa de ser
+            apenas uma página web e passa a implementar um conjunto de
+            componentes que tomam decisões importantes por exemplo o serviço de
+            autenticação ele serve para conformar a entidade o serviço acadêmico
+            recupera os dados do estudante o devalidação verifica as regras o
+            serviço tem matrícula tenta reservar uma vaga o banco registra a
+            operação o serviço de notificação informa o.
+          </p>
+          <p>
+            resultado e a auditoria registra quem fez o quê essa separação não
+            significa que cada elemento precise obrigatoriamente se tornar um
+            microsserviço nós podemos implementar isso tudo como uma aplicação
+            modular o mais importante nesse momento é separar claramente as
+            responsabilidades uma arquitetura segura ela precisa tornar visível
+            quem toma cada uma dessas decisões quais dados cada componente
+            utiliza em quem cada componente confia quais operações cada
+            componente pode executar e o que acontece quando uma etapa falha.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 09.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-08.html">← Aula 08</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-10.html">Aula 10 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>
