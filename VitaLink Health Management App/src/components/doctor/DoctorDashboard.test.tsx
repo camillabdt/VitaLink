@@ -145,3 +145,49 @@ test("professional sees only authorized patients and revalidates detail", async 
     expect.objectContaining({ credentials: "same-origin" }),
   )
 })
+
+test("professional clears loaded detail when focus revalidation loses access", async () => {
+  const user = userEvent.setup()
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            id: "99999999-9999-4999-8999-999999999999",
+            name: "Paciente Autorizada",
+            categories: ["histórico"],
+            operations: ["consultar"],
+            expires_at: "2026-09-13T05:00:00Z",
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "99999999-9999-4999-8999-999999999999",
+          name: "Paciente Autorizada",
+          birthdate: "1992-08-13",
+          phone: "+5553999999999",
+          blood_type: "O+",
+          categories: ["histórico"],
+          operations: ["consultar"],
+          expires_at: "2026-09-13T05:00:00Z",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(new Response("[]", { status: 200 }))
+
+  render(<DoctorDashboard onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  await user.click(await screen.findByRole("button", { name: "Ver detalhes" }))
+  expect(await screen.findByText("+5553999999999")).toBeInTheDocument()
+  window.dispatchEvent(new Event("focus"))
+
+  expect(
+    await screen.findByText("Nenhum paciente autorizado encontrado."),
+  ).toBeInTheDocument()
+  expect(screen.queryByText("+5553999999999")).not.toBeInTheDocument()
+})

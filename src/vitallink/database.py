@@ -131,6 +131,23 @@ class Authorization(Base):
     changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class AuthorizationRevision(Base):
+    """Immutable authorization state captured before a patient change."""
+
+    __tablename__ = "authorization_revisions"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    authorization_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("authorizations.id"), nullable=False
+    )
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    categories: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    operations: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    justification: Mapped[str] = mapped_column(String(500), nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class Notification(Base):
     """Internal account notification linked to a domain event."""
 

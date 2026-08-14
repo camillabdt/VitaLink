@@ -35,6 +35,7 @@ from vitallink.database import (
     AccountSession,
     AuditEvent,
     Authorization,
+    AuthorizationRevision,
     EmailVerification,
     LoginThrottle,
     Notification,
@@ -421,6 +422,27 @@ class AuthorizationResponse(BaseModel):
     professional: AuthorizationProfessionalResponse
 
 
+class AuthorizationRevocationRequest(BaseModel):
+    """Patient proof and reason for revoking an authorization."""
+
+    justification: str = Field(min_length=3, max_length=500)
+    step_up_confirmation_id: UUID
+
+
+class AuthorizationReductionRequest(AuthorizationRevocationRequest):
+    """Patient-selected strict subset of an active authorization."""
+
+    categories: list[str] = Field(min_length=1, max_length=9)
+    operations: list[str] = Field(min_length=1, max_length=3)
+
+
+class AuthorizationChangeResponse(BaseModel):
+    """Safe state returned after an authorization change."""
+
+    id: UUID
+    status: str
+
+
 class AccountSessionResponse(BaseModel):
     """Safe session metadata visible only to its account owner."""
 
@@ -434,7 +456,7 @@ class AccountSessionResponse(BaseModel):
 class StepUpConfirmationRequest(BaseModel):
     """TOTP proof bound to one supported sensitive action."""
 
-    action: str = Field(pattern=r"^(password_change|authorization_grant)$")
+    action: str = Field(pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke)$")
     totp_code: str = Field(pattern=r"^\d{6}$")
 
 
@@ -2484,7 +2506,50 @@ def active_authorization(
             Authorization.operations.contains([operation]),
         )
         .order_by(Authorization.expires_at.desc())
+        .with_for_update()
     )
+
+
+def authorization_change_denied(
+    session: Session,
+    request: Request,
+    account: Account,
+    authorization_id: UUID,
+    action: str,
+    reason: str,
+    status_code: int,
+    code: str,
+    message: str,
+) -> JSONResponse:
+    """Audit and return one safe authorization-change denial.
+
+    Args:
+        session: Database transaction scope.
+        request: Request carrying the correlation identifier.
+        account: Authenticated actor whose change was denied.
+        authorization_id: Opaque target authorization identifier.
+        action: Audit action attempted by the actor.
+        reason: Stable denial reason without submitted content.
+        status_code: Public HTTP status.
+        code: Stable public error code.
+        message: Safe user-facing message.
+
+    Returns:
+        A correlated error response after persisting the audit event.
+    """
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action=action,
+            target_id=audit_identifier(authorization_id),
+            result="denied",
+            reason=reason,
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return error_response(request, status_code, code, message)
 
 
 @app.get("/api/v1/access-codes", response_model=list[AccessCodeResponse])
@@ -2877,6 +2942,296 @@ def list_authorizations(
     ]
 
 
+@app.post(
+    "/api/v1/authorizations/{authorization_id}/revocations",
+    response_model=AuthorizationChangeResponse,
+)
+def revoke_authorization(
+    authorization_id: UUID,
+    revocation_request: AuthorizationRevocationRequest,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> AuthorizationChangeResponse | JSONResponse:
+    """Revoke an owned authorization after a session-bound TOTP confirmation.
+
+    Args:
+        authorization_id: Opaque authorization identifier.
+        revocation_request: Patient justification and action confirmation.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The revoked state or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.revoked",
+            "request_verification_failed",
+            403,
+            "request_verification_failed",
+            "Não foi possível validar a solicitação.",
+        )
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.revoked",
+            "patient_required",
+            403,
+            "patient_required",
+            "Apenas pacientes podem revogar autorizações.",
+        )
+    authorization = session.scalar(
+        select(Authorization)
+        .where(Authorization.id == authorization_id, Authorization.patient_id == patient.id)
+        .with_for_update()
+    )
+    if authorization is None:
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.revoked",
+            "not_found_or_not_owned",
+            404,
+            "authorization_not_found",
+            "Autorização não encontrada.",
+        )
+    if authorization.status == "revoked":
+        return AuthorizationChangeResponse(id=authorization.id, status=authorization.status)
+    confirmation = session.scalar(
+        select(StepUpConfirmation)
+        .where(
+            StepUpConfirmation.id == revocation_request.step_up_confirmation_id,
+            StepUpConfirmation.account_id == account.id,
+            StepUpConfirmation.session_id == account_session.id,
+            StepUpConfirmation.action == "authorization_revoke",
+            StepUpConfirmation.used_at.is_(None),
+            StepUpConfirmation.expires_at > now,
+        )
+        .with_for_update()
+    )
+    if confirmation is None:
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.revoked",
+            "action_confirmation_required",
+            403,
+            "action_confirmation_required",
+            "Confirme novamente esta ação.",
+        )
+    confirmation.used_at = now
+    session.add(
+        AuthorizationRevision(
+            authorization_id=authorization.id,
+            action="revoked",
+            categories=authorization.categories,
+            operations=authorization.operations,
+            status=authorization.status,
+            justification=revocation_request.justification,
+            changed_at=now,
+        )
+    )
+    authorization.status = "revoked"
+    authorization.changed_at = now
+    professional = session.get(Professional, authorization.professional_id)
+    if professional is not None:
+        session.add(
+            Notification(
+                account_id=professional.account_id,
+                kind="authorization_revoked",
+                subject_id=authorization.id,
+            )
+        )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="authorization.revoked",
+            target_id=audit_identifier(authorization.id),
+            result="success",
+            reason="patient_revoked",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return AuthorizationChangeResponse(id=authorization.id, status=authorization.status)
+
+
+@app.patch(
+    "/api/v1/authorizations/{authorization_id}",
+    response_model=AuthorizationChangeResponse,
+)
+def reduce_authorization(
+    authorization_id: UUID,
+    reduction_request: AuthorizationReductionRequest,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> AuthorizationChangeResponse | JSONResponse:
+    """Reduce an owned active authorization to a strict nonempty subset.
+
+    Args:
+        authorization_id: Opaque authorization identifier.
+        reduction_request: Remaining scope, justification, and action confirmation.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The active reduced state or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.reduced",
+            "request_verification_failed",
+            403,
+            "request_verification_failed",
+            "Não foi possível validar a solicitação.",
+        )
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.reduced",
+            "patient_required",
+            403,
+            "patient_required",
+            "Apenas pacientes podem reduzir autorizações.",
+        )
+    authorization = session.scalar(
+        select(Authorization)
+        .where(Authorization.id == authorization_id, Authorization.patient_id == patient.id)
+        .with_for_update()
+    )
+    if authorization is None:
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.reduced",
+            "not_found_or_not_owned",
+            404,
+            "authorization_not_found",
+            "Autorização não encontrada.",
+        )
+    categories = sorted(set(reduction_request.categories))
+    operations = sorted(set(reduction_request.operations))
+    if (
+        authorization.status != "active"
+        or authorization.expires_at <= now
+        or not set(categories) <= set(authorization.categories)
+        or not set(operations) <= set(authorization.operations)
+    ):
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.reduced",
+            "scope_not_reduced",
+            422,
+            "authorization_scope_invalid",
+            "Informe apenas um subconjunto ativo.",
+        )
+    if categories == sorted(authorization.categories) and operations == sorted(authorization.operations):
+        return AuthorizationChangeResponse(id=authorization.id, status=authorization.status)
+    confirmation = session.scalar(
+        select(StepUpConfirmation)
+        .where(
+            StepUpConfirmation.id == reduction_request.step_up_confirmation_id,
+            StepUpConfirmation.account_id == account.id,
+            StepUpConfirmation.session_id == account_session.id,
+            StepUpConfirmation.action == "authorization_reduce",
+            StepUpConfirmation.used_at.is_(None),
+            StepUpConfirmation.expires_at > now,
+        )
+        .with_for_update()
+    )
+    if confirmation is None:
+        return authorization_change_denied(
+            session,
+            request,
+            account,
+            authorization_id,
+            "authorization.reduced",
+            "action_confirmation_required",
+            403,
+            "action_confirmation_required",
+            "Confirme novamente esta ação.",
+        )
+    confirmation.used_at = now
+    session.add(
+        AuthorizationRevision(
+            authorization_id=authorization.id,
+            action="reduced",
+            categories=authorization.categories,
+            operations=authorization.operations,
+            status=authorization.status,
+            justification=reduction_request.justification,
+            changed_at=now,
+        )
+    )
+    authorization.categories = categories
+    authorization.operations = operations
+    authorization.changed_at = now
+    professional = session.get(Professional, authorization.professional_id)
+    if professional is not None:
+        session.add(
+            Notification(
+                account_id=professional.account_id,
+                kind="authorization_reduced",
+                subject_id=authorization.id,
+            )
+        )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="authorization.reduced",
+            target_id=audit_identifier(authorization.id),
+            result="success",
+            reason="patient_reduced_scope",
+            correlation_id=request.state.correlation_id,
+            event_metadata={
+                "role": account.role,
+                "category_count": len(categories),
+                "operation_count": len(operations),
+            },
+        )
+    )
+    session.commit()
+    return AuthorizationChangeResponse(id=authorization.id, status=authorization.status)
+
+
 @app.get("/api/v1/patients", response_model=list[AuthorizedPatientResponse])
 def list_authorized_patients(
     request: Request,
@@ -2958,13 +3313,30 @@ def get_authorized_patient(
     )
     patient = session.get(Patient, patient_id) if authorization is not None else None
     if authorization is None or patient is None:
+        latest_authorization = session.scalar(
+            select(Authorization)
+            .where(
+                Authorization.professional_id == professional.id,
+                Authorization.patient_id == patient_id,
+            )
+            .order_by(Authorization.changed_at.desc())
+        )
+        denied_rule = (
+            "D02"
+            if latest_authorization is not None
+            and (
+                latest_authorization.status == "revoked"
+                or (latest_authorization.status == "active" and latest_authorization.expires_at <= now)
+            )
+            else "not_found_or_not_authorized"
+        )
         session.add(
             AuditEvent(
                 actor_id=audit_identifier(account.id),
                 action="patient_profile.read",
                 target_id=audit_identifier(patient_id),
                 result="denied",
-                reason="not_found_or_not_authorized",
+                reason=denied_rule,
                 correlation_id=request.state.correlation_id,
                 event_metadata={"role": account.role, "category": "histórico", "operation": "consultar"},
             )

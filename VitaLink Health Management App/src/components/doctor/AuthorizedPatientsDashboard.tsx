@@ -46,30 +46,43 @@ export default function AuthorizedPatientsDashboard({
 
   useEffect(() => {
     let active = true
-    fetch("/api/v1/patients", { credentials: "same-origin" })
-      .then(async (response) => {
-        if (response.status === 401) {
-          handleSessionExpired()
-          return []
-        }
-        if (!response.ok) throw new Error("patients unavailable")
-        return (await response.json()) as AuthorizedPatient[]
-      })
-      .then((authorizedPatients) => {
-        if (active)
-          setPatients(
-            Array.isArray(authorizedPatients) ? authorizedPatients : [],
-          )
-      })
-      .catch(() => {
-        if (active)
-          setError("Não foi possível carregar os pacientes autorizados.")
-      })
-      .finally(() => {
-        if (active) setLoading(false)
-      })
+    const loadPatients = (clearDetail = false) => {
+      fetch("/api/v1/patients", { credentials: "same-origin" })
+        .then(async (response) => {
+          if (response.status === 401) {
+            handleSessionExpired()
+            return []
+          }
+          if (!response.ok) throw new Error("patients unavailable")
+          return (await response.json()) as AuthorizedPatient[]
+        })
+        .then((authorizedPatients) => {
+          if (!active) return
+          const currentPatients = Array.isArray(authorizedPatients)
+            ? authorizedPatients
+            : []
+          setPatients(currentPatients)
+          if (clearDetail) setSelectedPatient(null)
+        })
+        .catch(() => {
+          if (active)
+            setError("Não foi possível carregar os pacientes autorizados.")
+        })
+        .finally(() => {
+          if (active) setLoading(false)
+        })
+    }
+    const revalidateVisiblePage = () => {
+      if (document.visibilityState === "visible") loadPatients(true)
+    }
+    loadPatients()
+    const revalidateFocusedPage = () => loadPatients(true)
+    window.addEventListener("focus", revalidateFocusedPage)
+    document.addEventListener("visibilitychange", revalidateVisiblePage)
     return () => {
       active = false
+      window.removeEventListener("focus", revalidateFocusedPage)
+      document.removeEventListener("visibilitychange", revalidateVisiblePage)
     }
   }, [])
 

@@ -103,6 +103,11 @@ export default function PatientProfile({
   const [generatedCode, setGeneratedCode] = useState("")
   const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([])
   const [authorizations, setAuthorizations] = useState<Authorization[]>([])
+  const [revocationForm, setRevocationForm] = useState({
+    authorizationId: "",
+    justification: "",
+    totpCode: "",
+  })
   const [decisionSaving, setDecisionSaving] = useState("")
   const [grantForm, setGrantForm] = useState({
     categories: ["histórico"],
@@ -482,6 +487,80 @@ export default function PatientProfile({
       )
     } catch {
       setAccessCodeError("Não foi possível registrar a decisão.")
+    } finally {
+      setDecisionSaving("")
+    }
+  }
+
+  const revokeAuthorization = async (authorizationId: string) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    if (
+      revocationForm.authorizationId !== authorizationId ||
+      revocationForm.justification.trim().length < 3 ||
+      revocationForm.totpCode.length !== 6
+    ) {
+      setAccessCodeError("Informe o motivo e o TOTP para revogar.")
+      return
+    }
+    if (!window.confirm("Revogar esta autorização imediatamente?")) return
+    setDecisionSaving(authorizationId)
+    setAccessCodeError("")
+    setAccessCodeMessage("")
+    const headers = {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfToken,
+    }
+    try {
+      const stepUp = await fetch("/api/v1/step-up-confirmations", {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({
+          action: "authorization_revoke",
+          totp_code: revocationForm.totpCode,
+        }),
+      })
+      if (!stepUp.ok) {
+        setAccessCodeError("Não foi possível confirmar o TOTP.")
+        return
+      }
+      const confirmation = (await stepUp.json()) as { id: string }
+      const response = await fetch(
+        `/api/v1/authorizations/${authorizationId}/revocations`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify({
+            justification: revocationForm.justification.trim(),
+            step_up_confirmation_id: confirmation.id,
+          }),
+        },
+      )
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("authorization revocation failed")
+      setAuthorizations((current) =>
+        current.map((authorization) =>
+          authorization.id === authorizationId
+            ? { ...authorization, status: "revoked" }
+            : authorization,
+        ),
+      )
+      setRevocationForm({
+        authorizationId: "",
+        justification: "",
+        totpCode: "",
+      })
+      setAccessCodeMessage("Autorização revogada.")
+    } catch {
+      setAccessCodeError("Não foi possível revogar a autorização.")
     } finally {
       setDecisionSaving("")
     }
@@ -1058,8 +1137,13 @@ export default function PatientProfile({
 
                 <div className="mt-8 border-t pt-6">
                   <h3 className="font-semibold text-gray-900">
-                    Compartilhado com {authorizations.length}{" "}
-                    {authorizations.length === 1
+                    Compartilhado com{" "}
+                    {
+                      authorizations.filter((item) => item.status === "active")
+                        .length
+                    }{" "}
+                    {authorizations.filter((item) => item.status === "active")
+                      .length === 1
                       ? "profissional"
                       : "profissionais"}
                   </h3>
@@ -1088,8 +1172,65 @@ export default function PatientProfile({
                           <p className="mt-1 text-xs text-gray-500">
                             {authorization.status === "active"
                               ? `Ativo até ${new Date(authorization.expires_at).toLocaleDateString("pt-BR")}`
-                              : "Autorização expirada"}
+                              : authorization.status === "revoked"
+                                ? "Autorização revogada"
+                                : "Autorização expirada"}
                           </p>
+                          {authorization.status === "active" && (
+                            <div className="mt-3 space-y-2 border-t pt-3">
+                              <label className="block text-xs font-medium text-gray-700">
+                                Motivo da revogação
+                                <input
+                                  value={
+                                    revocationForm.authorizationId ===
+                                    authorization.id
+                                      ? revocationForm.justification
+                                      : ""
+                                  }
+                                  onChange={(event) =>
+                                    setRevocationForm((current) => ({
+                                      ...current,
+                                      authorizationId: authorization.id,
+                                      justification: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                                />
+                              </label>
+                              <label className="block text-xs font-medium text-gray-700">
+                                TOTP para revogação
+                                <input
+                                  value={
+                                    revocationForm.authorizationId ===
+                                    authorization.id
+                                      ? revocationForm.totpCode
+                                      : ""
+                                  }
+                                  onChange={(event) =>
+                                    setRevocationForm((current) => ({
+                                      ...current,
+                                      authorizationId: authorization.id,
+                                      totpCode: event.target.value
+                                        .replace(/\D/g, "")
+                                        .slice(0, 6),
+                                    }))
+                                  }
+                                  inputMode="numeric"
+                                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                disabled={decisionSaving === authorization.id}
+                                onClick={() =>
+                                  void revokeAuthorization(authorization.id)
+                                }
+                                className="rounded-lg px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Revogar autorização
+                              </button>
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>

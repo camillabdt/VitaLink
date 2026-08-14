@@ -310,10 +310,19 @@ def test_expired_authorization_disappears_without_ending_the_session() -> None:
             authorization.expires_at = datetime.now(UTC) - timedelta(seconds=1)
         patients = professional_client.get("/api/v1/patients")
         detail = professional_client.get(f"/api/v1/patients/{patient_id}")
+        listed_authorization = patient_client.get("/api/v1/authorizations")
 
     assert patients.status_code == 200
     assert patients.json() == []
     assert detail.status_code == 404
+    assert listed_authorization.json()[0]["status"] == "expired"
+    with SessionFactory() as session:
+        d02 = session.scalar(
+            select(AuditEvent)
+            .where(AuditEvent.reason == "D02", AuditEvent.action == "patient_profile.read")
+            .order_by(AuditEvent.created_at.desc())
+        )
+    assert d02 is not None
 
 
 def test_grant_requires_valid_term_scope_and_totp() -> None:

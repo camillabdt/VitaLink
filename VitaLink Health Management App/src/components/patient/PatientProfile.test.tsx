@@ -276,6 +276,76 @@ test("patient grants a pending request with explicit scope and TOTP", async () =
   expect(await screen.findByText("Acesso concedido.")).toBeInTheDocument()
 })
 
+test("patient confirms and revokes an active authorization with TOTP", async () => {
+  const user = userEvent.setup()
+  sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
+  vi.spyOn(window, "confirm").mockReturnValue(true)
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
+    .mockResolvedValueOnce(new Response("[]", { status: 200 }))
+    .mockResolvedValueOnce(new Response("[]", { status: 200 }))
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+            status: "active",
+            starts_at: "2026-08-14T05:00:00Z",
+            expires_at: "2026-09-13T05:00:00Z",
+            categories: ["histórico"],
+            operations: ["consultar"],
+            professional: {
+              id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+              name: "Dra. Profissional",
+              specialty: "Cardiologia",
+              institution: "Hospital Escola",
+            },
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc" }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          status: "revoked",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+  render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("tab", { name: "Acesso temporário" }))
+  await user.type(
+    await screen.findByLabelText("Motivo da revogação"),
+    "Encerramento do acompanhamento",
+  )
+  await user.type(screen.getByLabelText("TOTP para revogação"), "123456")
+  await user.click(screen.getByRole("button", { name: "Revogar autorização" }))
+
+  expect(window.confirm).toHaveBeenCalled()
+  expect(globalThis.fetch).toHaveBeenLastCalledWith(
+    "/api/v1/authorizations/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/revocations",
+    expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({
+        justification: "Encerramento do acompanhamento",
+        step_up_confirmation_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      }),
+    }),
+  )
+  expect(await screen.findByText("Autorização revogada")).toBeInTheDocument()
+})
+
 test("patient loads and ends an owned active session", async () => {
   const user = userEvent.setup()
   sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
