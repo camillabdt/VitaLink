@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import ClinicalDictation from "./ClinicalDictation"
 
 interface Author {
   name: string
@@ -453,6 +454,15 @@ export default function ClinicalGoals({
               }
               minLength={10}
             />
+            <ClinicalDictation
+              patientId={patientId!}
+              category="metas"
+              operation="anexar"
+              onDraft={(justification) =>
+                setGoalForm({ ...goalForm, justification })
+              }
+              onSessionExpired={onSessionExpired}
+            />
             <TextField
               label="Data de vigência"
               type="date"
@@ -552,6 +562,15 @@ export default function ClinicalGoals({
               setCorrection({ ...correction, justification })
             }
             minLength={10}
+          />
+          <ClinicalDictation
+            patientId={patientId!}
+            category="metas"
+            operation="atualizar"
+            onDraft={(justification) =>
+              setCorrection({ ...correction, justification })
+            }
+            onSessionExpired={onSessionExpired}
           />
           <TextField
             label="Data corrigida"

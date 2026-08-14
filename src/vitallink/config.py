@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     clamav_port: int = 3310
     document_max_bytes: int = 20 * 1024 * 1024
     patient_document_quota_bytes: int = 200 * 1024 * 1024
+    transcription_model: str = "Systran/faster-whisper-small"
+    transcription_revision: str = "536b0662742c02347bc0e980a01041f333bce120"
+    transcription_device: str = "cpu"
+    transcription_compute_type: str = "int8"
+    transcription_cache_dir: str = "/tmp/vitallink-whisper-models"
+    transcription_temp_dir: str = "/tmp/vitallink-transcriptions"
+    transcription_max_bytes: int = 10 * 1024 * 1024
+    transcription_max_seconds: int = 120
+    transcription_timeout_seconds: int = 180
     secret_key: SecretStr
 
 

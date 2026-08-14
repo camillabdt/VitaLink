@@ -56,6 +56,13 @@ from vitallink.database import (
     get_session,
 )
 from vitallink.document_storage import clamav_scan, document_content_type, ensure_private_buckets, storage_client
+from vitallink.transcription import (
+    InvalidAudioError,
+    NoSpeechError,
+    TranscriptionTimeoutError,
+    TranscriptionUnavailableError,
+    transcribe_temporary_audio,
+)
 
 GENERIC_REGISTRATION_MESSAGE = "Se os dados puderem ser cadastrados, enviaremos as instruções de confirmação."
 GENERIC_RECOVERY_MESSAGE = "Se a conta puder ser recuperada, enviaremos as instruções por e-mail."
@@ -495,6 +502,14 @@ class DocumentAuthorizedProfessionalResponse(BaseModel):
     specialty: str
     institution: str | None
     expires_at: datetime
+
+
+class TranscriptionResponse(BaseModel):
+    """Editable local draft that is never persisted automatically."""
+
+    draft: str
+    language: Literal["pt"]
+    requires_confirmation: Literal[True]
 
 
 class ClinicalResultCreate(BaseModel):
@@ -3030,6 +3045,129 @@ def authorized_document_patient(
         return None
     authorization = active_authorization(session, professional.id, patient_id, category, operation, now)
     return session.get(Patient, patient_id) if authorization is not None else None
+
+
+def transcription_error(
+    request: Request,
+    session: Session,
+    account: Account,
+    patient_id: UUID,
+    reason: str,
+    status_code: int,
+    code: str,
+    message: str,
+) -> JSONResponse:
+    """Audit and return one transcription denial without audio or draft text."""
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="transcription.created",
+            target_id=audit_identifier(patient_id),
+            result="denied",
+            reason=reason,
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return error_response(request, status_code, code, message)
+
+
+@app.post("/api/v1/transcriptions", response_model=TranscriptionResponse)
+def create_transcription(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID, Form()],
+    category: Annotated[Literal["consultas", "recomendações", "metas", "mensagens"], Form()],
+    operation: Annotated[Literal["anexar", "atualizar"], Form()],
+    audio: Annotated[UploadFile, File()],
+) -> TranscriptionResponse | JSONResponse:
+    """Return a local Portuguese draft and retain no uploaded audio."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = authorized_document_patient(session, account, patient_id, category, operation, now)
+    if (
+        account.role != "professional"
+        or patient is None
+        or not valid_csrf(request, "__Host-vitallink_session")
+    ):
+        return transcription_error(
+            request,
+            session,
+            account,
+            patient_id,
+            "not_found_or_not_authorized",
+            404,
+            "transcription_not_available",
+            "Ditado não disponível.",
+        )
+    suffixes = {
+        "audio/wav": ".wav",
+        "audio/x-wav": ".wav",
+        "audio/webm": ".webm",
+        "audio/ogg": ".ogg",
+        "audio/mpeg": ".mp3",
+        "audio/mp4": ".m4a",
+    }
+    suffix = suffixes.get(audio.content_type or "")
+    if suffix is None:
+        return transcription_error(
+            request,
+            session,
+            account,
+            patient_id,
+            "unsupported_audio_type",
+            422,
+            "invalid_audio",
+            "Use um formato de áudio compatível.",
+        )
+    content = audio.file.read(settings.transcription_max_bytes + 1)
+    audio.file.close()
+    if len(content) > settings.transcription_max_bytes:
+        return transcription_error(
+            request,
+            session,
+            account,
+            patient_id,
+            "audio_too_large",
+            413,
+            "audio_too_large",
+            "O áudio excede o limite permitido.",
+        )
+    try:
+        draft, _ = transcribe_temporary_audio(content, suffix, settings)
+    except InvalidAudioError:
+        return transcription_error(
+            request, session, account, patient_id, "invalid_or_too_long_audio", 422, "invalid_audio", "Revise o áudio."
+        )
+    except NoSpeechError:
+        return transcription_error(
+            request, session, account, patient_id, "no_speech_detected", 422, "no_speech_detected", "Nenhuma fala foi detectada."
+        )
+    except TranscriptionTimeoutError:
+        return transcription_error(
+            request, session, account, patient_id, "transcription_timeout", 504, "transcription_timeout", "A transcrição excedeu o tempo limite."
+        )
+    except TranscriptionUnavailableError:
+        return transcription_error(
+            request, session, account, patient_id, "transcription_unavailable", 503, "transcription_unavailable", "A transcrição local está indisponível."
+        )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="transcription.created",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="local_draft_returned_audio_discarded",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return TranscriptionResponse(draft=draft, language="pt", requires_confirmation=True)
 
 
 @app.post("/api/v1/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import ClinicalDictation from "./ClinicalDictation"
 import MentionTextarea, { type Mentionable } from "./MentionTextarea"
 
 interface ProfessionalParty {
@@ -385,6 +386,13 @@ export default function ClinicalMessages({
                       mentionables={mentionables}
                       placeholder="Escreva uma mensagem clínica"
                     />
+                    <ClinicalDictation
+                      patientId={patientId}
+                      category="mensagens"
+                      operation="anexar"
+                      onDraft={setContent}
+                      onSessionExpired={onSessionExpired}
+                    />
                     <TextInput
                       label="TOTP da mensagem"
                       value={totp}
@@ -409,6 +417,13 @@ export default function ClinicalMessages({
                       value={correctedContent}
                       onChange={setCorrectedContent}
                       mentionables={mentionables}
+                    />
+                    <ClinicalDictation
+                      patientId={patientId}
+                      category="mensagens"
+                      operation="atualizar"
+                      onDraft={setCorrectedContent}
+                      onSessionExpired={onSessionExpired}
                     />
                     <TextInput
                       label="Motivo da correção"

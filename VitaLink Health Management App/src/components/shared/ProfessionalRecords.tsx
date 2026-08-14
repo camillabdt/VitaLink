@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import ClinicalDictation from "./ClinicalDictation"
 
 export interface ProfessionalRecord {
   id: string
@@ -254,16 +255,26 @@ export default function ProfessionalRecords({
               required
             />
           </label>
-          <label className="text-sm font-medium text-gray-700 sm:col-span-2">
-            Conteúdo
+          <div className="text-sm font-medium text-gray-700 sm:col-span-2">
+            <label htmlFor="professional-record-content">Conteúdo</label>
             <textarea
+              id="professional-record-content"
               value={content}
               onChange={(event) => setContent(event.target.value)}
               rows={4}
               className="mt-1 w-full rounded-xl border px-3 py-2.5"
               required
             />
-          </label>
+            <ClinicalDictation
+              patientId={patientId!}
+              category={
+                kind === "recommendation" ? "recomendações" : "consultas"
+              }
+              operation="anexar"
+              onDraft={setContent}
+              onSessionExpired={onSessionExpired}
+            />
+          </div>
           <label className="text-sm font-medium text-gray-700">
             Justificativa
             <input
@@ -353,9 +364,12 @@ export default function ProfessionalRecords({
                   onSubmit={(event) => void correct(event)}
                   className="mt-4 grid gap-3 rounded-xl bg-gray-50 p-4"
                 >
-                  <label className="text-sm font-medium text-gray-700">
-                    Conteúdo corrigido
+                  <div className="text-sm font-medium text-gray-700">
+                    <label htmlFor={`corrected-record-${record.id}`}>
+                      Conteúdo corrigido
+                    </label>
                     <textarea
+                      id={`corrected-record-${record.id}`}
                       value={correctedContent}
                       onChange={(event) =>
                         setCorrectedContent(event.target.value)
@@ -364,7 +378,18 @@ export default function ProfessionalRecords({
                       className="mt-1 w-full rounded-xl border px-3 py-2.5"
                       required
                     />
-                  </label>
+                    <ClinicalDictation
+                      patientId={patientId!}
+                      category={
+                        editing.kind === "recommendation"
+                          ? "recomendações"
+                          : "consultas"
+                      }
+                      operation="atualizar"
+                      onDraft={setCorrectedContent}
+                      onSessionExpired={onSessionExpired}
+                    />
+                  </div>
                   <label className="text-sm font-medium text-gray-700">
                     Motivo da correção
                     <input

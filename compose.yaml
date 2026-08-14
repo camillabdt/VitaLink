@@ -53,6 +53,9 @@ services:
       VITALINK_S3_ACCESS_KEY: vitallink
       VITALINK_S3_SECRET_KEY: ${VITALINK_S3_SECRET_KEY:?configure VITALINK_S3_SECRET_KEY in .env}
       VITALINK_CLAMAV_HOST: clamav
+      VITALINK_TRANSCRIPTION_CACHE_DIR: /models
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,6 +76,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    volumes:
+      - whisper-models:/models
 
   web:
     build:
@@ -105,3 +110,4 @@ volumes:
   clamav-data:
   minio-data:
   postgres-data:
+  whisper-models:
