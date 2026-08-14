@@ -16,6 +16,13 @@ interface AccountSession {
   expires_at: string
 }
 
+interface AccessCodeMetadata {
+  id: string
+  created_at: string
+  expires_at: string
+  status: "active" | "consumed" | "revoked" | "expired"
+}
+
 interface OwnedProfileResponse {
   role: "patient" | "professional"
   status: string
@@ -60,9 +67,13 @@ export default function PatientProfile({
   const [profileMessage, setProfileMessage] = useState("")
   const [profileSaving, setProfileSaving] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [activeTab, setActiveTab] = useState<"personal" | "security">(
-    "personal",
-  )
+  const [activeTab, setActiveTab] =
+    useState<"personal" | "access" | "security">("personal")
+  const [accessCodes, setAccessCodes] = useState<AccessCodeMetadata[]>([])
+  const [accessCodesLoading, setAccessCodesLoading] = useState(false)
+  const [accessCodeError, setAccessCodeError] = useState("")
+  const [accessCodeMessage, setAccessCodeMessage] = useState("")
+  const [generatedCode, setGeneratedCode] = useState("")
   const [sessions, setSessions] = useState<AccountSession[]>([])
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [sessionsError, setSessionsError] = useState("")
@@ -135,6 +146,34 @@ export default function PatientProfile({
       active = false
     }
   }, [activeTab])
+
+  useEffect(() => {
+    if (activeTab !== "access" || account.role !== "patient") return
+    let active = true
+    setAccessCodesLoading(true)
+    setAccessCodeError("")
+    fetch("/api/v1/access-codes", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (response.status === 401) {
+          handleSessionExpired()
+          return []
+        }
+        if (!response.ok) throw new Error("access codes unavailable")
+        return (await response.json()) as AccessCodeMetadata[]
+      })
+      .then((codes) => {
+        if (active) setAccessCodes(codes)
+      })
+      .catch(() => {
+        if (active) setAccessCodeError("Não foi possível carregar os códigos.")
+      })
+      .finally(() => {
+        if (active) setAccessCodesLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [activeTab, account.role])
 
   const saveProfile = async () => {
     const csrfToken = sessionStorage.getItem("vitallink.csrf")
@@ -215,6 +254,82 @@ export default function PatientProfile({
       )
     } catch {
       setSessionsError("Não foi possível encerrar a sessão. Tente novamente.")
+    }
+  }
+
+  const generateAccessCode = async () => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setAccessCodeError("")
+    setAccessCodeMessage("")
+    try {
+      const response = await fetch("/api/v1/access-codes", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": csrfToken },
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("access code creation failed")
+      const created = (await response.json()) as AccessCodeMetadata & {
+        code: string
+      }
+      setGeneratedCode(created.code)
+      setAccessCodes((current) => [
+        {
+          id: created.id,
+          created_at: new Date().toISOString(),
+          expires_at: created.expires_at,
+          status: created.status,
+        },
+        ...current,
+      ])
+    } catch {
+      setAccessCodeError("Não foi possível gerar o código. Tente novamente.")
+    }
+  }
+
+  const copyAccessCode = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedCode)
+      setAccessCodeMessage("Código copiado.")
+    } catch {
+      setAccessCodeError("Não foi possível copiar o código.")
+    }
+  }
+
+  const revokeAccessCode = async (accessCodeId: string) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setAccessCodeError("")
+    try {
+      const response = await fetch(`/api/v1/access-codes/${accessCodeId}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": csrfToken },
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("access code revocation failed")
+      setAccessCodes((current) =>
+        current.map((code) =>
+          code.id === accessCodeId ? { ...code, status: "revoked" } : code,
+        ),
+      )
+      setGeneratedCode("")
+      setAccessCodeMessage("Código revogado.")
+    } catch {
+      setAccessCodeError("Não foi possível revogar o código.")
     }
   }
 
@@ -437,6 +552,9 @@ export default function PatientProfile({
             >
               {[
                 ["personal", "Informações pessoais"],
+                ...(account.role === "patient"
+                  ? [["access", "Acesso temporário"]]
+                  : []),
                 ["security", "Segurança"],
               ].map(([id, label]) => (
                 <button
@@ -444,7 +562,9 @@ export default function PatientProfile({
                   type="button"
                   role="tab"
                   aria-selected={activeTab === id}
-                  onClick={() => setActiveTab(id as "personal" | "security")}
+                  onClick={() =>
+                    setActiveTab(id as "personal" | "access" | "security")
+                  }
                   className="px-4 py-2 rounded-lg text-sm font-medium"
                   style={
                     activeTab === id
@@ -512,6 +632,107 @@ export default function PatientProfile({
                     </div>
                   ))}
                 </div>
+              </section>
+            )}
+
+            {activeTab === "access" && account.role === "patient" && (
+              <section
+                className="rounded-2xl border bg-white p-6"
+                style={{ borderColor: "var(--border)" }}
+                aria-labelledby="access-code-title"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3
+                      id="access-code-title"
+                      className="font-semibold text-gray-900"
+                    >
+                      Código temporário
+                    </h3>
+                    <p className="mt-1 max-w-xl text-sm text-gray-500">
+                      O código vale por 24 horas e uma única solicitação. Ele
+                      não concede acesso aos seus dados.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void generateAccessCode()}
+                    className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                    style={{ background: "var(--primary)" }}
+                  >
+                    Gerar código
+                  </button>
+                </div>
+
+                {generatedCode && (
+                  <div className="mt-5 rounded-xl bg-teal-50 p-4">
+                    <p className="break-all font-mono text-sm font-semibold text-teal-900">
+                      {generatedCode}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void copyAccessCode()}
+                      className="mt-3 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-teal-700"
+                    >
+                      Copiar código
+                    </button>
+                  </div>
+                )}
+
+                {accessCodesLoading ? (
+                  <p role="status" className="mt-5 text-sm text-gray-500">
+                    Carregando códigos...
+                  </p>
+                ) : accessCodes.length === 0 ? (
+                  <p className="mt-5 text-sm text-gray-500">
+                    Nenhum código gerado.
+                  </p>
+                ) : (
+                  <ul className="mt-5 space-y-3">
+                    {accessCodes.map((code) => (
+                      <li
+                        key={code.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {code.status === "active"
+                              ? "Código ativo"
+                              : code.status === "consumed"
+                                ? "Código utilizado"
+                                : code.status === "revoked"
+                                  ? "Código revogado"
+                                  : "Código expirado"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Expira em{" "}
+                            {new Date(code.expires_at).toLocaleString("pt-BR")}
+                          </p>
+                        </div>
+                        {code.status === "active" && (
+                          <button
+                            type="button"
+                            onClick={() => void revokeAccessCode(code.id)}
+                            className="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                          >
+                            Revogar
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {accessCodeMessage && (
+                  <p role="status" className="mt-4 text-sm text-emerald-700">
+                    {accessCodeMessage}
+                  </p>
+                )}
+                {accessCodeError && (
+                  <p role="alert" className="mt-4 text-sm text-red-600">
+                    {accessCodeError}
+                  </p>
+                )}
               </section>
             )}
 

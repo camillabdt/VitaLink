@@ -97,6 +97,86 @@ test("patient saves editable profile fields through the API", async () => {
   )
 })
 
+test("patient generates and copies a temporary access code", async () => {
+  const user = userEvent.setup()
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  })
+  sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "44444444-4444-4444-8444-444444444444",
+          code: "synthetic-temporary-code-with-32-chars",
+          expires_at: "2026-08-15T04:00:00Z",
+          status: "active",
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+  render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("tab", { name: "Acesso temporário" }))
+  expect(await screen.findByText("Nenhum código gerado.")).toBeInTheDocument()
+  await user.click(screen.getByRole("button", { name: "Gerar código" }))
+  expect(
+    await screen.findByText("synthetic-temporary-code-with-32-chars"),
+  ).toBeInTheDocument()
+  await user.click(screen.getByRole("button", { name: "Copiar código" }))
+
+  expect(writeText).toHaveBeenCalledWith(
+    "synthetic-temporary-code-with-32-chars",
+  )
+})
+
+test("patient revokes an owned active access code", async () => {
+  const user = userEvent.setup()
+  sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            id: "66666666-6666-4666-8666-666666666666",
+            created_at: "2026-08-14T04:00:00Z",
+            expires_at: "2026-08-15T04:00:00Z",
+            status: "active",
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(new Response(null, { status: 204 }))
+
+  render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("tab", { name: "Acesso temporário" }))
+  await user.click(await screen.findByRole("button", { name: "Revogar" }))
+
+  expect(globalThis.fetch).toHaveBeenLastCalledWith(
+    "/api/v1/access-codes/66666666-6666-4666-8666-666666666666",
+    expect.objectContaining({
+      method: "DELETE",
+      headers: { "X-CSRF-Token": "session-csrf-token" },
+    }),
+  )
+  expect(screen.getByText("Código revogado")).toBeInTheDocument()
+})
+
 test("patient loads and ends an owned active session", async () => {
   const user = userEvent.setup()
   sessionStorage.setItem("vitallink.csrf", "session-csrf-token")

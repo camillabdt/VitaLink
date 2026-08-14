@@ -29,11 +29,14 @@ from starlette.responses import JSONResponse
 
 from vitallink.config import get_settings
 from vitallink.database import (
+    AccessCode,
+    AccessRequest,
     Account,
     AccountSession,
     AuditEvent,
     EmailVerification,
     LoginThrottle,
+    Notification,
     Patient,
     Professional,
     RecoveryCredential,
@@ -288,6 +291,39 @@ class OwnedProfileUpdate(BaseModel):
     uf: str | None = None
     role: str | None = None
     status: str | None = None
+
+
+class AccessCodeCreatedResponse(BaseModel):
+    """One-time plaintext access code returned only when generated."""
+
+    id: UUID
+    code: str
+    expires_at: datetime
+    status: str
+
+
+class AccessCodeResponse(BaseModel):
+    """Safe access-code metadata visible to its patient owner."""
+
+    id: UUID
+    created_at: datetime
+    expires_at: datetime
+    status: str
+
+
+class AccessRequestCreate(BaseModel):
+    """Temporary code and justification submitted by a professional."""
+
+    code: str = Field(min_length=32, max_length=128)
+    justification: str = Field(min_length=10, max_length=1000)
+
+
+class AccessRequestResponse(BaseModel):
+    """Minimal confirmation of a pending professional request."""
+
+    id: UUID
+    status: str
+    patient: str
 
 
 class AccountSessionResponse(BaseModel):
@@ -2221,6 +2257,359 @@ def delete_owned_session(
             path="/",
         )
     return response
+
+
+@app.post("/api/v1/access-codes", status_code=status.HTTP_201_CREATED, response_model=AccessCodeCreatedResponse)
+def create_access_code(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> AccessCodeCreatedResponse | JSONResponse:
+    """Create a temporary code for the authenticated patient.
+
+    Args:
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The plaintext code once, or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.created",
+                target_id=None,
+                result="denied",
+                reason="request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return csrf_denied_response(request)
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.created",
+                target_id=None,
+                result="denied",
+                reason="patient_required",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, "patient_required", "Apenas pacientes podem gerar códigos.")
+
+    raw_code = secrets.token_urlsafe(24)
+    access_code = AccessCode(
+        patient_id=patient.id,
+        code_hash=keyed_digest(raw_code),
+        created_at=now,
+        expires_at=now + timedelta(hours=24),
+    )
+    session.add(access_code)
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="access_code.created",
+            target_id=audit_identifier(access_code.id),
+            result="success",
+            reason="patient_requested",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return AccessCodeCreatedResponse(
+        id=access_code.id,
+        code=raw_code,
+        expires_at=access_code.expires_at,
+        status="active",
+    )
+
+
+def access_code_status(access_code: AccessCode, now: datetime) -> str:
+    """Resolve the externally visible state of an access code.
+
+    Args:
+        access_code: Persisted code metadata.
+        now: Server-controlled current time.
+
+    Returns:
+        Active, consumed, revoked, or expired state.
+    """
+    if access_code.consumed_at is not None:
+        return "consumed"
+    if access_code.revoked_at is not None:
+        return "revoked"
+    if access_code.expires_at <= now:
+        return "expired"
+    return "active"
+
+
+@app.get("/api/v1/access-codes", response_model=list[AccessCodeResponse])
+def list_access_codes(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[AccessCodeResponse] | JSONResponse:
+    """List access-code metadata belonging to the authenticated patient.
+
+    Args:
+        request: Authenticated request containing the opaque session.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Owned code metadata without plaintext codes, or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        return error_response(request, 403, "patient_required", "Apenas pacientes podem listar códigos.")
+    access_codes = session.scalars(
+        select(AccessCode).where(AccessCode.patient_id == patient.id).order_by(AccessCode.created_at.desc())
+    ).all()
+    return [
+        AccessCodeResponse(
+            id=access_code.id,
+            created_at=access_code.created_at,
+            expires_at=access_code.expires_at,
+            status=access_code_status(access_code, now),
+        )
+        for access_code in access_codes
+    ]
+
+
+@app.delete("/api/v1/access-codes/{access_code_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+def revoke_access_code(
+    access_code_id: UUID,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> Response:
+    """Revoke an active access code owned by the authenticated patient.
+
+    Args:
+        access_code_id: Owned code identifier.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Empty success response or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.revoked",
+                target_id=audit_identifier(access_code_id),
+                result="denied",
+                reason="request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return csrf_denied_response(request)
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    access_code = None
+    if patient is not None:
+        access_code = session.scalar(
+            select(AccessCode)
+            .where(AccessCode.id == access_code_id, AccessCode.patient_id == patient.id)
+            .with_for_update()
+        )
+    if access_code is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.revoked",
+                target_id=audit_identifier(access_code_id),
+                result="denied",
+                reason="not_owned_or_missing",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "access_code_not_found", "Código não encontrado.")
+    if access_code_status(access_code, now) != "active":
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.revoked",
+                target_id=audit_identifier(access_code.id),
+                result="denied",
+                reason="inactive",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 409, "access_code_inactive", "O código não está ativo.")
+    access_code.revoked_at = now
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="access_code.revoked",
+            target_id=audit_identifier(access_code.id),
+            result="success",
+            reason="patient_requested",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.post("/api/v1/access-requests", status_code=status.HTTP_201_CREATED, response_model=AccessRequestResponse)
+def create_access_request(
+    access_request: AccessRequestCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> AccessRequestResponse | JSONResponse:
+    """Consume a patient code to create one pending professional request.
+
+    Args:
+        access_request: Temporary code and professional justification.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Minimal patient confirmation and pending state, or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_request.created",
+                target_id=None,
+                result="denied",
+                reason="request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return csrf_denied_response(request)
+    professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+    if professional is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_request.created",
+                target_id=None,
+                result="denied",
+                reason="professional_required",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, "professional_required", "Apenas profissionais podem solicitar acesso.")
+    justification = access_request.justification.strip()
+    if len(justification) < 10:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_request.created",
+                target_id=None,
+                result="denied",
+                reason="justification_invalid",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 422, "justification_invalid", "Revise a justificativa informada.")
+    temporary_code = session.scalar(
+        select(AccessCode).where(AccessCode.code_hash == keyed_digest(access_request.code)).with_for_update()
+    )
+    if temporary_code is None or access_code_status(temporary_code, now) != "active":
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.consumed",
+                target_id=keyed_digest(f"access-code:{access_request.code}"),
+                result="denied",
+                reason="invalid_or_inactive",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 422, "access_code_invalid", "O código informado não é válido.")
+
+    patient = session.get(Patient, temporary_code.patient_id)
+    if patient is None:
+        return error_response(request, 422, "access_code_invalid", "O código informado não é válido.")
+    temporary_code.consumed_at = now
+    pending_request = AccessRequest(
+        patient_id=patient.id,
+        professional_id=professional.id,
+        justification=justification,
+        status="pending",
+        created_at=now,
+    )
+    session.add(pending_request)
+    session.flush()
+    session.add(
+        Notification(
+            account_id=patient.account_id,
+            kind="access_request_created",
+            subject_id=pending_request.id,
+            created_at=now,
+        )
+    )
+    session.add_all(
+        [
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_code.consumed",
+                target_id=audit_identifier(temporary_code.id),
+                result="success",
+                reason="professional_requested",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            ),
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_request.created",
+                target_id=audit_identifier(pending_request.id),
+                result="success",
+                reason="code_consumed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "status": "pending"},
+            ),
+        ]
+    )
+    session.commit()
+    return AccessRequestResponse(id=pending_request.id, status=pending_request.status, patient=patient.name)
 
 
 def owned_profile_response(session: Session, account: Account) -> CurrentAccountResponse | None:

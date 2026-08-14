@@ -77,6 +77,54 @@ class Professional(Base):
     account: Mapped[Account] = relationship(back_populates="professional")
 
 
+class AccessCode(Base):
+    """Single-use patient access code retained only as a keyed digest."""
+
+    __tablename__ = "access_codes"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AccessRequest(Base):
+    """Professional request awaiting an explicit patient decision."""
+
+    __tablename__ = "access_requests"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    professional_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("professionals.id"), nullable=False
+    )
+    justification: Mapped[str] = mapped_column(String(1000), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
+class Notification(Base):
+    """Internal account notification linked to a domain event."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(64), nullable=False)
+    subject_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class EmailVerification(Base):
     """Single-use confirmation code stored only as a keyed digest."""
 

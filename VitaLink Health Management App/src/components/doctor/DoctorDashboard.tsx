@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react"
+import { useMemo, useRef, useState } from "react"
 import Layout from "@/components/shared/Layout"
 import MentionTextarea from "@/components/shared/MentionTextarea"
 import type { Mentionable } from "@/components/shared/MentionTextarea"
@@ -161,6 +161,7 @@ export default function DoctorDashboard({ onNavigate, onLogout }: Props) {
             setView("detail")
           }}
           unreadNotes={unreadNotes}
+          onSessionExpired={() => onNavigate("login")}
         />
       )}
       {view === "detail" && selectedPatient && (
@@ -182,6 +183,7 @@ function PatientListView({
   onFilterStatus,
   onSelect,
   unreadNotes,
+  onSessionExpired,
 }: {
   patients: Patient[]
   stats: any
@@ -191,18 +193,56 @@ function PatientListView({
   onFilterStatus: (v: any) => void
   onSelect: (p: Patient) => void
   unreadNotes: number
+  onSessionExpired: () => void
 }) {
-  const [accessSearch, setAccessSearch] = useState("")
-  const [accessResult, setAccessResult] = useState(false)
+  const accessCodeInput = useRef<HTMLInputElement>(null)
+  const [accessCode, setAccessCode] = useState("")
   const [accessJustification, setAccessJustification] = useState("")
-  const [accessSent, setAccessSent] = useState(false)
+  const [accessPatient, setAccessPatient] = useState("")
+  const [accessLoading, setAccessLoading] = useState(false)
+  const [accessError, setAccessError] = useState("")
 
-  const handleAccessSearch = () => {
-    if (accessSearch.trim().length > 0) setAccessResult(true)
-  }
-
-  const handleAccessSend = () => {
-    if (accessJustification.trim()) setAccessSent(true)
+  const handleAccessSend = async () => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setAccessLoading(true)
+    setAccessError("")
+    try {
+      const response = await fetch("/api/v1/access-requests", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({
+          code: accessCode.trim(),
+          justification: accessJustification.trim(),
+        }),
+      })
+      if (response.status === 401) {
+        sessionStorage.removeItem("vitallink.csrf")
+        onSessionExpired()
+        return
+      }
+      if (!response.ok) {
+        setAccessError(
+          response.status === 422
+            ? "O código informado não é válido."
+            : "Não foi possível enviar a solicitação.",
+        )
+        return
+      }
+      const pending = (await response.json()) as { patient: string }
+      setAccessPatient(pending.patient)
+    } catch {
+      setAccessError("Não foi possível enviar a solicitação. Tente novamente.")
+    } finally {
+      setAccessLoading(false)
+    }
   }
 
   return (
@@ -327,12 +367,7 @@ function PatientListView({
         </div>
         <div className="flex gap-2 flex-shrink-0">
           <button
-            className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-gray-50 transition-colors"
-            style={{ borderColor: "var(--border)" }}
-          >
-            Ver agenda
-          </button>
-          <button
+            onClick={() => accessCodeInput.current?.focus()}
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
             style={{ background: "var(--primary)" }}
           >
@@ -543,11 +578,11 @@ function PatientListView({
           </span>
         </div>
         <p className="text-sm text-gray-500 mb-4 mt-2">
-          Busque um paciente pelo CPF ou nome para solicitar acesso à sua ficha
-          clínica.
+          Use somente o código temporário compartilhado pelo paciente. A
+          solicitação não concede acesso até a decisão dele.
         </p>
 
-        {accessSent ? (
+        {accessPatient ? (
           <div
             className="flex items-center gap-3 p-4 rounded-xl"
             style={{ background: "#F0FDF9" }}
@@ -574,119 +609,92 @@ function PatientListView({
                 Solicitação enviada
               </div>
               <div className="text-xs text-green-700">
-                Aguardando autorização do paciente.
+                {accessPatient} · aguardando autorização do paciente.
               </div>
             </div>
             <button
               onClick={() => {
-                setAccessSent(false)
-                setAccessResult(false)
-                setAccessSearch("")
+                setAccessPatient("")
+                setAccessCode("")
                 setAccessJustification("")
               }}
               className="ml-auto text-xs text-gray-400 hover:text-gray-600 transition-colors"
             >
-              Nova busca
+              Nova solicitação
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <div className="flex gap-2">
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void handleAccessSend()
+            }}
+          >
+            <div>
+              <label
+                htmlFor="access-code"
+                className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
+              >
+                Código temporário
+              </label>
               <input
+                ref={accessCodeInput}
+                id="access-code"
                 type="text"
-                value={accessSearch}
-                onChange={(e) => setAccessSearch(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleAccessSearch()}
-                placeholder="Nome ou CPF do paciente..."
-                className="flex-1 px-3 py-2.5 rounded-xl border text-sm outline-none"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
+                minLength={32}
+                maxLength={128}
+                required
+                autoComplete="off"
+                placeholder="Cole o código compartilhado pelo paciente"
+                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
                 style={{ borderColor: "var(--border)" }}
                 onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
                 onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
               />
-              <button
-                onClick={handleAccessSearch}
-                className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-                style={{ background: "var(--primary)" }}
-              >
-                Buscar
-              </button>
             </div>
-
-            {accessResult && (
-              <div className="space-y-3">
-                <div
-                  className="flex items-center gap-3 p-3.5 rounded-xl border"
-                  style={{
-                    borderColor: "var(--border)",
-                    background: "#FAFAFA",
-                  }}
-                >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                    style={{
-                      background: "linear-gradient(135deg, #64748B, #475569)",
-                    }}
-                  >
-                    JF
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-gray-900">
-                      João Ferreira
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      45 anos · CPF 123.***.***-45
-                    </div>
-                  </div>
-                  <span
-                    className="text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{ background: "#F1F5F9", color: "#64748B" }}
-                  >
-                    Paciente encontrado
-                  </span>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                    Justificativa clínica
-                  </label>
-                  <textarea
-                    value={accessJustification}
-                    onChange={(e) => setAccessJustification(e.target.value)}
-                    rows={3}
-                    placeholder="Descreva o motivo clínico para solicitar acesso ao prontuário deste paciente..."
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none"
-                    style={{ borderColor: "var(--border)" }}
-                    onFocus={(e) =>
-                      (e.target.style.borderColor = "var(--primary)")
-                    }
-                    onBlur={(e) =>
-                      (e.target.style.borderColor = "var(--border)")
-                    }
-                  />
-                </div>
-                <button
-                  onClick={handleAccessSend}
-                  disabled={!accessJustification.trim()}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
-                  style={{ background: "var(--primary)" }}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="22" y1="2" x2="11" y2="13" />
-                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                  </svg>
-                  Enviar solicitação
-                </button>
-              </div>
+            <div>
+              <label
+                htmlFor="access-justification"
+                className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
+              >
+                Justificativa clínica
+              </label>
+              <textarea
+                id="access-justification"
+                value={accessJustification}
+                onChange={(e) => setAccessJustification(e.target.value)}
+                rows={3}
+                minLength={10}
+                maxLength={1000}
+                required
+                placeholder="Descreva o motivo clínico para solicitar acesso ao prontuário deste paciente..."
+                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none"
+                style={{ borderColor: "var(--border)" }}
+                onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={
+                accessLoading ||
+                accessCode.trim().length < 32 ||
+                accessJustification.trim().length < 10
+              }
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 disabled:opacity-50"
+              style={{ background: "var(--primary)" }}
+            >
+              {accessLoading ? "Enviando..." : "Enviar solicitação"}
+            </button>
+            {accessError && (
+              <p role="alert" className="text-sm text-red-600">
+                {accessError}
+              </p>
             )}
-          </div>
+          </form>
         )}
       </div>
     </div>
