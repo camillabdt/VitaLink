@@ -4,8 +4,32 @@ version = "0.1.0"
 description = "Secure medical information management system"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "alembic>=1.16,<2",
+    "argon2-cffi>=25,<26",
+    "cryptography>=50,<51",
+    "email-validator>=2.2,<3",
+    "fastapi>=0.116,<1",
+    "psycopg[binary]>=3.2,<4",
+    "pydantic-settings>=2.10,<3",
+    "pyotp>=2.9,<3",
+    "sqlalchemy>=2.0,<3",
+    "uvicorn[standard]>=0.35,<1",
+]
 
 [tool.ruff]
 line-length = 120
 target-version = "py312"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["src"]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+    "pip-audit>=2.9,<3",
+    "pytest>=9.0.3,<10",
+    "ruff>=0.12,<1",
+]

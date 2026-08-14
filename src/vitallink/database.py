@@ -1,0 +1,158 @@
+"""Relational persistence for identity and audit data."""
+
+from collections.abc import Iterator
+from datetime import UTC, date, datetime
+from uuid import UUID, uuid4
+
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, create_engine
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
+
+from vitallink.config import get_settings
+
+
+class Base(DeclarativeBase):
+    """Declarative base for VitaLink database models."""
+
+
+class Account(Base):
+    """An individual VitaLink account awaiting or holding activation."""
+
+    __tablename__ = "accounts"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    email: Mapped[str] = mapped_column(String(320), unique=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(512), nullable=False)
+    role: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    patient: Mapped["Patient"] = relationship(back_populates="account", cascade="all, delete-orphan")
+
+
+class Patient(Base):
+    """Patient identity data owned by one account."""
+
+    __tablename__ = "patients"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), unique=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    cpf: Mapped[str] = mapped_column(String(11), unique=True, nullable=False)
+    birthdate: Mapped[date] = mapped_column(Date, nullable=False)
+    phone: Mapped[str] = mapped_column(String(32), nullable=False)
+    blood_type: Mapped[str | None] = mapped_column(String(3))
+    account: Mapped[Account] = relationship(back_populates="patient")
+
+
+class EmailVerification(Base):
+    """Single-use confirmation code stored only as a keyed digest."""
+
+    __tablename__ = "email_verifications"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    code_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AccountSession(Base):
+    """Opaque server-side session with an explicit permitted purpose."""
+
+    __tablename__ = "account_sessions"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    last_used_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class TotpCredential(Base):
+    """Encrypted TOTP secret enrolled for one account."""
+
+    __tablename__ = "totp_credentials"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), unique=True, nullable=False
+    )
+    secret_ciphertext: Mapped[str] = mapped_column(String(512), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RecoveryCredential(Base):
+    """A single-use recovery value retained only as a keyed digest."""
+
+    __tablename__ = "recovery_credentials"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    value_hash: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LoginThrottle(Base):
+    """Progressive login limit keyed by pseudonymous account and origin."""
+
+    __tablename__ = "login_throttles"
+    __table_args__ = (UniqueConstraint("target_id", "origin_id"),)
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    target_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    origin_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    blocked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AuditEvent(Base):
+    """Append-only security event with pseudonymous identifiers."""
+
+    __tablename__ = "audit_events"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    actor_id: Mapped[str | None] = mapped_column(String(64))
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_id: Mapped[str | None] = mapped_column(String(64))
+    result: Mapped[str] = mapped_column(String(32), nullable=False)
+    reason: Mapped[str] = mapped_column(String(64), nullable=False)
+    correlation_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), nullable=False)
+    event_metadata: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
+settings = get_settings()
+engine = create_engine(settings.database_url, pool_pre_ping=True)
+SessionFactory = sessionmaker(bind=engine, expire_on_commit=False)
+
+
+def get_session() -> Iterator[Session]:
+    """Provide one database transaction scope to an API request.
+
+    Yields:
+        A SQLAlchemy session closed after the request.
+    """
+    with SessionFactory() as session:
+        yield session

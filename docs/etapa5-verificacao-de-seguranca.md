@@ -2,11 +2,11 @@
 
 ## Estado da etapa
 
-O VitaLink ainda não possui uma implementação executável que possa ser submetida diretamente a uma análise dinâmica de segurança.
+O VitaLink possui uma primeira fatia vertical executável para cadastro, ativação TOTP, login e logout do paciente. A implementação e as evidências locais da issue #50 estão registradas em [Implementação da issue #50](implementacao-issue-50.md). Essa evidência é limitada ao fluxo de identidade do paciente e não comprova as demais telas, perfis ou controles planejados.
 
-O diretório `VitaLink Health Management App/` contém um frontend de referência executável exportado do Figma Make. Como seus fluxos usam dados simulados e não estão conectados ao backend planejado, ele ainda não permite verificar os controles de segurança do sistema.
+O diretório `VitaLink Health Management App/` continua sendo a baseline visual exportada do Figma Make. Os componentes de autenticação do paciente foram conectados à API; as demais áreas ainda contêm partes simuladas e só serão consideradas implementadas quando suas issues produzirem testes e evidências próprias.
 
-## Estratégia TDD planejada para o VitaLink
+## Estratégia TDD adotada para o VitaLink
 
 A implementação seguirá TDD em fatias verticais. Cada ciclo seleciona um comportamento observável pela interface pública, produz um teste RED pelo motivo esperado, implementa o mínimo para GREEN e só então permite refatoração. A suíte cresce junto com cada issue; os testes de segurança não ficam adiados para uma fase final.
 

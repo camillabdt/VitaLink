@@ -1,0 +1,79 @@
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:d4bb0a8c1b7bb2e29f976d099e7bfb9a5d8858cffe9e46b35cd302cd1f1f8168
+    environment:
+      POSTGRES_DB: vitallink
+      POSTGRES_USER: vitallink
+      POSTGRES_PASSWORD: vitallink
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vitallink -d vitallink"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  mailpit:
+    image: axllent/mailpit:v1.27@sha256:e22dce5b36f93c77082e204a3942fb6b283b7896e057458400a4c88344c3df68
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      VITALINK_DATABASE_URL: postgresql+psycopg://vitallink:vitallink@postgres:5432/vitallink
+      VITALINK_PUBLIC_ORIGIN: https://localhost
+      VITALINK_SECRET_KEY: ${VITALINK_SECRET_KEY:?configure VITALINK_SECRET_KEY in .env}
+      VITALINK_SMTP_HOST: mailpit
+      VITALINK_SMTP_PORT: 1025
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    build:
+      context: "./VitaLink Health Management App"
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-check-certificate",
+          "-qO-",
+          "https://localhost/health",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  caddy-config:
+  caddy-data:
+  postgres-data:

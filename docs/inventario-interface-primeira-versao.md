@@ -6,6 +6,10 @@ Este inventário transforma a exigência de “todas as telas funcionais” em c
 
 Segurança, domínio e acessibilidade prevalecem quando exigirem mudança em relação ao protótipo. Toda mudança relevante deve ser mencionada na issue e demonstrada na revisão visual.
 
+### Progresso da issue #50
+
+O cadastro, a confirmação de e-mail, a ativação TOTP, o login e o logout do paciente estão conectados à API e cobertos por testes. Login profissional, recuperação e as demais telas permanecem associados às issues indicadas neste inventário. Para evitar controles simulados visíveis, os seletores profissionais foram retirados temporariamente dos formulários desta fatia e retornam com comportamento real na issue #52. Consulte a [evidência de implementação](implementacao-issue-50.md).
+
 ## Telas e destinos
 
 | Destino                     | Baseline local                                           | Decisão para a primeira versão                              | Comportamento verificável                                                                    |
