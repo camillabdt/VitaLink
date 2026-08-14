@@ -14,6 +14,7 @@ interface Props {
   onLogout: () => void
   patientName?: string
   doctorName?: string
+  userSubtitle?: string
   mobile?: boolean
   onClose?: () => void
 }
@@ -187,6 +188,7 @@ export default function Sidebar({
   onLogout,
   patientName,
   doctorName,
+  userSubtitle,
   mobile,
   onClose,
 }: Props) {
@@ -195,7 +197,8 @@ export default function Sidebar({
     userType === "patient"
       ? patientName || "Ana Ribeiro"
       : doctorName || "Dr. Carlos Mendes"
-  const subtitle = userType === "patient" ? "Paciente" : "Cardiologista"
+  const subtitle =
+    userSubtitle || (userType === "patient" ? "Paciente" : "Profissional")
   const initials = name
     .split(" ")
     .slice(0, 2)

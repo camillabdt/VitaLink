@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import {
   LineChart,
   Line,
@@ -14,24 +14,29 @@ import {
   AreaChart,
 } from "recharts"
 import Layout from "@/components/shared/Layout"
-import type { Page, DocType, MedicalDocument } from "@/data/mockData"
+import type { Page } from "@/data/mockData"
 import {
   examHistory,
   recentExams,
   doctorRecommendations,
   currentPatient,
   fmtDate,
-  patientDocuments as initialPatientDocuments,
-  patientConsultations,
-  patientDoctorAccess,
 } from "@/data/mockData"
 import DocumentUploadModal from "@/components/shared/DocumentUploadModal"
+import type { StoredDocument } from "@/components/shared/DocumentUploadModal"
 import DocumentViewerModal from "@/components/shared/DocumentViewerModal"
+import PersonalObservations from "@/components/patient/PersonalObservations"
+import ClinicalResults from "@/components/patient/ClinicalResults"
+import ClinicalGoals from "@/components/shared/ClinicalGoals"
+import ProfessionalRecords from "@/components/shared/ProfessionalRecords"
 
 interface Props {
   onNavigate: (page: Page) => void
   onLogout: () => void
+  initialTab?: PatientTab
 }
+
+type PatientTab = "overview" | "documents" | "observations" | "charts" | "recommendations"
 
 const statusConfig = {
   normal: { label: "Normal", bg: "#DCFCE7", text: "#166534" },
@@ -64,16 +69,22 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null
 }
 
-export default function PatientDashboard({ onNavigate, onLogout }: Props) {
-  const [activeTab, setActiveTab] =
-    useState<"overview" | "documents" | "consultas" | "charts" | "recommendations">(
-      "overview",
-    )
+export default function PatientDashboard({
+  onNavigate,
+  onLogout,
+  initialTab = "overview",
+}: Props) {
+  const [activeTab, setActiveTab] = useState<PatientTab>(initialTab)
+
+  const handleSessionExpired = useCallback(() => {
+    sessionStorage.removeItem("vitallink.csrf")
+    onNavigate("login")
+  }, [onNavigate])
 
   const tabs = [
     { id: "overview", label: "Visão Geral" },
     { id: "documents", label: "Documentos" },
-    { id: "consultas", label: "Consultas" },
+    { id: "observations", label: "Histórico" },
     { id: "charts", label: "Evolução" },
     { id: "recommendations", label: "Recomendações" },
   ] as const
@@ -234,10 +245,35 @@ export default function PatientDashboard({ onNavigate, onLogout }: Props) {
       </div>
 
       {activeTab === "overview" && <OverviewTab summaryCards={summaryCards} />}
-      {activeTab === "documents" && <DocumentsTab onNavigate={onNavigate} />}
-      {activeTab === "consultas" && <ConsultasTab />}
-      {activeTab === "charts" && <ChartsTab />}
-      {activeTab === "recommendations" && <RecommendationsTab />}
+      {activeTab === "documents" && <DocumentsTab />}
+      {activeTab === "observations" && (
+        <div className="space-y-6">
+          <PersonalObservations onSessionExpired={handleSessionExpired} />
+          <ClinicalResults
+            mode="history"
+            onSessionExpired={handleSessionExpired}
+          />
+          <ProfessionalRecords
+            mode="history"
+            onSessionExpired={handleSessionExpired}
+          />
+        </div>
+      )}
+      {activeTab === "charts" && (
+        <div className="space-y-6">
+          <ClinicalResults
+            mode="charts"
+            onSessionExpired={handleSessionExpired}
+          />
+          <ClinicalGoals onSessionExpired={handleSessionExpired} />
+        </div>
+      )}
+      {activeTab === "recommendations" && (
+        <ProfessionalRecords
+          mode="recommendations"
+          onSessionExpired={handleSessionExpired}
+        />
+      )}
     </Layout>
   )
 }
@@ -610,13 +646,13 @@ function OverviewTab({ summaryCards }: { summaryCards: any[] }) {
   )
 }
 
-const docTypeConfig: Record<DocType, {
+const docTypeConfig: Record<StoredDocument["category"], {
   label: string
   bg: string
   text: string
   icon: React.ReactNode
 }> = {
-  exam: {
+  exames: {
     label: "Exame",
     bg: "#CCFBF1",
     text: "#0E7490",
@@ -639,7 +675,7 @@ const docTypeConfig: Record<DocType, {
       </svg>
     ),
   },
-  prescription: {
+  receitas: {
     label: "Receita",
     bg: "#DBEAFE",
     text: "#1D4ED8",
@@ -659,7 +695,7 @@ const docTypeConfig: Record<DocType, {
       </svg>
     ),
   },
-  report: {
+  laudos: {
     label: "Laudo",
     bg: "#FEF9C3",
     text: "#92400E",
@@ -681,7 +717,7 @@ const docTypeConfig: Record<DocType, {
       </svg>
     ),
   },
-  image: {
+  imagens: {
     label: "Imagem",
     bg: "#EDE9FE",
     text: "#5B21B6",
@@ -704,29 +740,56 @@ const docTypeConfig: Record<DocType, {
   },
 }
 
-function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
-  const [docFilter, setDocFilter] = useState<"all" | DocType>("all")
-  const [docs, setDocs] = useState<MedicalDocument[]>(initialPatientDocuments)
+function DocumentsTab() {
+  const [docFilter, setDocFilter] =
+    useState<"all" | StoredDocument["category"]>("all")
+  const [docs, setDocs] = useState<StoredDocument[]>([])
   const [showUpload, setShowUpload] = useState(false)
-  const [viewing, setViewing] = useState<MedicalDocument | null>(null)
+  const [viewing, setViewing] = useState<StoredDocument | null>(null)
+  const [loadError, setLoadError] = useState("")
 
-  const filterChips: Array<{ id: "all" | DocType } & { label: string }> = [
+  useEffect(() => {
+    fetch("/api/v1/documents", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("documents unavailable")
+        return (await response.json()) as StoredDocument[]
+      })
+      .then(setDocs)
+      .catch(() => setLoadError("Não foi possível carregar os documentos."))
+  }, [])
+
+  const filterChips: Array<{
+    id: "all" | StoredDocument["category"]
+    label: string
+  }> = [
     { id: "all", label: "Todos" },
-    { id: "exam", label: "Exames" },
-    { id: "prescription", label: "Receitas" },
-    { id: "report", label: "Laudos" },
-    { id: "image", label: "Imagens" },
+    { id: "exames", label: "Exames" },
+    { id: "receitas", label: "Receitas" },
+    { id: "laudos", label: "Laudos" },
+    { id: "imagens", label: "Imagens" },
   ]
 
   const filtered =
-    docFilter === "all" ? docs : docs.filter((d) => d.type === docFilter)
+    docFilter === "all"
+      ? docs
+      : docs.filter((document) => document.category === docFilter)
 
   const counts: Record<string, number> = { all: docs.length }
-  for (const d of docs) counts[d.type] = (counts[d.type] ?? 0) + 1
+  for (const document of docs) {
+    counts[document.category] = (counts[document.category] ?? 0) + 1
+  }
 
   return (
     <>
       <div className="space-y-5">
+        {loadError && (
+          <p
+            role="alert"
+            className="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+          >
+            {loadError}
+          </p>
+        )}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             {filterChips.map((chip) => (
@@ -811,7 +874,7 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
         ) : (
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((doc) => {
-              const cfg = docTypeConfig[doc.type]
+              const cfg = docTypeConfig[doc.category]
               return (
                 <div
                   key={doc.id}
@@ -835,10 +898,10 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
                   <div>
                     <div className="font-semibold text-gray-900 text-sm truncate">
-                      {doc.name}
+                      {doc.original_name}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {fmtDate(doc.date)} · {doc.doctor}
+                      {fmtDate(doc.created_at.slice(0, 10))}
                     </div>
                   </div>
 
@@ -847,35 +910,12 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
                       className="text-xs px-2 py-0.5 rounded font-mono font-medium uppercase"
                       style={{ background: "#F1F5F9", color: "#64748B" }}
                     >
-                      {doc.fileType}
+                      {doc.content_type.split("/")[1].replace("jpeg", "jpg")}
                     </span>
-                    {doc.size !== "—" && (
-                      <span className="text-xs text-gray-400">{doc.size}</span>
-                    )}
+                    <span className="text-xs text-gray-400">
+                      {(doc.size / 1024 / 1024).toFixed(1)} MB
+                    </span>
                   </div>
-
-                  {doc.sharedWith.length > 0 && (
-                    <div className="text-xs text-gray-400 flex items-center gap-1">
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="18" cy="5" r="3" />
-                        <circle cx="6" cy="12" r="3" />
-                        <circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                      </svg>
-                      Compartilhado com {doc.sharedWith.length} médico
-                      {doc.sharedWith.length !== 1 ? "s" : ""}
-                    </div>
-                  )}
 
                   <div
                     className="flex items-center gap-2 mt-auto pt-2 border-t"
@@ -901,28 +941,6 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
                       </svg>
                       Visualizar
                     </button>
-                    <button
-                      className="w-8 h-8 rounded-lg border flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0"
-                      style={{ borderColor: "var(--border)", color: "#64748B" }}
-                      title="Compartilhar"
-                    >
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="18" cy="5" r="3" />
-                        <circle cx="6" cy="12" r="3" />
-                        <circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                      </svg>
-                    </button>
                   </div>
                 </div>
               )
@@ -933,7 +951,6 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
       {showUpload && (
         <DocumentUploadModal
-          doctors={patientDoctorAccess}
           onSave={(doc) => {
             setDocs((prev) => [doc, ...prev])
             setShowUpload(false)
@@ -947,258 +964,6 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
         <DocumentViewerModal doc={viewing} onClose={() => setViewing(null)} />
       )}
     </>
-  )
-}
-
-function ConsultasTab() {
-  const [showForm, setShowForm] = useState(false)
-  const [formData, setFormData] = useState({
-    date: "",
-    doctorId: "",
-    motivo: "",
-    obs: "",
-  })
-
-  const selectedDoctor = patientDoctorAccess.find(
-    (d) => d.doctorId === formData.doctorId,
-  )
-
-  const specialtyColors: Record<string, Record<"bg" | "text", string>> = {
-    Cardiologia: { bg: "#FEE2E2", text: "#991B1B" },
-    Endocrinologia: { bg: "#EDE9FE", text: "#5B21B6" },
-    Nefrologia: { bg: "#DBEAFE", text: "#1D4ED8" },
-  }
-  const defaultColor = { bg: "var(--teal-100)", text: "var(--teal-700)" }
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-gray-900">Histórico de Consultas</h3>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-          style={{ background: "linear-gradient(135deg, #0E9F8A, #0D9488)" }}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          Registrar consulta
-        </button>
-      </div>
-
-      {showForm && (
-        <div
-          className="bg-white rounded-2xl border p-5 space-y-4"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <h4 className="font-semibold text-gray-900">Nova Consulta</h4>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                Data
-              </label>
-              <input
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, date: e.target.value }))
-                }
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                style={{ borderColor: "var(--border)" }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                Médico
-              </label>
-              <select
-                value={formData.doctorId}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, doctorId: e.target.value }))
-                }
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                style={{ borderColor: "var(--border)", background: "#FAFAFA" }}
-              >
-                <option value="">Selecionar médico...</option>
-                {patientDoctorAccess.map((d) => (
-                  <option key={d.doctorId} value={d.doctorId}>
-                    {d.doctorName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {selectedDoctor && (
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                  Especialidade
-                </label>
-                <div
-                  className="px-3 py-2.5 rounded-xl text-sm text-gray-700"
-                  style={{ background: "var(--muted)" }}
-                >
-                  {selectedDoctor.specialty}
-                </div>
-              </div>
-            )}
-            <div className={selectedDoctor ? "" : "sm:col-span-2"}>
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                Motivo
-              </label>
-              <input
-                type="text"
-                value={formData.motivo}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, motivo: e.target.value }))
-                }
-                placeholder="Motivo da consulta..."
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                style={{ borderColor: "var(--border)" }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                Observações
-              </label>
-              <textarea
-                value={formData.obs}
-                onChange={(e) =>
-                  setFormData((f) => ({ ...f, obs: e.target.value }))
-                }
-                rows={3}
-                placeholder="Observações sobre a consulta..."
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none"
-                style={{ borderColor: "var(--border)" }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-xl text-sm font-medium border hover:bg-gray-50 transition-colors"
-              style={{ borderColor: "var(--border)" }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={() => setShowForm(false)}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-              style={{ background: "var(--primary)" }}
-            >
-              Salvar
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {patientConsultations.map((c, i) => {
-          const sc = specialtyColors[c.specialty] || defaultColor
-          return (
-            <div key={c.id} className="flex gap-4">
-              <div className="flex flex-col items-center flex-shrink-0">
-                <div
-                  className="w-3 h-3 rounded-full mt-1.5 flex-shrink-0"
-                  style={{ background: "var(--primary)" }}
-                />
-                {i < patientConsultations.length - 1 && (
-                  <div
-                    className="w-px flex-1 mt-1"
-                    style={{ background: "var(--border)", minHeight: "2rem" }}
-                  />
-                )}
-              </div>
-              <div
-                className="bg-white rounded-2xl border p-4 flex-1 mb-2"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div className="flex items-start justify-between gap-2 flex-wrap mb-2">
-                  <div>
-                    <div className="font-semibold text-gray-900 text-sm">
-                      {c.motivo}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-0.5">
-                      {c.doctorName}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span
-                      className="text-xs px-2.5 py-1 rounded-full font-medium"
-                      style={{ background: sc.bg, color: sc.text }}
-                    >
-                      {c.specialty}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {fmtDate(c.date)}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {c.summary}
-                </p>
-                {(c.documents.length > 0 || c.prescriptions.length > 0) && (
-                  <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
-                    {c.documents.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                          <polyline points="14 2 14 8 20 8" />
-                        </svg>
-                        {c.documents.length} documento
-                        {c.documents.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {c.prescriptions.length > 0 && (
-                      <span className="flex items-center gap-1">
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M9 11l3 3L22 4" />
-                          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
-                        </svg>
-                        {c.prescriptions.length} receita
-                        {c.prescriptions.length !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
   )
 }
 

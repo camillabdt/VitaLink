@@ -2,9 +2,9 @@
 
 ## Estado da etapa
 
-O VitaLink possui fatias verticais executáveis para cadastro, ativação TOTP, login, recuperação de conta, troca de senha e gestão de sessões do paciente. As evidências estão registradas em [Implementação da issue #50](implementacao-issue-50.md) e [Implementação da issue #51](implementacao-issue-51.md). Elas não comprovam as demais telas, perfis ou controles planejados.
+O VitaLink possui as fatias verticais da primeira versão executáveis e validadas. As evidências automatizadas, de integração e operacionais estão registradas nas implementações das issues [#50](implementacao-issue-50.md) a [#65](implementacao-issue-65.md). A revisão visual, funcional e de acessibilidade foi concluída na [issue #66](implementacao-issue-66.md).
 
-O diretório `VitaLink Health Management App/` continua sendo a baseline visual exportada do Figma Make. Os componentes de autenticação, recuperação e segurança da conta do paciente foram conectados à API; as demais áreas ainda contêm partes simuladas e só serão consideradas implementadas quando suas issues produzirem testes e evidências próprias.
+O diretório `VitaLink Health Management App/` continua sendo a baseline visual exportada do Figma Make. Os controles mantidos na primeira versão estão conectados à API e os comportamentos simulados ou fora de escopo foram removidos. A revisão HITL confirmou a cobertura do inventário nos viewports e critérios de acessibilidade definidos.
 
 ## Estratégia TDD adotada para o VitaLink
 
@@ -240,6 +240,6 @@ Esta verificação possui as seguintes limitações:
 
 A Etapa 5 passa a possuir **evidência prática e reproduzível de um processo de verificação de segurança**, incluindo ambiente controlado, ferramenta, comando executado, relatórios e análise de achados.
 
-A verificação não valida a segurança do VitaLink. Seu objetivo, enquanto não há implementação do sistema, é demonstrar a aplicação do processo de análise e estabelecer como resultados de ferramentas devem ser interpretados sem confundir ameaça, vulnerabilidade, alerta automatizado e vulnerabilidade comprovada.
+A execução do ZAP descrita nesta seção não valida a segurança do VitaLink, pois teve o OWASP Juice Shop como alvo didático. Ela demonstra a aplicação do processo de análise e estabelece como resultados de ferramentas devem ser interpretados sem confundir ameaça, vulnerabilidade, alerta automatizado e vulnerabilidade comprovada. A implementação atual do VitaLink é sustentada separadamente pelas evidências das issues #50 a #66.
 
-Quando uma implementação executável do VitaLink estiver disponível, o mesmo processo deverá ser reaplicado diretamente sobre o sistema, complementado por testes específicos dos controles de autorização, revogação, compartilhamento, auditoria, integridade e disponibilidade definidos nas etapas anteriores.
+Uma análise dinâmica futura deverá reaplicar o processo diretamente sobre uma implantação controlada do VitaLink. Essa análise complementará os testes atuais de autorização, revogação, compartilhamento, auditoria, integridade e disponibilidade, sem substituir suas evidências específicas.

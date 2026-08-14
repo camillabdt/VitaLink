@@ -17,6 +17,7 @@ jobs:
       VITALINK_DATABASE_URL: postgresql+psycopg://vitallink:vitallink@localhost:5432/vitallink
       VITALINK_PUBLIC_ORIGIN: https://testserver
       VITALINK_SECRET_KEY: ci-only-synthetic-secret-key-with-32-characters
+      VITALINK_S3_SECRET_KEY: ci-only-synthetic-storage-secret
       VITALINK_SMTP_HOST: localhost
       VITALINK_SMTP_PORT: 1025
       PYTHONPATH: src
@@ -43,7 +44,7 @@ jobs:
           cache-dependency-path: VitaLink Health Management App/pnpm-lock.yaml
 
       - name: Start real integration services
-        run: docker compose up -d postgres mailpit
+        run: docker compose up -d --wait --wait-timeout 120 postgres mailpit minio clamav
 
       - name: Install backend dependencies
         run: uv sync --frozen
@@ -80,4 +81,4 @@ jobs:
 
       - name: Show service logs on failure
         if: failure()
-        run: docker compose logs --no-color postgres mailpit
+        run: docker compose logs --no-color postgres mailpit minio clamav

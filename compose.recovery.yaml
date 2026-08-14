@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:d4bb0a8c1b7bb2e29f976d099e7bfb9a5d8858cffe9e46b35cd302cd1f1f8168
+    environment:
+      POSTGRES_DB: vitallink
+      POSTGRES_USER: vitallink
+      POSTGRES_PASSWORD: recovery-only-synthetic
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vitallink -d vitallink"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - recovery-postgres:/var/lib/postgresql/data
+
+  object-store:
+    image: minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2
+    volumes:
+      - recovery-objects:/data
+
+  object-tools:
+    image: postgres:17-alpine@sha256:d4bb0a8c1b7bb2e29f976d099e7bfb9a5d8858cffe9e46b35cd302cd1f1f8168
+    entrypoint: ["sh"]
+    profiles: ["backup"]
+    volumes:
+      - recovery-objects:/data
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      VITALINK_DATABASE_URL: postgresql+psycopg://vitallink:recovery-only-synthetic@postgres:5432/vitallink
+      VITALINK_SECRET_KEY: recovery-only-synthetic-secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  recovery-objects:
+  recovery-postgres:

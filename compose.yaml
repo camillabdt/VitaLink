@@ -21,6 +21,31 @@ services:
       - "127.0.0.1:1025:1025"
       - "127.0.0.1:8025:8025"
 
+  minio:
+    image: minio/minio@sha256:a1a8bd4ac40ad7881a245bab97323e18f971e4d4cba2c2007ec1bedd21cbaba2
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: vitallink
+      MINIO_ROOT_PASSWORD: ${VITALINK_S3_SECRET_KEY:?configure VITALINK_S3_SECRET_KEY in .env}
+    ports:
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - minio-data:/data
+
+  backup-tools:
+    image: postgres:17-alpine@sha256:d4bb0a8c1b7bb2e29f976d099e7bfb9a5d8858cffe9e46b35cd302cd1f1f8168
+    entrypoint: ["sh"]
+    profiles: ["backup"]
+    volumes:
+      - minio-data:/data
+
+  clamav:
+    image: clamav/clamav@sha256:ee39b41018b30407214e390c2d715f793e256bb256890b431c11ba3a1416273a
+    ports:
+      - "127.0.0.1:3310:3310"
+    volumes:
+      - clamav-data:/var/lib/clamav
+
   api:
     build:
       context: .
@@ -31,10 +56,23 @@ services:
       VITALINK_SECRET_KEY: ${VITALINK_SECRET_KEY:?configure VITALINK_SECRET_KEY in .env}
       VITALINK_SMTP_HOST: mailpit
       VITALINK_SMTP_PORT: 1025
+      VITALINK_S3_ENDPOINT: http://minio:9000
+      VITALINK_S3_ACCESS_KEY: vitallink
+      VITALINK_S3_SECRET_KEY: ${VITALINK_S3_SECRET_KEY:?configure VITALINK_S3_SECRET_KEY in .env}
+      VITALINK_CLAMAV_HOST: clamav
+      VITALINK_API_RATE_LIMIT_REQUESTS: ${VITALINK_API_RATE_LIMIT_REQUESTS:-20}
+      VITALINK_API_RATE_LIMIT_WINDOW_SECONDS: ${VITALINK_API_RATE_LIMIT_WINDOW_SECONDS:-60}
+      VITALINK_TRANSCRIPTION_CACHE_DIR: /models
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      DO_NOT_TRACK: "1"
     depends_on:
       postgres:
         condition: service_healthy
       mailpit:
+        condition: service_started
+      minio:
+        condition: service_started
+      clamav:
         condition: service_started
     healthcheck:
       test:
@@ -47,6 +85,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    volumes:
+      - whisper-models:/models
 
   web:
     build:
@@ -76,4 +116,7 @@ services:
 volumes:
   caddy-config:
   caddy-data:
+  clamav-data:
+  minio-data:
   postgres-data:
+  whisper-models:

@@ -1,15 +1,11 @@
 import { useEffect, useState } from "react"
 import Layout from "@/components/shared/Layout"
-import type { Page, PatientDoctorAccess } from "@/data/mockData"
-import {
-  currentPatient,
-  patientDoctorAccess,
-  patientAccessLogs,
-  fmtDate,
-} from "@/data/mockData"
-import doctorImg from "@/imports/ChatGPT_Image_3_de_ago._de_2026__11_38_29.png"
+import AuditHistory from "@/components/shared/AuditHistory"
+import PersonalObservations from "@/components/patient/PersonalObservations"
+import type { Page, UserType } from "@/data/mockData"
 
 interface Props {
+  userType?: UserType
   onNavigate: (page: Page) => void
   onLogout: () => void
 }
@@ -22,27 +18,105 @@ interface AccountSession {
   expires_at: string
 }
 
-export default function PatientProfile({ onNavigate, onLogout }: Props) {
+interface AccessCodeMetadata {
+  id: string
+  created_at: string
+  expires_at: string
+  status: "active" | "consumed" | "revoked" | "expired"
+}
+
+interface AccessRequest {
+  id: string
+  status: "pending" | "granted" | "rejected"
+  created_at: string
+  justification: string
+  professional: {
+    name: string
+    specialty: string
+    institution: string | null
+  }
+}
+
+interface Authorization {
+  id: string
+  status: string
+  starts_at: string
+  expires_at: string
+  categories: string[]
+  operations: string[]
+  professional: {
+    id: string
+    name: string
+    specialty: string
+    institution: string | null
+  }
+}
+
+interface OwnedProfileResponse {
+  role: "patient" | "professional"
+  status: string
+  version: number
+  profile: {
+    name: string
+    email: string
+    cpf: string
+    birthdate: string
+    phone: string
+    blood_type?: string | null
+    crm?: string
+    uf?: string
+    specialty?: string
+    institution?: string | null
+  }
+}
+
+const emptyProfile: OwnedProfileResponse = {
+  role: "patient",
+  status: "active",
+  version: 1,
+  profile: {
+    name: "",
+    email: "",
+    cpf: "",
+    birthdate: "",
+    phone: "",
+    blood_type: "",
+  },
+}
+
+export default function PatientProfile({
+  userType = "patient",
+  onNavigate,
+  onLogout,
+}: Props) {
+  const [account, setAccount] = useState<OwnedProfileResponse>(emptyProfile)
+  const [form, setForm] = useState(emptyProfile.profile)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [profileError, setProfileError] = useState("")
+  const [profileMessage, setProfileMessage] = useState("")
+  const [profileSaving, setProfileSaving] = useState(false)
   const [editing, setEditing] = useState(false)
-  const [note, setNote] = useState(
-    "Tenho histórico familiar de doenças cardíacas. Faço acompanhamento regular. Pratico caminhada 3x/semana. Tomo vitamina D conforme indicação médica desde julho de 2026.",
-  )
-  const [editNote, setEditNote] = useState(note)
-  const [form, setForm] = useState({
-    name: currentPatient.name,
-    email: currentPatient.email,
-    phone: currentPatient.phone,
-    birthdate: currentPatient.birthdate,
-    bloodType: currentPatient.bloodType,
-    weight: String(currentPatient.weight),
-    height: String(currentPatient.height),
-  })
-  const [savingNote, setSavingNote] = useState(false)
-  const [doctors, setDoctors] =
-    useState<PatientDoctorAccess[]>(patientDoctorAccess)
-  const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [activeTab, setActiveTab] =
-    useState<"personal" | "doctors" | "security">("personal")
+    useState<"personal" | "observations" | "access" | "security">("personal")
+  const [accessCodes, setAccessCodes] = useState<AccessCodeMetadata[]>([])
+  const [accessCodesLoading, setAccessCodesLoading] = useState(false)
+  const [accessCodeError, setAccessCodeError] = useState("")
+  const [accessCodeMessage, setAccessCodeMessage] = useState("")
+  const [generatedCode, setGeneratedCode] = useState("")
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([])
+  const [authorizations, setAuthorizations] = useState<Authorization[]>([])
+  const [revocationForm, setRevocationForm] = useState({
+    authorizationId: "",
+    justification: "",
+    totpCode: "",
+  })
+  const [decisionSaving, setDecisionSaving] = useState("")
+  const [grantForm, setGrantForm] = useState({
+    categories: ["histórico"],
+    operations: ["consultar"],
+    durationDays: "30",
+    totpCode: "",
+  })
   const [sessions, setSessions] = useState<AccountSession[]>([])
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [sessionsError, setSessionsError] = useState("")
@@ -60,6 +134,32 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
     sessionStorage.removeItem("vitallink.csrf")
     onNavigate("login")
   }
+
+  const loadProfile = async () => {
+    setProfileLoading(true)
+    setProfileError("")
+    try {
+      const response = await fetch("/api/v1/me", {
+        credentials: "same-origin",
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("profile unavailable")
+      const current = (await response.json()) as OwnedProfileResponse
+      setAccount(current)
+      setForm(current.profile)
+    } catch {
+      setProfileError("Não foi possível carregar o perfil.")
+    } finally {
+      setProfileLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void loadProfile()
+  }, [])
 
   useEffect(() => {
     if (activeTab !== "security") return
@@ -90,6 +190,114 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
     }
   }, [activeTab])
 
+  useEffect(() => {
+    if (activeTab !== "access" || account.role !== "patient") return
+    let active = true
+    setAccessCodesLoading(true)
+    setAccessCodeError("")
+    Promise.all([
+      fetch("/api/v1/access-codes", { credentials: "same-origin" }),
+      fetch("/api/v1/access-requests", { credentials: "same-origin" }),
+      fetch("/api/v1/authorizations", { credentials: "same-origin" }),
+    ])
+      .then(
+        async ([codesResponse, requestsResponse, authorizationsResponse]) => {
+          if (
+            codesResponse.status === 401 ||
+            requestsResponse.status === 401 ||
+            authorizationsResponse.status === 401
+          ) {
+            handleSessionExpired()
+            return null
+          }
+          if (
+            !codesResponse.ok ||
+            !requestsResponse.ok ||
+            !authorizationsResponse.ok
+          )
+            throw new Error("access data unavailable")
+          return {
+            codes: (await codesResponse.json()) as AccessCodeMetadata[],
+            requests: (await requestsResponse.json()) as AccessRequest[],
+            authorizations:
+              (await authorizationsResponse.json()) as Authorization[],
+          }
+        },
+      )
+      .then((accessData) => {
+        if (!active || !accessData) return
+        setAccessCodes(accessData.codes)
+        setAccessRequests(accessData.requests)
+        setAuthorizations(accessData.authorizations)
+      })
+      .catch(() => {
+        if (active)
+          setAccessCodeError("Não foi possível carregar os dados de acesso.")
+      })
+      .finally(() => {
+        if (active) setAccessCodesLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [activeTab, account.role])
+
+  const saveProfile = async () => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setProfileError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setProfileSaving(true)
+    setProfileError("")
+    setProfileMessage("")
+    const payload =
+      account.role === "patient"
+        ? {
+            expected_version: account.version,
+            name: form.name,
+            birthdate: form.birthdate,
+            phone: form.phone,
+            blood_type: form.blood_type,
+          }
+        : {
+            expected_version: account.version,
+            phone: form.phone,
+            institution: form.institution || null,
+          }
+    try {
+      const response = await fetch("/api/v1/me", {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify(payload),
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (response.status === 409) {
+        setProfileError(
+          "O perfil foi alterado em outra sessão. Recarregue antes de tentar novamente.",
+        )
+        return
+      }
+      if (!response.ok) throw new Error("profile update failed")
+      const updated = (await response.json()) as OwnedProfileResponse
+      setAccount(updated)
+      setForm(updated.profile)
+      setEditing(false)
+      setProfileMessage("Perfil atualizado.")
+    } catch {
+      setProfileError("Não foi possível atualizar o perfil. Tente novamente.")
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
   const endSession = async (sessionId: string) => {
     const csrfToken = sessionStorage.getItem("vitallink.csrf")
     if (!csrfToken) {
@@ -109,10 +317,254 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
       }
       if (!response.ok) throw new Error("session revoke failed")
       setSessions((current) =>
-        current.filter((session) => session.id !== sessionId),
+        current.filter((activeSession) => activeSession.id !== sessionId),
       )
     } catch {
       setSessionsError("Não foi possível encerrar a sessão. Tente novamente.")
+    }
+  }
+
+  const generateAccessCode = async () => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setAccessCodeError("")
+    setAccessCodeMessage("")
+    try {
+      const response = await fetch("/api/v1/access-codes", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": csrfToken },
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("access code creation failed")
+      const created = (await response.json()) as AccessCodeMetadata & {
+        code: string
+      }
+      setGeneratedCode(created.code)
+      setAccessCodes((current) => [
+        {
+          id: created.id,
+          created_at: new Date().toISOString(),
+          expires_at: created.expires_at,
+          status: created.status,
+        },
+        ...current,
+      ])
+    } catch {
+      setAccessCodeError("Não foi possível gerar o código. Tente novamente.")
+    }
+  }
+
+  const copyAccessCode = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedCode)
+      setAccessCodeMessage("Código copiado.")
+    } catch {
+      setAccessCodeError("Não foi possível copiar o código.")
+    }
+  }
+
+  const revokeAccessCode = async (accessCodeId: string) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setAccessCodeError("")
+    try {
+      const response = await fetch(`/api/v1/access-codes/${accessCodeId}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": csrfToken },
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("access code revocation failed")
+      setAccessCodes((current) =>
+        current.map((code) =>
+          code.id === accessCodeId ? { ...code, status: "revoked" } : code,
+        ),
+      )
+      setGeneratedCode("")
+      setAccessCodeMessage("Código revogado.")
+    } catch {
+      setAccessCodeError("Não foi possível revogar o código.")
+    }
+  }
+
+  const toggleGrantValue = (
+    field: "categories" | "operations",
+    value: string,
+  ) => {
+    setGrantForm((current) => ({
+      ...current,
+      [field]: current[field].includes(value)
+        ? current[field].filter((item) => item !== value)
+        : [...current[field], value],
+    }))
+  }
+
+  const decideAccessRequest = async (
+    accessRequestId: string,
+    decision: "granted" | "rejected",
+  ) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setDecisionSaving(accessRequestId)
+    setAccessCodeError("")
+    setAccessCodeMessage("")
+    const headers = {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfToken,
+    }
+    try {
+      let stepUpConfirmationId: string | undefined
+      if (decision === "granted") {
+        if (
+          grantForm.categories.length === 0 ||
+          grantForm.operations.length === 0 ||
+          grantForm.totpCode.length !== 6
+        ) {
+          setAccessCodeError("Informe escopo, prazo e TOTP para conceder.")
+          return
+        }
+        const stepUp = await fetch("/api/v1/step-up-confirmations", {
+          method: "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify({
+            action: "authorization_grant",
+            totp_code: grantForm.totpCode,
+          }),
+        })
+        if (!stepUp.ok) {
+          setAccessCodeError("Não foi possível confirmar o TOTP.")
+          return
+        }
+        stepUpConfirmationId = ((await stepUp.json()) as { id: string }).id
+      }
+      const response = await fetch(
+        `/api/v1/access-requests/${accessRequestId}/decisions`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify(
+            decision === "granted"
+              ? {
+                  decision,
+                  categories: grantForm.categories,
+                  operations: grantForm.operations,
+                  duration_days: Number(grantForm.durationDays),
+                  step_up_confirmation_id: stepUpConfirmationId,
+                }
+              : { decision },
+          ),
+        },
+      )
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("decision failed")
+      setAccessRequests((current) =>
+        current.map((item) =>
+          item.id === accessRequestId ? { ...item, status: decision } : item,
+        ),
+      )
+      setGrantForm((current) => ({ ...current, totpCode: "" }))
+      setAccessCodeMessage(
+        decision === "granted" ? "Acesso concedido." : "Solicitação recusada.",
+      )
+    } catch {
+      setAccessCodeError("Não foi possível registrar a decisão.")
+    } finally {
+      setDecisionSaving("")
+    }
+  }
+
+  const revokeAuthorization = async (authorizationId: string) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    if (
+      revocationForm.authorizationId !== authorizationId ||
+      revocationForm.justification.trim().length < 3 ||
+      revocationForm.totpCode.length !== 6
+    ) {
+      setAccessCodeError("Informe o motivo e o TOTP para revogar.")
+      return
+    }
+    if (!window.confirm("Revogar esta autorização imediatamente?")) return
+    setDecisionSaving(authorizationId)
+    setAccessCodeError("")
+    setAccessCodeMessage("")
+    const headers = {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfToken,
+    }
+    try {
+      const stepUp = await fetch("/api/v1/step-up-confirmations", {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({
+          action: "authorization_revoke",
+          totp_code: revocationForm.totpCode,
+        }),
+      })
+      if (!stepUp.ok) {
+        setAccessCodeError("Não foi possível confirmar o TOTP.")
+        return
+      }
+      const confirmation = (await stepUp.json()) as { id: string }
+      const response = await fetch(
+        `/api/v1/authorizations/${authorizationId}/revocations`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify({
+            justification: revocationForm.justification.trim(),
+            step_up_confirmation_id: confirmation.id,
+          }),
+        },
+      )
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("authorization revocation failed")
+      setAuthorizations((current) =>
+        current.map((authorization) =>
+          authorization.id === authorizationId
+            ? { ...authorization, status: "revoked" }
+            : authorization,
+        ),
+      )
+      setRevocationForm({
+        authorizationId: "",
+        justification: "",
+        totpCode: "",
+      })
+      setAccessCodeMessage("Autorização revogada.")
+    } catch {
+      setAccessCodeError("Não foi possível revogar a autorização.")
+    } finally {
+      setDecisionSaving("")
     }
   }
 
@@ -171,10 +623,7 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
         handleSessionExpired()
         return
       }
-      if (!response.ok) {
-        setPasswordError("Não foi possível atualizar a senha.")
-        return
-      }
+      if (!response.ok) throw new Error("password update failed")
       setPasswordForm({
         currentPassword: "",
         newPassword: "",
@@ -189,483 +638,95 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
     }
   }
 
-  const handleSaveNote = () => {
-    setSavingNote(true)
-    setTimeout(() => {
-      setNote(editNote)
-      setSavingNote(false)
-    }, 600)
-  }
-
-  const removeDoctor = (doctorId: string) => {
-    setDoctors((prev) => prev.filter((d) => d.doctorId !== doctorId))
-    setConfirmRemove(null)
-  }
-
-  const bmi = (
-    Number(form.weight) / Math.pow(Number(form.height) / 100, 2)
-  ).toFixed(1)
-  const bmiStatus =
-    Number(bmi) < 18.5
-      ? "Abaixo do peso"
-      : Number(bmi) < 25
-        ? "Peso normal"
-        : Number(bmi) < 30
-          ? "Sobrepeso"
-          : "Obesidade"
-
-  const tabs = [
-    { id: "personal", label: "Informações pessoais" },
-    { id: "doctors", label: `Meus médicos (${doctors.length})` },
-    { id: "security", label: "Segurança" },
-  ] as const
+  const fields =
+    account.role === "patient"
+      ? [
+          ["name", "Nome completo", "text", true],
+          ["email", "E-mail confirmado", "email", false],
+          ["cpf", "CPF", "text", false],
+          ["birthdate", "Data de nascimento", "date", true],
+          ["phone", "Telefone", "tel", true],
+          ["blood_type", "Tipo sanguíneo", "text", true],
+        ]
+      : [
+          ["name", "Nome completo", "text", false],
+          ["email", "E-mail confirmado", "email", false],
+          ["cpf", "CPF", "text", false],
+          ["birthdate", "Data de nascimento", "date", false],
+          ["phone", "Telefone", "tel", true],
+          ["crm", "CRM", "text", false],
+          ["uf", "UF", "text", false],
+          ["specialty", "Especialidade validada", "text", false],
+          ["institution", "Instituição", "text", true],
+        ]
 
   return (
     <Layout
-      currentPage="patient-profile"
-      userType="patient"
+      currentPage={
+        userType === "patient" ? "patient-profile" : "doctor-profile"
+      }
+      userType={userType}
       onNavigate={onNavigate}
       onLogout={onLogout}
       title="Meu Perfil"
-      subtitle="Gerencie suas informações pessoais e de saúde"
+      subtitle="Gerencie seus dados permitidos e a segurança da conta"
+      userName={form.name || undefined}
+      userSubtitle={
+        account.role === "patient"
+          ? "Paciente"
+          : form.specialty || "Profissional"
+      }
     >
       <div className="max-w-3xl mx-auto space-y-5">
-        {/* Avatar + identity header */}
-        <div
-          className="bg-white rounded-2xl border p-6"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <div className="flex items-start justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-5">
-              <div className="relative">
-                <div
-                  className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-bold text-white"
-                  style={{
-                    background: "linear-gradient(135deg, #0E9F8A, #0D9488)",
-                  }}
-                >
-                  {form.name
-                    .split(" ")
-                    .slice(0, 2)
-                    .map((n) => n[0])
-                    .join("")}
-                </div>
-                <button
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white border shadow-sm flex items-center justify-center"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                </button>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">{form.name}</h2>
-                <p className="text-gray-500 text-sm">{form.email}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <span
-                    className="text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{
-                      background: "var(--teal-100)",
-                      color: "var(--teal-700)",
-                    }}
-                  >
-                    Tipo {form.bloodType}
-                  </span>
-                  <span
-                    className="text-xs px-2.5 py-1 rounded-full font-medium"
-                    style={{ background: "#EDE9FE", color: "#6D28D9" }}
-                  >
-                    Paciente
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {doctors.length} médico{doctors.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {activeTab === "personal" && (
-              <button
-                onClick={() => (editing ? setEditing(false) : setEditing(true))}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                style={
-                  editing
-                    ? { background: "var(--primary)", color: "#fff" }
-                    : { background: "var(--muted)", color: "var(--foreground)" }
-                }
-              >
-                {editing ? (
-                  <>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    Salvar
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    Editar
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div
-            className="grid grid-cols-3 gap-4 mt-5 p-4 rounded-xl"
-            style={{ background: "var(--muted)" }}
-          >
-            {[
-              { label: "Peso", value: `${form.weight} kg` },
-              { label: "Altura", value: `${form.height} cm` },
-              { label: "IMC", value: `${bmi} · ${bmiStatus}` },
-            ].map((s) => (
-              <div key={s.label} className="text-center">
-                <div className="font-bold text-gray-900">{s.value}</div>
-                <div className="text-xs text-gray-500 mt-0.5">{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tabs */}
-        <div
-          className="flex gap-1 p-1 rounded-xl w-fit"
-          style={{ background: "var(--muted)" }}
-        >
-          {tabs.map((tab) => (
+        {profileLoading ? (
+          <p role="status" className="text-sm text-gray-500">
+            Carregando perfil...
+          </p>
+        ) : profileError && !account.profile.name ? (
+          <div role="alert" className="bg-white rounded-2xl border p-6">
+            <p className="text-sm text-red-600">{profileError}</p>
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap"
-              style={
-                activeTab === tab.id
-                  ? {
-                      background: "#fff",
-                      color: "var(--teal-700)",
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                    }
-                  : { color: "#64748B" }
-              }
+              type="button"
+              onClick={() => void loadProfile()}
+              className="mt-3 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: "var(--primary)" }}
             >
-              {tab.label}
+              Tentar novamente
             </button>
-          ))}
-        </div>
-
-        {/* ── Personal info ── */}
-        {activeTab === "personal" && (
+          </div>
+        ) : (
           <>
-            <div
+            <section
               className="bg-white rounded-2xl border p-6"
               style={{ borderColor: "var(--border)" }}
+              aria-labelledby="profile-name"
             >
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Informações Pessoais
-              </h3>
-              <div className="grid sm:grid-cols-2 gap-4">
-                {[
-                  { label: "Nome completo", key: "name", type: "text" },
-                  { label: "E-mail", key: "email", type: "email" },
-                  { label: "Telefone", key: "phone", type: "tel" },
-                  {
-                    label: "Data de nascimento",
-                    key: "birthdate",
-                    type: "date",
-                  },
-                ].map(({ label, key, type }) => (
-                  <div key={key}>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                      {label}
-                    </label>
-                    {editing ? (
-                      <input
-                        type={type}
-                        value={(form as any)[key]}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, [key]: e.target.value }))
-                        }
-                        className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-                        style={{
-                          borderColor: "var(--border)",
-                          background: "#FAFAFA",
-                        }}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "var(--primary)")
-                        }
-                        onBlur={(e) =>
-                          (e.target.style.borderColor = "var(--border)")
-                        }
-                      />
-                    ) : (
-                      <div
-                        className="px-4 py-2.5 rounded-xl text-sm text-gray-900"
-                        style={{ background: "var(--muted)" }}
-                      >
-                        {(form as any)[key] || "—"}
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                    CPF
-                  </label>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="flex min-w-0 flex-1 items-center gap-4">
                   <div
-                    className="px-4 py-2.5 rounded-xl text-sm text-gray-400"
-                    style={{ background: "var(--muted)" }}
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-bold text-white"
+                    style={{
+                      background: "linear-gradient(135deg, #0E9F8A, #0D9488)",
+                    }}
+                    aria-hidden="true"
                   >
-                    {currentPatient.cpf}{" "}
-                    <span className="text-xs">(não editável)</span>
+                    {form.name
+                      .split(" ")
+                      .slice(0, 2)
+                      .map((part) => part[0])
+                      .join("")}
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                    Tipo sanguíneo
-                  </label>
-                  {editing ? (
-                    <select
-                      value={form.bloodType}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, bloodType: e.target.value }))
-                      }
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-                      style={{
-                        borderColor: "var(--border)",
-                        background: "#FAFAFA",
-                      }}
+                  <div className="min-w-0">
+                    <h2
+                      id="profile-name"
+                      className="text-xl font-bold text-gray-900"
                     >
-                      {["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"].map(
-                        (t) => (
-                          <option key={t}>{t}</option>
-                        ),
-                      )}
-                    </select>
-                  ) : (
-                    <div
-                      className="px-4 py-2.5 rounded-xl text-sm text-gray-900"
-                      style={{ background: "var(--muted)" }}
-                    >
-                      {form.bloodType}
-                    </div>
-                  )}
-                </div>
-
-                {editing && (
-                  <>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                        Peso (kg)
-                      </label>
-                      <input
-                        type="number"
-                        value={form.weight}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, weight: e.target.value }))
-                        }
-                        className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-                        style={{
-                          borderColor: "var(--border)",
-                          background: "#FAFAFA",
-                        }}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "var(--primary)")
-                        }
-                        onBlur={(e) =>
-                          (e.target.style.borderColor = "var(--border)")
-                        }
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                        Altura (cm)
-                      </label>
-                      <input
-                        type="number"
-                        value={form.height}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, height: e.target.value }))
-                        }
-                        className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-                        style={{
-                          borderColor: "var(--border)",
-                          background: "#FAFAFA",
-                        }}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "var(--primary)")
-                        }
-                        onBlur={(e) =>
-                          (e.target.style.borderColor = "var(--border)")
-                        }
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Health notes */}
-            <div
-              className="bg-white rounded-2xl border p-6"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">
-                  Minhas Anotações de Saúde
-                </h3>
-                <span className="text-xs text-gray-400">
-                  Visível para você e seus médicos
-                </span>
-              </div>
-              <textarea
-                value={editNote}
-                onChange={(e) => setEditNote(e.target.value)}
-                rows={5}
-                className="w-full px-4 py-3 rounded-xl border text-sm outline-none resize-none leading-relaxed transition-all"
-                style={{ borderColor: "var(--border)", background: "#FAFAFA" }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-                placeholder="Registre sintomas, medicamentos, observações importantes..."
-              />
-              <div className="flex items-center justify-between mt-3">
-                <span className="text-xs text-gray-400">
-                  {editNote.length} caracteres
-                </span>
-                <button
-                  onClick={handleSaveNote}
-                  disabled={savingNote || editNote === note}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-                  style={{ background: "var(--primary)", color: "#fff" }}
-                >
-                  {savingNote ? (
-                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  )}
-                  Salvar anotação
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* ── Doctors ── */}
-        {activeTab === "doctors" && (
-          <div className="space-y-4">
-            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 flex gap-3">
-              <svg
-                className="flex-shrink-0 mt-0.5 text-amber-500"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-              <p className="text-amber-700 text-sm leading-relaxed">
-                Os médicos listados abaixo têm acesso aos seus dados de saúde,
-                exames e anotações. Você pode remover um médico a qualquer
-                momento — o acesso é revogado imediatamente.
-              </p>
-            </div>
-
-            {doctors.map((doc) => (
-              <div
-                key={doc.doctorId}
-                className="bg-white rounded-2xl border p-5"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div className="flex items-center gap-4">
-                  {doc.avatar ? (
-                    <img
-                      src={doc.avatar}
-                      alt={doc.doctorName}
-                      className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border"
-                      style={{ borderColor: "var(--border)" }}
-                    />
-                  ) : doc.doctorId === "d1" ? (
-                    <div
-                      className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border"
-                      style={{ borderColor: "var(--border)" }}
-                    >
-                      <img
-                        src={doctorImg}
-                        alt={doc.doctorName}
-                        className="w-full h-full object-cover object-top"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center text-lg font-bold text-white flex-shrink-0"
-                      style={{
-                        background: "linear-gradient(135deg, #0E9F8A, #0D9488)",
-                      }}
-                    >
-                      {doc.doctorName
-                        .split(" ")
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-gray-900">
-                        {doc.doctorName}
-                      </span>
+                      {form.name}
+                    </h2>
+                    <p className="break-all text-sm text-gray-500">
+                      {form.email}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
                       <span
                         className="text-xs px-2.5 py-1 rounded-full font-medium"
                         style={{
@@ -673,511 +734,668 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
                           color: "var(--teal-700)",
                         }}
                       >
-                        {doc.specialty}
+                        {account.role === "patient"
+                          ? `Tipo ${form.blood_type || "não informado"}`
+                          : `${form.crm}/${form.uf}`}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {account.role === "patient"
+                          ? "Paciente"
+                          : `Profissional · ${form.specialty}`}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-500 mt-0.5">
-                      {doc.crm}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      Acesso concedido em {fmtDate(doc.grantedAt)}
-                    </div>
                   </div>
-
-                  {confirmRemove === doc.doctorId ? (
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-sm text-gray-600 hidden sm:inline">
-                        Confirmar remoção?
-                      </span>
-                      <button
-                        onClick={() => removeDoctor(doc.doctorId)}
-                        className="px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-all"
-                        style={{ background: "#EF4444" }}
-                      >
-                        Remover
-                      </button>
-                      <button
-                        onClick={() => setConfirmRemove(null)}
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium border hover:bg-gray-50 transition-colors"
-                        style={{ borderColor: "var(--border)" }}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setConfirmRemove(doc.doctorId)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium text-red-500 border border-red-100 hover:bg-red-50 transition-colors flex-shrink-0"
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                        <polyline points="16 17 21 12 16 7" />
-                        <line x1="21" y1="12" x2="9" y2="12" />
-                      </svg>
-                      Remover acesso
-                    </button>
-                  )}
                 </div>
-
-                {/* What this doctor can see */}
-                <div className="mt-4 flex gap-2 flex-wrap">
-                  {[
-                    "Exames",
-                    "Histórico",
-                    "Anotações",
-                    "Valores de referência",
-                  ].map((item) => (
-                    <span
-                      key={item}
-                      className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full"
-                      style={{ background: "#F1F5F9", color: "#64748B" }}
-                    >
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 12 12"
-                        fill="none"
-                      >
-                        <path
-                          d="M2 6L5 9L10 3"
-                          stroke="#0E9F8A"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {doctors.length === 0 && (
-              <div
-                className="bg-white rounded-2xl border p-10 text-center"
-                style={{ borderColor: "var(--border)" }}
-              >
-                <div
-                  className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                  style={{ background: "var(--muted)" }}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#94A3B8"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 00-3-3.87" />
-                    <path d="M16 3.13a4 4 0 010 7.75" />
-                  </svg>
-                </div>
-                <p className="font-medium text-gray-700">
-                  Nenhum médico vinculado
-                </p>
-                <p className="text-sm text-gray-400 mt-1">
-                  Solicite que seu médico crie um vínculo pelo sistema.
-                </p>
-              </div>
-            )}
-
-            <div
-              className="bg-white rounded-2xl border p-5"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <h4 className="font-semibold text-gray-900 mb-1">
-                Adicionar médico
-              </h4>
-              <p className="text-sm text-gray-500 mb-3">
-                Compartilhe este código com seu médico para que ele solicite
-                acesso:
-              </p>
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex-1 px-4 py-3 rounded-xl font-mono text-sm font-semibold tracking-widest text-center text-teal-700"
-                  style={{
-                    background: "var(--teal-50)",
-                    letterSpacing: "0.2em",
-                  }}
-                >
-                  ANA-2026-RF49
-                </div>
-                <button
-                  className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border hover:bg-gray-50 transition-colors flex-shrink-0"
-                  style={{ borderColor: "var(--border)" }}
-                >
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                    <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
-                  </svg>
-                  Copiar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── Security ── */}
-        {activeTab === "security" && (
-          <div className="space-y-4">
-            <div
-              className="bg-white rounded-2xl border p-6"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Alterar senha
-              </h3>
-              <form onSubmit={changePassword} className="space-y-4 max-w-md">
-                {[
-                  ["Senha atual", "currentPassword", "current-password"],
-                  ["Nova senha", "newPassword", "new-password"],
-                  [
-                    "Confirmar nova senha",
-                    "confirmation",
-                    "new-password-confirmation",
-                  ],
-                ].map(([label, field, id]) => (
-                  <div key={field}>
-                    <label
-                      htmlFor={id}
-                      className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
-                    >
-                      {label}
-                    </label>
-                    <input
-                      id={id}
-                      type="password"
-                      minLength={field === "currentPassword" ? 1 : 12}
-                      maxLength={128}
-                      value={passwordForm[(field as keyof typeof passwordForm)]}
-                      onChange={(event) =>
-                        setPasswordForm((current) => ({
-                          ...current,
-                          [field]: event.target.value,
-                        }))
-                      }
-                      required
-                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-                      style={{
-                        borderColor: "var(--border)",
-                        background: "#FAFAFA",
-                      }}
-                    />
-                  </div>
-                ))}
-                <div>
-                  <label
-                    htmlFor="password-change-totp"
-                    className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
-                  >
-                    TOTP adicional
-                  </label>
-                  <input
-                    id="password-change-totp"
-                    inputMode="numeric"
-                    pattern="\d{6}"
-                    maxLength={6}
-                    value={passwordForm.totpCode}
-                    onChange={(event) =>
-                      setPasswordForm((current) => ({
-                        ...current,
-                        totpCode: event.target.value.replace(/\D/g, ""),
-                      }))
+                {activeTab === "personal" && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      editing ? void saveProfile() : setEditing(true)
                     }
-                    required
-                    className="w-full px-4 py-2.5 rounded-xl border text-sm text-center font-mono tracking-[0.3em] outline-none"
+                    disabled={profileSaving}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50"
                     style={{
-                      borderColor: "var(--border)",
-                      background: "#FAFAFA",
+                      background: editing ? "var(--primary)" : "var(--muted)",
+                      color: editing ? "#fff" : "var(--foreground)",
                     }}
-                  />
-                </div>
-                {passwordError && (
-                  <p role="alert" className="text-sm text-red-600">
-                    {passwordError}
-                  </p>
-                )}
-                {passwordMessage && (
-                  <p role="status" className="text-sm text-emerald-700">
-                    {passwordMessage}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={passwordSaving}
-                  className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-                  style={{ background: "var(--primary)", color: "#fff" }}
-                >
-                  {passwordSaving ? "Atualizando..." : "Atualizar senha"}
-                </button>
-              </form>
-            </div>
-
-            <div
-              className="bg-white rounded-2xl border p-6"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <h3 className="font-semibold text-gray-900 mb-1">
-                Autenticação em dois fatores
-              </h3>
-              <p className="text-sm text-gray-500 mb-4">
-                Adicione uma camada extra de proteção para seus dados de saúde.
-              </p>
-              <div
-                className="flex items-center justify-between p-4 rounded-xl border"
-                style={{ borderColor: "var(--border)", background: "#FAFAFA" }}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ background: "#FEF9C3" }}
                   >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#D97706"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      Aplicativo autenticador
-                    </div>
-                    <div className="text-xs text-emerald-700">Ativo</div>
-                  </div>
-                </div>
-                <span className="text-xs text-gray-500">
-                  Recuperação disponível na entrada
-                </span>
+                    {profileSaving
+                      ? "Salvando..."
+                      : editing
+                        ? "Salvar"
+                        : "Editar"}
+                  </button>
+                )}
               </div>
-            </div>
+              {profileMessage && (
+                <p role="status" className="mt-3 text-sm text-emerald-700">
+                  {profileMessage}
+                </p>
+              )}
+              {profileError && account.profile.name && (
+                <p role="alert" className="mt-3 text-sm text-red-600">
+                  {profileError}
+                </p>
+              )}
+            </section>
 
             <div
-              className="bg-white rounded-2xl border p-6"
-              style={{ borderColor: "var(--border)" }}
+              className="flex gap-1 p-1 rounded-xl w-fit"
+              style={{ background: "var(--muted)" }}
+              role="tablist"
+              aria-label="Seções do perfil"
             >
-              <h3 className="font-semibold text-gray-900 mb-4">
-                Sessões ativas
-              </h3>
-              {sessionsLoading && (
-                <p className="text-sm text-gray-500">Carregando sessões...</p>
-              )}
-              {sessionsError && (
-                <p role="alert" className="text-sm text-red-600 mb-3">
-                  {sessionsError}
-                </p>
-              )}
-              {!sessionsLoading && !sessionsError && sessions.length === 0 && (
-                <p className="text-sm text-gray-500">
-                  Nenhuma sessão ativa encontrada.
-                </p>
-              )}
-              {sessions.map((activeSession) => (
-                <div
-                  key={activeSession.id}
-                  className="flex items-center justify-between py-3 border-b last:border-0"
-                  style={{ borderColor: "var(--border)" }}
+              {[
+                ["personal", "Informações pessoais"],
+                ...(account.role === "patient"
+                  ? [
+                      ["observations", "Observações pessoais"],
+                      ["access", "Acesso temporário"],
+                    ]
+                  : []),
+                ["security", "Segurança"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === id}
+                  onClick={() =>
+                    setActiveTab(
+                      id as "personal" | "observations" | "access" | "security",
+                    )
+                  }
+                  className="px-4 py-2 rounded-lg text-sm font-medium"
+                  style={
+                    activeTab === id
+                      ? { background: "#fff", color: "var(--teal-700)" }
+                      : { color: "#64748B" }
+                  }
                 >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-9 h-9 rounded-xl flex items-center justify-center"
-                      style={{ background: "var(--muted)" }}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="#64748B"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect x="2" y="3" width="20" height="14" rx="2" />
-                        <line x1="8" y1="21" x2="16" y2="21" />
-                        <line x1="12" y1="17" x2="12" y2="21" />
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                        Sessão iniciada em{" "}
-                        {new Date(activeSession.created_at).toLocaleDateString(
-                          "pt-BR",
-                        )}
-                        {activeSession.current && (
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full font-medium"
-                            style={{ background: "#DCFCE7", color: "#166534" }}
-                          >
-                            Este dispositivo
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Último uso:{" "}
-                        {new Date(activeSession.last_used_at).toLocaleString(
-                          "pt-BR",
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  {!activeSession.current && (
-                    <button
-                      onClick={() => endSession(activeSession.id)}
-                      className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      Encerrar sessão
-                    </button>
-                  )}
-                </div>
+                  {label}
+                </button>
               ))}
             </div>
 
-            <div
-              className="bg-white rounded-2xl border p-6"
-              style={{ borderColor: "var(--border)" }}
-            >
-              <div className="flex items-center gap-2 mb-4">
-                <div
-                  className="w-8 h-8 rounded-xl flex items-center justify-center"
-                  style={{ background: "var(--teal-100)" }}
+            {activeTab === "personal" && (
+              <section
+                className="bg-white rounded-2xl border p-6"
+                style={{ borderColor: "var(--border)" }}
+                aria-labelledby="personal-data-title"
+              >
+                <h3
+                  id="personal-data-title"
+                  className="font-semibold text-gray-900 mb-4"
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--teal-700)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </div>
-                <h3 className="font-semibold text-gray-900">
-                  Histórico de Acessos
+                  Informações pessoais
                 </h3>
-              </div>
-              <p className="text-sm text-gray-500 mb-4">
-                Registro de quem acessou seus dados, o quê foi acessado e
-                quando.
-              </p>
-              <div className="space-y-0">
-                {patientAccessLogs.map((log, i) => {
-                  const roleConfig = {
-                    doctor: {
-                      label: "Médico",
-                      bg: "var(--teal-100)",
-                      text: "var(--teal-700)",
-                    },
-                    patient: {
-                      label: "Paciente",
-                      bg: "#DBEAFE",
-                      text: "#1D4ED8",
-                    },
-                    system: {
-                      label: "Sistema",
-                      bg: "#F1F5F9",
-                      text: "#64748B",
-                    },
-                  }
-                  const rc = roleConfig[log.actorRole]
-                  const initials =
-                    log.actorRole === "system"
-                      ? "⚙"
-                      : log.actorName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .slice(0, 2)
-                          .join("")
-                  return (
-                    <div
-                      key={log.id}
-                      className="flex items-center gap-3 px-3 py-3 rounded-xl"
-                      style={{
-                        background: i % 2 === 0 ? "#F8FAFC" : "transparent",
-                      }}
-                    >
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                        style={{
-                          background:
-                            log.actorRole === "system"
-                              ? "#94A3B8"
-                              : log.actorRole === "patient"
-                                ? "#3B82F6"
-                                : "linear-gradient(135deg, #0E9F8A, #0D9488)",
-                        }}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {fields.map(([key, label, type, editable]) => (
+                    <div key={String(key)}>
+                      <label
+                        htmlFor={`profile-${key}`}
+                        className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
                       >
-                        {initials}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-gray-900 truncate">
-                            {log.actorName}
-                          </span>
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full font-medium"
-                            style={{ background: rc.bg, color: rc.text }}
-                          >
-                            {rc.label}
-                          </span>
+                        {label}
+                      </label>
+                      {editing && editable ? (
+                        <input
+                          id={`profile-${key}`}
+                          type={String(type)}
+                          value={String(form[(key as keyof typeof form)] || "")}
+                          onChange={(event) =>
+                            setForm((current) => ({
+                              ...current,
+                              [String(key)]: event.target.value,
+                            }))
+                          }
+                          required={key !== "institution"}
+                          className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-teal-600"
+                          style={{ borderColor: "var(--border)" }}
+                        />
+                      ) : (
+                        <div
+                          id={`profile-${key}`}
+                          className="min-h-10 break-all rounded-xl px-4 py-2.5 text-sm text-gray-900"
+                          style={{ background: "var(--muted)" }}
+                        >
+                          {String(
+                            form[(key as keyof typeof form)] || "Não informado",
+                          )}
+                          {!editable && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              (não editável)
+                            </span>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          <span className="font-medium">{log.action}</span>
-                          <span className="text-gray-400">
-                            {" "}
-                            · {log.resource}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-xs font-medium text-gray-700">
-                          {fmtDate(log.date)}
-                        </div>
-                        <div className="text-xs text-gray-400">{log.time}</div>
-                        <div className="text-xs text-gray-300 font-mono mt-0.5 truncate max-w-[120px]">
-                          {log.device}
-                        </div>
-                      </div>
+                      )}
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {activeTab === "observations" && account.role === "patient" && (
+              <PersonalObservations onSessionExpired={handleSessionExpired} />
+            )}
+
+            {activeTab === "access" && account.role === "patient" && (
+              <section
+                className="rounded-2xl border bg-white p-6"
+                style={{ borderColor: "var(--border)" }}
+                aria-labelledby="access-code-title"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <h3
+                      id="access-code-title"
+                      className="font-semibold text-gray-900"
+                    >
+                      Código temporário
+                    </h3>
+                    <p className="mt-1 max-w-xl text-sm text-gray-500">
+                      O código vale por 24 horas e uma única solicitação. Ele
+                      não concede acesso aos seus dados.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void generateAccessCode()}
+                    className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+                    style={{ background: "var(--primary)" }}
+                  >
+                    Gerar código
+                  </button>
+                </div>
+
+                {generatedCode && (
+                  <div className="mt-5 rounded-xl bg-teal-50 p-4">
+                    <p className="break-all font-mono text-sm font-semibold text-teal-900">
+                      {generatedCode}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void copyAccessCode()}
+                      className="mt-3 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-teal-700"
+                    >
+                      Copiar código
+                    </button>
+                  </div>
+                )}
+
+                {accessCodesLoading ? (
+                  <p role="status" className="mt-5 text-sm text-gray-500">
+                    Carregando códigos...
+                  </p>
+                ) : accessCodes.length === 0 ? (
+                  <p className="mt-5 text-sm text-gray-500">
+                    Nenhum código gerado.
+                  </p>
+                ) : (
+                  <ul className="mt-5 space-y-3">
+                    {accessCodes.map((code) => (
+                      <li
+                        key={code.id}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4"
+                        style={{ borderColor: "var(--border)" }}
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {code.status === "active"
+                              ? "Código ativo"
+                              : code.status === "consumed"
+                                ? "Código utilizado"
+                                : code.status === "revoked"
+                                  ? "Código revogado"
+                                  : "Código expirado"}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            Expira em{" "}
+                            {new Date(code.expires_at).toLocaleString("pt-BR")}
+                          </p>
+                        </div>
+                        {code.status === "active" && (
+                          <button
+                            type="button"
+                            onClick={() => void revokeAccessCode(code.id)}
+                            className="rounded-lg px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                          >
+                            Revogar
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="font-semibold text-gray-900">
+                    Solicitações de profissionais
+                  </h3>
+                  {accessRequests.filter((item) => item.status === "pending")
+                    .length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">
+                      Nenhuma solicitação pendente.
+                    </p>
+                  ) : (
+                    <ul className="mt-4 space-y-4">
+                      {accessRequests
+                        .filter((item) => item.status === "pending")
+                        .map((accessRequest) => (
+                          <li
+                            key={accessRequest.id}
+                            className="rounded-xl border p-4"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            <p className="font-semibold text-gray-900">
+                              {accessRequest.professional.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {accessRequest.professional.specialty}
+                              {accessRequest.professional.institution
+                                ? ` · ${accessRequest.professional.institution}`
+                                : ""}
+                            </p>
+                            <p className="mt-3 text-sm text-gray-700">
+                              {accessRequest.justification}
+                            </p>
+
+                            <fieldset className="mt-4">
+                              <legend className="text-sm font-semibold text-gray-800">
+                                Categorias autorizadas
+                              </legend>
+                              <div className="mt-2 flex flex-wrap gap-3">
+                                {[
+                                  "histórico",
+                                  "consultas",
+                                  "exames",
+                                  "laudos",
+                                  "receitas",
+                                  "imagens",
+                                  "recomendações",
+                                  "metas",
+                                  "mensagens",
+                                ].map((category) => (
+                                  <label
+                                    key={category}
+                                    className="flex items-center gap-2 text-sm text-gray-700"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={grantForm.categories.includes(
+                                        category,
+                                      )}
+                                      onChange={() =>
+                                        toggleGrantValue("categories", category)
+                                      }
+                                    />
+                                    {category}
+                                  </label>
+                                ))}
+                              </div>
+                            </fieldset>
+
+                            <fieldset className="mt-4">
+                              <legend className="text-sm font-semibold text-gray-800">
+                                Operações autorizadas
+                              </legend>
+                              <div className="mt-2 flex flex-wrap gap-3">
+                                {["consultar", "anexar", "atualizar"].map(
+                                  (operation) => (
+                                    <label
+                                      key={operation}
+                                      className="flex items-center gap-2 text-sm text-gray-700"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={grantForm.operations.includes(
+                                          operation,
+                                        )}
+                                        onChange={() =>
+                                          toggleGrantValue(
+                                            "operations",
+                                            operation,
+                                          )
+                                        }
+                                      />
+                                      {operation}
+                                    </label>
+                                  ),
+                                )}
+                              </div>
+                            </fieldset>
+
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <label
+                                  htmlFor={`authorization-duration-${accessRequest.id}`}
+                                  className="block text-sm font-medium text-gray-700"
+                                >
+                                  Prazo em dias
+                                </label>
+                                <input
+                                  id={`authorization-duration-${accessRequest.id}`}
+                                  type="number"
+                                  min="1"
+                                  max="90"
+                                  value={grantForm.durationDays}
+                                  onChange={(event) =>
+                                    setGrantForm((current) => ({
+                                      ...current,
+                                      durationDays: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor={`authorization-totp-${accessRequest.id}`}
+                                  className="block text-sm font-medium text-gray-700"
+                                >
+                                  TOTP para concessão
+                                </label>
+                                <input
+                                  id={`authorization-totp-${accessRequest.id}`}
+                                  inputMode="numeric"
+                                  pattern="[0-9]{6}"
+                                  maxLength={6}
+                                  value={grantForm.totpCode}
+                                  onChange={(event) =>
+                                    setGrantForm((current) => ({
+                                      ...current,
+                                      totpCode: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                              <button
+                                type="button"
+                                disabled={decisionSaving === accessRequest.id}
+                                onClick={() =>
+                                  void decideAccessRequest(
+                                    accessRequest.id,
+                                    "granted",
+                                  )
+                                }
+                                className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                style={{ background: "var(--primary)" }}
+                              >
+                                Conceder acesso
+                              </button>
+                              <button
+                                type="button"
+                                disabled={decisionSaving === accessRequest.id}
+                                onClick={() =>
+                                  void decideAccessRequest(
+                                    accessRequest.id,
+                                    "rejected",
+                                  )
+                                }
+                                className="rounded-xl px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Recusar
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="font-semibold text-gray-900">
+                    Compartilhado com{" "}
+                    {
+                      authorizations.filter((item) => item.status === "active")
+                        .length
+                    }{" "}
+                    {authorizations.filter((item) => item.status === "active")
+                      .length === 1
+                      ? "profissional"
+                      : "profissionais"}
+                  </h3>
+                  {authorizations.length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">
+                      Nenhuma autorização concedida.
+                    </p>
+                  ) : (
+                    <ul className="mt-4 grid gap-3 md:grid-cols-2">
+                      {authorizations.map((authorization) => (
+                        <li
+                          key={authorization.id}
+                          className="rounded-xl border p-4"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <p className="font-semibold text-gray-900">
+                            {authorization.professional.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {authorization.professional.specialty}
+                          </p>
+                          <p className="mt-2 text-xs text-gray-600">
+                            {authorization.categories.join(", ")} ·{" "}
+                            {authorization.operations.join(", ")}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {authorization.status === "active"
+                              ? `Ativo até ${new Date(authorization.expires_at).toLocaleDateString("pt-BR")}`
+                              : authorization.status === "revoked"
+                                ? "Autorização revogada"
+                                : "Autorização expirada"}
+                          </p>
+                          {authorization.status === "active" && (
+                            <div className="mt-3 space-y-2 border-t pt-3">
+                              <label className="block text-xs font-medium text-gray-700">
+                                Motivo da revogação
+                                <input
+                                  value={
+                                    revocationForm.authorizationId ===
+                                    authorization.id
+                                      ? revocationForm.justification
+                                      : ""
+                                  }
+                                  onChange={(event) =>
+                                    setRevocationForm((current) => ({
+                                      ...current,
+                                      authorizationId: authorization.id,
+                                      justification: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                                />
+                              </label>
+                              <label className="block text-xs font-medium text-gray-700">
+                                TOTP para revogação
+                                <input
+                                  value={
+                                    revocationForm.authorizationId ===
+                                    authorization.id
+                                      ? revocationForm.totpCode
+                                      : ""
+                                  }
+                                  onChange={(event) =>
+                                    setRevocationForm((current) => ({
+                                      ...current,
+                                      authorizationId: authorization.id,
+                                      totpCode: event.target.value
+                                        .replace(/\D/g, "")
+                                        .slice(0, 6),
+                                    }))
+                                  }
+                                  inputMode="numeric"
+                                  className="mt-1 w-full rounded-lg border px-3 py-2 text-sm"
+                                />
+                              </label>
+                              <button
+                                type="button"
+                                disabled={decisionSaving === authorization.id}
+                                onClick={() =>
+                                  void revokeAuthorization(authorization.id)
+                                }
+                                className="rounded-lg px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Revogar autorização
+                              </button>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                {accessCodeMessage && (
+                  <p role="status" className="mt-4 text-sm text-emerald-700">
+                    {accessCodeMessage}
+                  </p>
+                )}
+                {accessCodeError && (
+                  <p role="alert" className="mt-4 text-sm text-red-600">
+                    {accessCodeError}
+                  </p>
+                )}
+              </section>
+            )}
+
+            {activeTab === "security" && (
+              <div className="space-y-5">
+                <section
+                  className="bg-white rounded-2xl border p-6"
+                  style={{ borderColor: "var(--border)" }}
+                  aria-labelledby="password-title"
+                >
+                  <h3
+                    id="password-title"
+                    className="font-semibold text-gray-900 mb-4"
+                  >
+                    Atualizar senha
+                  </h3>
+                  <form
+                    onSubmit={changePassword}
+                    className="grid sm:grid-cols-2 gap-4"
+                  >
+                    {[
+                      ["currentPassword", "Senha atual"],
+                      ["newPassword", "Nova senha"],
+                      ["confirmation", "Confirmar nova senha"],
+                      ["totpCode", "TOTP adicional"],
+                    ].map(([key, label]) => (
+                      <div key={key}>
+                        <label
+                          htmlFor={`password-${key}`}
+                          className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
+                        >
+                          {label}
+                        </label>
+                        <input
+                          id={`password-${key}`}
+                          type={key === "totpCode" ? "text" : "password"}
+                          inputMode={key === "totpCode" ? "numeric" : undefined}
+                          value={
+                            passwordForm[(key as keyof typeof passwordForm)]
+                          }
+                          onChange={(event) =>
+                            setPasswordForm((current) => ({
+                              ...current,
+                              [key]: event.target.value,
+                            }))
+                          }
+                          required
+                          minLength={key === "newPassword" ? 12 : undefined}
+                          maxLength={key === "totpCode" ? 6 : 128}
+                          className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-teal-600"
+                          style={{ borderColor: "var(--border)" }}
+                        />
+                      </div>
+                    ))}
+                    <div className="sm:col-span-2">
+                      <button
+                        type="submit"
+                        disabled={passwordSaving}
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-50"
+                        style={{ background: "var(--primary)" }}
+                      >
+                        {passwordSaving ? "Atualizando..." : "Atualizar senha"}
+                      </button>
+                    </div>
+                  </form>
+                  {passwordMessage && (
+                    <p role="status" className="mt-3 text-sm text-emerald-700">
+                      {passwordMessage}
+                    </p>
+                  )}
+                  {passwordError && (
+                    <p role="alert" className="mt-3 text-sm text-red-600">
+                      {passwordError}
+                    </p>
+                  )}
+                </section>
+
+                <section
+                  className="bg-white rounded-2xl border p-6"
+                  style={{ borderColor: "var(--border)" }}
+                  aria-labelledby="sessions-title"
+                >
+                  <h3
+                    id="sessions-title"
+                    className="font-semibold text-gray-900 mb-4"
+                  >
+                    Sessões ativas
+                  </h3>
+                  {sessionsLoading ? (
+                    <p role="status" className="text-sm text-gray-500">
+                      Carregando sessões...
+                    </p>
+                  ) : sessionsError ? (
+                    <p role="alert" className="text-sm text-red-600">
+                      {sessionsError}
+                    </p>
+                  ) : sessions.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      Nenhuma outra sessão ativa.
+                    </p>
+                  ) : (
+                    <ul className="space-y-3">
+                      {sessions.map((activeSession) => (
+                        <li
+                          key={activeSession.id}
+                          className="flex items-center justify-between gap-4 rounded-xl p-4"
+                          style={{ background: "var(--muted)" }}
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {activeSession.current
+                                ? "Este dispositivo"
+                                : "Outra sessão"}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Último uso:{" "}
+                              {new Date(
+                                activeSession.last_used_at,
+                              ).toLocaleString("pt-BR")}
+                            </p>
+                          </div>
+                          {!activeSession.current && (
+                            <button
+                              type="button"
+                              onClick={() => void endSession(activeSession.id)}
+                              className="text-sm font-medium text-red-600 hover:text-red-700"
+                            >
+                              Encerrar sessão
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
               </div>
-            </div>
-          </div>
+            )}
+            <AuditHistory onSessionExpired={onLogout} />
+          </>
         )}
       </div>
     </Layout>

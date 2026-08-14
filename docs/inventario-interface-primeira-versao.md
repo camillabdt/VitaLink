@@ -18,6 +18,18 @@ A recuperação de senha, a recuperação reforçada do TOTP, a troca de senha c
 
 O cadastro profissional, a confirmação de e-mail, a ativação TOTP, a decisão manual auditada e o login após aprovação estão conectados à API. Os seletores profissionais retornaram aos formulários com comportamento real. Contas pendentes ou rejeitadas recebem estado explícito sem sessão, e a rota após login usa o perfil informado pelo servidor. Consulte a [evidência da issue #52](implementacao-issue-52.md).
 
+### Progresso da issue #53
+
+Os perfis próprios de paciente e profissional usam dados persistidos e edição limitada pela API. Configurações abre a rota adequada de cada papel e reutiliza troca de senha e sessões. Controles simulados pertencentes a autorizações, observações e auditoria foram retirados até as respectivas issues. Consulte a [evidência da issue #53](implementacao-issue-53.md).
+
+### Progresso da issue #54
+
+O paciente gera, copia, lista e revoga códigos temporários próprios. O profissional cria uma solicitação justificada somente pelo código, sem busca por nome, CPF ou e-mail e sem receber acesso antes da decisão. Solicitação e notificação ficam persistidas. Consulte a [evidência da issue #54](implementacao-issue-54.md).
+
+### Validação final da issue #66
+
+As fatias das issues #55 a #65 completaram os destinos e controles restantes deste inventário. A revisão humana final aprovou os treze componentes TSX, as rotas acrescentadas, os três viewports obrigatórios, a acessibilidade e a ausência de controles simulados ou decorativos. Não foram registradas diferenças aceitas nem pendências. Consulte a [evidência HITL da issue #66](implementacao-issue-66.md).
+
 ## Telas e destinos
 
 | Destino                     | Baseline local                                           | Decisão para a primeira versão                              | Comportamento verificável                                                                    |
