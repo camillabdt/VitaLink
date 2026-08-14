@@ -72,12 +72,24 @@ O projeto declara Python 3.12 e `uv` em [pyproject.toml](pyproject.toml). A exec
 
 Pré-requisitos: Docker Engine e Docker Compose v2.
 
-1. Crie o arquivo local de configuração e substitua `VITALINK_SECRET_KEY` por um segredo aleatório com pelo menos 32 caracteres:
+1. Crie o arquivo local de configuração e preencha os segredos exigidos. O arquivo `.env` é local e não deve ser versionado:
 
    ```bash
    cp .env.example .env
    python3 -c 'import secrets; print(secrets.token_urlsafe(32))'
    ```
+
+   Use o valor gerado em `VITALINK_SECRET_KEY` e defina também um valor
+   aleatório para `VITALINK_S3_SECRET_KEY`. Para habilitar a conta sintética
+   de demonstração, preencha `VITALINK_DEMO_PASSWORD` (com pelo menos 12
+   caracteres) e gere uma chave TOTP:
+
+   ```bash
+   python3 -c 'import secrets,base64; print(base64.b32encode(secrets.token_bytes(20)).decode().rstrip("="))'
+   ```
+
+   Use o segundo valor em `VITALINK_DEMO_TOTP_SECRET`. Não use credenciais ou
+   dados de uma pessoa real.
 
 2. Inicie e construa os serviços:
 
@@ -98,3 +110,31 @@ docker compose up -d --build
 docker compose ps
 docker compose stop
 ```
+
+#### Login de demonstração
+
+Depois que os serviços estiverem em execução, crie a conta sintética uma vez:
+
+```bash
+set -a
+source .env
+set +a
+
+docker compose exec \
+  -e VITALINK_DEMO_PASSWORD="$VITALINK_DEMO_PASSWORD" \
+  -e VITALINK_DEMO_TOTP_SECRET="$VITALINK_DEMO_TOTP_SECRET" \
+  api python -m vitallink.seed_demo
+```
+
+O e-mail da conta é `demo.patient@example.com` e a senha é o valor definido em
+`VITALINK_DEMO_PASSWORD`. O seed não imprime credenciais e é seguro para ser
+executado novamente quando essa conta já existir.
+
+Para gerar o código do autenticador, adicione `VITALINK_DEMO_TOTP_SECRET` em
+um aplicativo compatível com TOTP, como Google Authenticator ou Authy, usando
+a opção de inserir uma chave manualmente e o tipo baseado em tempo. O
+aplicativo gera um código de seis dígitos, renovado a cada 30 segundos. Use o
+código atual no campo **Código do autenticador** durante o login.
+
+O Mailpit, disponível em <http://localhost:8025>, captura as mensagens de
+confirmação e recuperação enviadas pelo ambiente local.
