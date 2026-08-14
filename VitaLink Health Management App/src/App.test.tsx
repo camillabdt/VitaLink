@@ -6,6 +6,22 @@ import App from "./App"
 afterEach(() => {
   vi.restoreAllMocks()
   sessionStorage.clear()
+  window.history.replaceState({}, "", "/")
+})
+
+test("password recovery e-mail link opens the reset form directly", () => {
+  window.history.replaceState(
+    {},
+    "",
+    "/reset-password?token=synthetic-password-reset-token-with-safe-length",
+  )
+
+  render(<App />)
+
+  expect(screen.getByLabelText("Nova senha")).toBeInTheDocument()
+  expect(
+    screen.getByRole("heading", { name: "Crie uma nova senha" }),
+  ).toBeInTheDocument()
 })
 
 test("patient logout revokes the server session before returning to login", async () => {

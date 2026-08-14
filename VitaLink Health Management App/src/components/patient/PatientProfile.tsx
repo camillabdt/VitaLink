@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Layout from "@/components/shared/Layout"
 import type { Page, PatientDoctorAccess } from "@/data/mockData"
 import {
@@ -12,6 +12,14 @@ import doctorImg from "@/imports/ChatGPT_Image_3_de_ago._de_2026__11_38_29.png"
 interface Props {
   onNavigate: (page: Page) => void
   onLogout: () => void
+}
+
+interface AccountSession {
+  id: string
+  current: boolean
+  created_at: string
+  last_used_at: string
+  expires_at: string
 }
 
 export default function PatientProfile({ onNavigate, onLogout }: Props) {
@@ -35,6 +43,151 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [activeTab, setActiveTab] =
     useState<"personal" | "doctors" | "security">("personal")
+  const [sessions, setSessions] = useState<AccountSession[]>([])
+  const [sessionsLoading, setSessionsLoading] = useState(false)
+  const [sessionsError, setSessionsError] = useState("")
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmation: "",
+    totpCode: "",
+  })
+  const [passwordSaving, setPasswordSaving] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+
+  const handleSessionExpired = () => {
+    sessionStorage.removeItem("vitallink.csrf")
+    onNavigate("login")
+  }
+
+  useEffect(() => {
+    if (activeTab !== "security") return
+    let active = true
+    setSessionsLoading(true)
+    setSessionsError("")
+    fetch("/api/v1/sessions", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (response.status === 401) {
+          handleSessionExpired()
+          return []
+        }
+        if (!response.ok) throw new Error("sessions unavailable")
+        return (await response.json()) as AccountSession[]
+      })
+      .then((items) => {
+        if (active) setSessions(items)
+      })
+      .catch(() => {
+        if (active)
+          setSessionsError("Não foi possível carregar as sessões ativas.")
+      })
+      .finally(() => {
+        if (active) setSessionsLoading(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [activeTab])
+
+  const endSession = async (sessionId: string) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setSessionsError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setSessionsError("")
+    try {
+      const response = await fetch(`/api/v1/sessions/${sessionId}`, {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": csrfToken },
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("session revoke failed")
+      setSessions((current) =>
+        current.filter((session) => session.id !== sessionId),
+      )
+    } catch {
+      setSessionsError("Não foi possível encerrar a sessão. Tente novamente.")
+    }
+  }
+
+  const changePassword = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setPasswordError("")
+    setPasswordMessage("")
+    if (passwordForm.newPassword !== passwordForm.confirmation) {
+      setPasswordError("As senhas não coincidem.")
+      return
+    }
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setPasswordError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setPasswordSaving(true)
+    const headers = {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfToken,
+    }
+    try {
+      const stepUp = await fetch("/api/v1/step-up-confirmations", {
+        method: "POST",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({
+          action: "password_change",
+          totp_code: passwordForm.totpCode,
+        }),
+      })
+      if (stepUp.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!stepUp.ok) {
+        setPasswordError(
+          stepUp.status === 429
+            ? "Aguarde antes de tentar novamente."
+            : "Não foi possível confirmar o TOTP.",
+        )
+        return
+      }
+      const confirmation = (await stepUp.json()) as { id: string }
+      const response = await fetch("/api/v1/me/password", {
+        method: "PATCH",
+        credentials: "same-origin",
+        headers,
+        body: JSON.stringify({
+          current_password: passwordForm.currentPassword,
+          new_password: passwordForm.newPassword,
+          step_up_confirmation_id: confirmation.id,
+        }),
+      })
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) {
+        setPasswordError("Não foi possível atualizar a senha.")
+        return
+      }
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmation: "",
+        totpCode: "",
+      })
+      setPasswordMessage("Senha atualizada com segurança.")
+    } catch {
+      setPasswordError("Não foi possível atualizar a senha. Tente novamente.")
+    } finally {
+      setPasswordSaving(false)
+    }
+  }
 
   const handleSaveNote = () => {
     setSavingNote(true)
@@ -698,38 +851,90 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
               <h3 className="font-semibold text-gray-900 mb-4">
                 Alterar senha
               </h3>
-              <div className="space-y-4 max-w-md">
-                {["Senha atual", "Nova senha", "Confirmar nova senha"].map(
-                  (label) => (
-                    <div key={label}>
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide">
-                        {label}
-                      </label>
-                      <input
-                        type="password"
-                        placeholder="••••••••"
-                        className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
-                        style={{
-                          borderColor: "var(--border)",
-                          background: "#FAFAFA",
-                        }}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "var(--primary)")
-                        }
-                        onBlur={(e) =>
-                          (e.target.style.borderColor = "var(--border)")
-                        }
-                      />
-                    </div>
-                  ),
+              <form onSubmit={changePassword} className="space-y-4 max-w-md">
+                {[
+                  ["Senha atual", "currentPassword", "current-password"],
+                  ["Nova senha", "newPassword", "new-password"],
+                  [
+                    "Confirmar nova senha",
+                    "confirmation",
+                    "new-password-confirmation",
+                  ],
+                ].map(([label, field, id]) => (
+                  <div key={field}>
+                    <label
+                      htmlFor={id}
+                      className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
+                    >
+                      {label}
+                    </label>
+                    <input
+                      id={id}
+                      type="password"
+                      minLength={field === "currentPassword" ? 1 : 12}
+                      maxLength={128}
+                      value={passwordForm[(field as keyof typeof passwordForm)]}
+                      onChange={(event) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          [field]: event.target.value,
+                        }))
+                      }
+                      required
+                      className="w-full px-4 py-2.5 rounded-xl border text-sm outline-none"
+                      style={{
+                        borderColor: "var(--border)",
+                        background: "#FAFAFA",
+                      }}
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label
+                    htmlFor="password-change-totp"
+                    className="block text-xs font-medium text-gray-500 mb-1.5 uppercase tracking-wide"
+                  >
+                    TOTP adicional
+                  </label>
+                  <input
+                    id="password-change-totp"
+                    inputMode="numeric"
+                    pattern="\d{6}"
+                    maxLength={6}
+                    value={passwordForm.totpCode}
+                    onChange={(event) =>
+                      setPasswordForm((current) => ({
+                        ...current,
+                        totpCode: event.target.value.replace(/\D/g, ""),
+                      }))
+                    }
+                    required
+                    className="w-full px-4 py-2.5 rounded-xl border text-sm text-center font-mono tracking-[0.3em] outline-none"
+                    style={{
+                      borderColor: "var(--border)",
+                      background: "#FAFAFA",
+                    }}
+                  />
+                </div>
+                {passwordError && (
+                  <p role="alert" className="text-sm text-red-600">
+                    {passwordError}
+                  </p>
+                )}
+                {passwordMessage && (
+                  <p role="status" className="text-sm text-emerald-700">
+                    {passwordMessage}
+                  </p>
                 )}
                 <button
+                  type="submit"
+                  disabled={passwordSaving}
                   className="px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
                   style={{ background: "var(--primary)", color: "#fff" }}
                 >
-                  Atualizar senha
+                  {passwordSaving ? "Atualizando..." : "Atualizar senha"}
                 </button>
-              </div>
+              </form>
             </div>
 
             <div
@@ -768,15 +973,12 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
                     <div className="text-sm font-medium text-gray-900">
                       Aplicativo autenticador
                     </div>
-                    <div className="text-xs text-gray-500">Não configurado</div>
+                    <div className="text-xs text-emerald-700">Ativo</div>
                   </div>
                 </div>
-                <button
-                  className="px-3.5 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90"
-                  style={{ background: "var(--primary)" }}
-                >
-                  Ativar
-                </button>
+                <span className="text-xs text-gray-500">
+                  Recuperação disponível na entrada
+                </span>
               </div>
             </div>
 
@@ -787,22 +989,22 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
               <h3 className="font-semibold text-gray-900 mb-4">
                 Sessões ativas
               </h3>
-              {[
-                {
-                  device: "Chrome · MacOS",
-                  location: "São Paulo, SP",
-                  time: "Agora",
-                  current: true,
-                },
-                {
-                  device: "Safari · iPhone",
-                  location: "São Paulo, SP",
-                  time: "2 dias atrás",
-                  current: false,
-                },
-              ].map((s) => (
+              {sessionsLoading && (
+                <p className="text-sm text-gray-500">Carregando sessões...</p>
+              )}
+              {sessionsError && (
+                <p role="alert" className="text-sm text-red-600 mb-3">
+                  {sessionsError}
+                </p>
+              )}
+              {!sessionsLoading && !sessionsError && sessions.length === 0 && (
+                <p className="text-sm text-gray-500">
+                  Nenhuma sessão ativa encontrada.
+                </p>
+              )}
+              {sessions.map((activeSession) => (
                 <div
-                  key={s.device}
+                  key={activeSession.id}
                   className="flex items-center justify-between py-3 border-b last:border-0"
                   style={{ borderColor: "var(--border)" }}
                 >
@@ -821,38 +1023,18 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       >
-                        {s.device.includes("iPhone") ? (
-                          <>
-                            <rect
-                              x="5"
-                              y="2"
-                              width="14"
-                              height="20"
-                              rx="2"
-                              ry="2"
-                            />
-                            <line x1="12" y1="18" x2="12.01" y2="18" />
-                          </>
-                        ) : (
-                          <>
-                            <rect
-                              x="2"
-                              y="3"
-                              width="20"
-                              height="14"
-                              rx="2"
-                              ry="2"
-                            />
-                            <line x1="8" y1="21" x2="16" y2="21" />
-                            <line x1="12" y1="17" x2="12" y2="21" />
-                          </>
-                        )}
+                        <rect x="2" y="3" width="20" height="14" rx="2" />
+                        <line x1="8" y1="21" x2="16" y2="21" />
+                        <line x1="12" y1="17" x2="12" y2="21" />
                       </svg>
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                        {s.device}
-                        {s.current && (
+                        Sessão iniciada em{" "}
+                        {new Date(activeSession.created_at).toLocaleDateString(
+                          "pt-BR",
+                        )}
+                        {activeSession.current && (
                           <span
                             className="text-xs px-2 py-0.5 rounded-full font-medium"
                             style={{ background: "#DCFCE7", color: "#166534" }}
@@ -862,13 +1044,19 @@ export default function PatientProfile({ onNavigate, onLogout }: Props) {
                         )}
                       </div>
                       <div className="text-xs text-gray-400">
-                        {s.location} · {s.time}
+                        Último uso:{" "}
+                        {new Date(activeSession.last_used_at).toLocaleString(
+                          "pt-BR",
+                        )}
                       </div>
                     </div>
                   </div>
-                  {!s.current && (
-                    <button className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors">
-                      Encerrar
+                  {!activeSession.current && (
+                    <button
+                      onClick={() => endSession(activeSession.id)}
+                      className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Encerrar sessão
                     </button>
                   )}
                 </div>
