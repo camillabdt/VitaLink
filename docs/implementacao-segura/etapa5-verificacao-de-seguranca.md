@@ -8,14 +8,14 @@ O diretório `VitaLink Health Management App/` contém a interface implementada.
 
 ## Validação atual do HEAD
 
-Em 14 de agosto de 2026, os serviços PostgreSQL, Mailpit, MinIO e ClamAV foram iniciados pelo Docker Compose e as suítes foram repetidas:
+Em 14 de agosto de 2026, os serviços PostgreSQL, Mailpit, MinIO e ClamAV foram iniciados pelo Docker Compose e as suítes foram repetidas localmente. Após a consolidação documental, o mesmo HEAD também foi validado pelo CI da `develop`:
 
-| Suíte    | Resultado                           | Observação                                                                                                                                                          |
-| -------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Backend  | 86 aprovados, 1 aviso               | Execução com PostgreSQL, MinIO, Mailpit e ClamAV reais; aviso de depreciação da integração Starlette/httpx.                                                         |
-| Frontend | 39 aprovados e 18 reprovados, de 57 | Houve timeouts em fluxos de autenticação, observações, registros e metas, além de asserções divergentes na recuperação, no login profissional e nas metas clínicas. |
+| Ambiente                   | Backend               | Frontend                     | Observação                                                                                                                                                           |
+| -------------------------- | --------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Execução local             | 86 aprovados, 1 aviso | 39 aprovados e 18 reprovados | Houve timeouts e asserções divergentes na execução frontend concorrente; dois arquivos de autenticação passaram isoladamente com um único worker.                    |
+| CI da `develop`, `ac44643` | 86 aprovados, 1 aviso | 57 aprovados                 | O workflow [CI #31839018690](https://github.com/camillabdt/VitaLink/actions/runs/31839018690) também aprovou migrações, seed, Ruff, `pip-audit`, formatação e build. |
 
-O resultado não autoriza promover o HEAD atual à `main`. As falhas frontend precisam ser diagnosticadas e a suíte completa deve ficar verde antes da repetição do gate HITL.
+O gate automatizado da `develop` está verde. A divergência local permanece registrada como instabilidade do ambiente de execução, sem correção funcional nesta consolidação. A promoção à `main` ainda depende da repetição da revisão HITL sobre o HEAD atual; o DAST específico do VitaLink também permanece pendente como evidência complementar.
 
 ## Estratégia TDD adotada para o VitaLink
 
