@@ -14,6 +14,10 @@ O cadastro, a confirmação de e-mail, a ativação TOTP, o login e o logout do 
 
 A recuperação de senha, a recuperação reforçada do TOTP, a troca de senha com step-up, a listagem e o encerramento de sessões próprias e o direcionamento de Configurações estão conectados à API. Os temporizadores, sessões fixas e botões inertes desses trechos foram removidos. A recuperação automática reforçada é exclusiva do paciente; profissional retorna à validação manual. Consulte a [evidência da issue #51](implementacao-issue-51.md).
 
+### Progresso da issue #52
+
+O cadastro profissional, a confirmação de e-mail, a ativação TOTP, a decisão manual auditada e o login após aprovação estão conectados à API. Os seletores profissionais retornaram aos formulários com comportamento real. Contas pendentes ou rejeitadas recebem estado explícito sem sessão, e a rota após login usa o perfil informado pelo servidor. Consulte a [evidência da issue #52](implementacao-issue-52.md).
+
 ## Telas e destinos
 
 | Destino                     | Baseline local                                           | Decisão para a primeira versão                              | Comportamento verificável                                                                    |

@@ -8,6 +8,7 @@ interface Props {
 }
 
 export default function LoginPage({ onNavigate }: Props) {
+  const [userType, setUserType] = useState<UserType>("patient")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [totpCode, setTotpCode] = useState("")
@@ -27,10 +28,19 @@ export default function LoginPage({ onNavigate }: Props) {
         body: JSON.stringify({ email, password, totp_code: totpCode }),
       })
       if (!response.ok) {
+        const errorCode =
+          response.status === 403
+            ? ((await response.json().catch(() => ({}))) as { code?: string })
+                .code
+            : undefined
         setError(
           response.status === 429
             ? "Aguarde antes de tentar novamente."
-            : "Não foi possível entrar com os dados informados.",
+            : errorCode === "professional_pending_validation"
+              ? "Cadastro profissional pendente de validação."
+              : errorCode === "professional_rejected"
+                ? "Cadastro profissional rejeitado."
+                : "Não foi possível entrar com os dados informados.",
         )
         return
       }
@@ -40,7 +50,21 @@ export default function LoginPage({ onNavigate }: Props) {
         return
       }
       sessionStorage.setItem("vitallink.csrf", csrfToken)
-      onNavigate("patient-dashboard", "patient")
+      const accountResponse = await fetch("/api/v1/me", {
+        credentials: "same-origin",
+      })
+      if (!accountResponse.ok) {
+        sessionStorage.removeItem("vitallink.csrf")
+        setError("Não foi possível confirmar o perfil da sessão.")
+        return
+      }
+      const account = await accountResponse.json()
+      onNavigate(
+        account.role === "professional"
+          ? "doctor-dashboard"
+          : "patient-dashboard",
+        account.role === "professional" ? "doctor" : "patient",
+      )
     } catch {
       setError("Não foi possível conectar ao VitaLink. Tente novamente.")
     } finally {
@@ -116,8 +140,36 @@ export default function LoginPage({ onNavigate }: Props) {
             Bem-vindo de volta
           </h2>
           <p className="text-gray-500 text-sm mb-7">
-            Entre como paciente usando senha e aplicativo autenticador.
+            Entre como {userType === "doctor" ? "profissional" : "paciente"}{" "}
+            usando senha e aplicativo autenticador.
           </p>
+
+          <div className="grid grid-cols-2 gap-2 bg-gray-100 rounded-xl p-1 mb-6">
+            <button
+              type="button"
+              aria-pressed={userType === "patient"}
+              onClick={() => setUserType("patient")}
+              className={`rounded-lg p-2 text-sm font-medium ${
+                userType === "patient"
+                  ? "bg-white text-teal-700 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              Paciente
+            </button>
+            <button
+              type="button"
+              aria-pressed={userType === "doctor"}
+              onClick={() => setUserType("doctor")}
+              className={`rounded-lg p-2 text-sm font-medium ${
+                userType === "doctor"
+                  ? "bg-white text-teal-700 shadow-sm"
+                  : "text-gray-600"
+              }`}
+            >
+              Profissional de saúde
+            </button>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <label className="block">

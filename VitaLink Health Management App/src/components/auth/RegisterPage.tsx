@@ -67,7 +67,7 @@ function InputField({
 }
 
 export default function RegisterPage({ onNavigate }: Props) {
-  const [userType] = useState<UserType>("patient")
+  const [userType, setUserType] = useState<UserType>("patient")
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     name: "",
@@ -109,10 +109,6 @@ export default function RegisterPage({ onNavigate }: Props) {
   }
 
   const handleSubmit = async () => {
-    if (userType === "doctor") {
-      onNavigate("doctor-dashboard", "doctor")
-      return
-    }
     if (form.password !== form.confirm) {
       setError("As senhas informadas não coincidem.")
       return
@@ -121,19 +117,39 @@ export default function RegisterPage({ onNavigate }: Props) {
     setLoading(true)
     setError("")
     try {
-      const response = await fetch("/api/v1/patient-registrations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: form.name,
-          email: form.email,
-          cpf: form.cpf.replace(/\D/g, ""),
-          birthdate: form.birthdate,
-          phone: form.phone,
-          password: form.password,
-          blood_type: form.bloodType || null,
-        }),
-      })
+      const response = await fetch(
+        userType === "doctor"
+          ? "/api/v1/professional-registrations"
+          : "/api/v1/patient-registrations",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            userType === "doctor"
+              ? {
+                  name: form.name,
+                  email: form.email,
+                  cpf: form.cpf.replace(/\D/g, ""),
+                  birthdate: form.birthdate,
+                  phone: form.phone,
+                  password: form.password,
+                  crm: form.crm,
+                  uf: form.uf,
+                  specialty: form.specialty,
+                  institution: form.institution || null,
+                }
+              : {
+                  name: form.name,
+                  email: form.email,
+                  cpf: form.cpf.replace(/\D/g, ""),
+                  birthdate: form.birthdate,
+                  phone: form.phone,
+                  password: form.password,
+                  blood_type: form.bloodType || null,
+                },
+          ),
+        },
+      )
       if (!response.ok) {
         setError(
           response.status === 422
@@ -488,8 +504,37 @@ export default function RegisterPage({ onNavigate }: Props) {
                   : "Preencha seus dados para começar"}
               </p>
 
-              <div className="bg-gray-100 rounded-xl p-3 mb-6 text-center text-sm font-medium text-teal-700">
-                👤 Cadastro de paciente
+              <div className="grid grid-cols-2 gap-2 bg-gray-100 rounded-xl p-1 mb-6">
+                <button
+                  type="button"
+                  aria-pressed={userType === "patient"}
+                  onClick={() => {
+                    setUserType("patient")
+                    setStep(1)
+                  }}
+                  className={`rounded-lg p-2 text-sm font-medium ${
+                    userType === "patient"
+                      ? "bg-white text-teal-700 shadow-sm"
+                      : "text-gray-600"
+                  }`}
+                >
+                  Paciente
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={userType === "doctor"}
+                  onClick={() => {
+                    setUserType("doctor")
+                    setStep(1)
+                  }}
+                  className={`rounded-lg p-2 text-sm font-medium ${
+                    userType === "doctor"
+                      ? "bg-white text-teal-700 shadow-sm"
+                      : "text-gray-600"
+                  }`}
+                >
+                  Profissional de saúde
+                </button>
               </div>
 
               {/* Doctor step indicator */}
@@ -667,10 +712,14 @@ export default function RegisterPage({ onNavigate }: Props) {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                        <label
+                          htmlFor="professional-uf"
+                          className="block text-sm font-medium text-gray-700 mb-1.5"
+                        >
                           UF
                         </label>
                         <select
+                          id="professional-uf"
                           value={form.uf}
                           onChange={(e) => set("uf", e.target.value)}
                           className="w-full px-4 py-3 rounded-xl border text-sm outline-none"
@@ -717,10 +766,14 @@ export default function RegisterPage({ onNavigate }: Props) {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                      <label
+                        htmlFor="professional-specialty"
+                        className="block text-sm font-medium text-gray-700 mb-1.5"
+                      >
                         Especialidade
                       </label>
                       <select
+                        id="professional-specialty"
                         value={form.specialty}
                         onChange={(e) => set("specialty", e.target.value)}
                         required
@@ -765,9 +818,9 @@ export default function RegisterPage({ onNavigate }: Props) {
                           <line x1="12" y1="16" x2="12.01" y2="16" />
                         </svg>
                         <p className="text-blue-700 text-xs leading-relaxed">
-                          Seu CRM será verificado junto ao CFM. O processo leva
-                          até 24 horas. Você receberá um e-mail assim que a
-                          verificação for concluída.
+                          Seus dados profissionais serão conferidos manualmente
+                          no ambiente acadêmico. A conta permanecerá pendente
+                          até a decisão ser registrada.
                         </p>
                       </div>
                     </div>

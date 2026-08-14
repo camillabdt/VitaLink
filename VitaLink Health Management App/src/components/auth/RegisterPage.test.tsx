@@ -119,6 +119,67 @@ test("patient confirms e-mail and activates TOTP before login", async () => {
   )
 })
 
+test("professional requests registration with registry data", async () => {
+  const user = userEvent.setup()
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response("{}", { status: 202 }),
+  )
+  render(<RegisterPage onNavigate={vi.fn()} />)
+
+  await user.click(
+    screen.getByRole("button", { name: "Profissional de saúde" }),
+  )
+  await user.type(
+    screen.getByPlaceholderText("Maria da Silva"),
+    "Profissional Sintética",
+  )
+  await user.type(
+    screen.getByPlaceholderText("seu@email.com"),
+    "professional@example.com",
+  )
+  await user.type(screen.getByPlaceholderText("000.000.000-00"), "52998224725")
+  await user.type(screen.getByLabelText("Data de nascimento"), "1987-06-12")
+  await user.type(
+    screen.getByPlaceholderText("(11) 99999-9999"),
+    "+5553999999999",
+  )
+  await user.type(
+    screen.getByPlaceholderText("Mínimo 12 caracteres"),
+    "uma senha profissional segura 2026",
+  )
+  await user.type(
+    screen.getByPlaceholderText("Repita a senha"),
+    "uma senha profissional segura 2026",
+  )
+  await user.click(screen.getByRole("button", { name: "Próximo →" }))
+  await user.type(screen.getByPlaceholderText("142890"), "142890")
+  await user.selectOptions(screen.getByLabelText("UF"), "RS")
+  await user.selectOptions(
+    screen.getByLabelText("Especialidade"),
+    "Cardiologia",
+  )
+  expect(
+    screen.getByText(/dados profissionais serão conferidos manualmente/i),
+  ).toBeInTheDocument()
+  expect(screen.queryByText(/CFM|24 horas/i)).not.toBeInTheDocument()
+  await user.type(
+    screen.getByPlaceholderText("Hospital das Clínicas de SP"),
+    "Hospital Acadêmico Sintético",
+  )
+  await user.click(screen.getByRole("button", { name: "Criar conta" }))
+
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    "/api/v1/professional-registrations",
+    expect.objectContaining({
+      method: "POST",
+      body: expect.stringContaining('"crm":"142890"'),
+    }),
+  )
+  expect(
+    await screen.findByRole("heading", { name: "Confirme seu e-mail" }),
+  ).toBeInTheDocument()
+})
+
 async function fillPatientRegistration(
   user: ReturnType<typeof userEvent.setup>,
 ) {

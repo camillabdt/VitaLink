@@ -11,12 +11,19 @@ afterEach(() => {
 test("patient enters with password and TOTP through the public API", async () => {
   const user = userEvent.setup()
   const onNavigate = vi.fn()
-  vi.spyOn(globalThis, "fetch").mockResolvedValue(
-    new Response(null, {
-      status: 204,
-      headers: { "X-CSRF-Token": "session-csrf-token" },
-    }),
-  )
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(null, {
+        status: 204,
+        headers: { "X-CSRF-Token": "session-csrf-token" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ role: "patient", status: "active" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
   render(<LoginPage onNavigate={onNavigate} />)
 
   await user.type(screen.getByLabelText("E-mail"), "patient@example.com")
@@ -56,5 +63,71 @@ test("patient sees a safe message when login attempts are limited", async () => 
 
   expect(await screen.findByRole("alert")).toHaveTextContent(
     "Aguarde antes de tentar novamente.",
+  )
+})
+
+test("approved professional enters the professional dashboard", async () => {
+  const user = userEvent.setup()
+  const onNavigate = vi.fn()
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(null, {
+        status: 204,
+        headers: { "X-CSRF-Token": "session-csrf-token" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ role: "professional", status: "active" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+  render(<LoginPage onNavigate={onNavigate} />)
+
+  await user.click(
+    screen.getByRole("button", { name: "Profissional de saúde" }),
+  )
+  await user.type(screen.getByLabelText("E-mail"), "professional@example.com")
+  await user.type(
+    screen.getByLabelText("Senha"),
+    "uma senha profissional segura 2026",
+  )
+  await user.type(screen.getByLabelText("Código do autenticador"), "123456")
+  await user.click(screen.getByRole("button", { name: "Entrar" }))
+
+  expect(globalThis.fetch).toHaveBeenNthCalledWith(
+    2,
+    "/api/v1/me",
+    expect.objectContaining({ credentials: "same-origin" }),
+  )
+  expect(onNavigate).toHaveBeenCalledWith("doctor-dashboard", "doctor")
+})
+
+test("professional sees the pending validation state after valid factors", async () => {
+  const user = userEvent.setup()
+  vi.spyOn(globalThis, "fetch").mockResolvedValue(
+    new Response(
+      JSON.stringify({
+        code: "professional_pending_validation",
+        message: "Cadastro profissional pendente de validação.",
+      }),
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    ),
+  )
+  render(<LoginPage onNavigate={vi.fn()} />)
+
+  await user.click(
+    screen.getByRole("button", { name: "Profissional de saúde" }),
+  )
+  await user.type(screen.getByLabelText("E-mail"), "professional@example.com")
+  await user.type(
+    screen.getByLabelText("Senha"),
+    "uma senha profissional segura 2026",
+  )
+  await user.type(screen.getByLabelText("Código do autenticador"), "123456")
+  await user.click(screen.getByRole("button", { name: "Entrar" }))
+
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Cadastro profissional pendente de validação.",
   )
 })

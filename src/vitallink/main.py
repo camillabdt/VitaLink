@@ -35,6 +35,7 @@ from vitallink.database import (
     EmailVerification,
     LoginThrottle,
     Patient,
+    Professional,
     RecoveryCredential,
     StepUpConfirmation,
     TotpCredential,
@@ -49,6 +50,23 @@ settings = get_settings()
 secret_cipher = Fernet(urlsafe_b64encode(hashlib.sha256(settings.secret_key.get_secret_value().encode()).digest()))
 dummy_password_hash = password_hasher.hash("timing-only-value-never-used-for-login")
 http_logger = logging.getLogger("vitallink.http")
+
+
+def reject_common_password_value(value: str) -> str:
+    """Reject a locally known common password.
+
+    Args:
+        value: Submitted password.
+
+    Returns:
+        The unchanged password when accepted.
+
+    Raises:
+        ValueError: If the password is present in the local denylist.
+    """
+    if value.casefold() in COMMON_PASSWORDS:
+        raise ValueError("password is too common")
+    return value
 
 
 class PatientRegistration(BaseModel):
@@ -89,20 +107,55 @@ class PatientRegistration(BaseModel):
     @field_validator("password")
     @classmethod
     def reject_common_password(cls, value: str) -> str:
-        """Reject locally known common passwords without changing valid Unicode input.
+        """Reject a locally known common patient password."""
+        return reject_common_password_value(value)
+
+
+class ProfessionalRegistration(BaseModel):
+    """Validated public input for a professional registration request."""
+
+    name: str = Field(min_length=2, max_length=200)
+    email: EmailStr
+    cpf: str = Field(pattern=r"^\d{11}$")
+    birthdate: date
+    phone: str = Field(min_length=8, max_length=32)
+    password: str = Field(min_length=12, max_length=128)
+    crm: str = Field(min_length=1, max_length=32)
+    uf: str = Field(pattern=r"^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)$")
+    specialty: str = Field(min_length=2, max_length=120)
+    institution: str | None = Field(default=None, max_length=200)
+
+    @field_validator("cpf")
+    @classmethod
+    def validate_cpf(cls, value: str) -> str:
+        """Validate professional CPF check digits.
+
+        Args:
+            value: Eleven numeric CPF digits.
+
+        Returns:
+            The validated CPF.
+
+        Raises:
+            ValueError: If the check digits are invalid.
+        """
+        return PatientRegistration.validate_cpf(value)
+
+    @field_validator("password")
+    @classmethod
+    def reject_common_password(cls, value: str) -> str:
+        """Reject a locally known common professional password.
 
         Args:
             value: Submitted password.
 
         Returns:
-            The unchanged password when it satisfies the policy.
+            The unchanged password when accepted.
 
         Raises:
             ValueError: If the password is present in the local denylist.
         """
-        if value.casefold() in COMMON_PASSWORDS:
-            raise ValueError("password is too common")
-        return value
+        return reject_common_password_value(value)
 
 
 class PublicMessage(BaseModel):
@@ -1128,6 +1181,112 @@ def register_patient(
     return PublicMessage(message=GENERIC_REGISTRATION_MESSAGE)
 
 
+@app.post(
+    "/api/v1/professional-registrations",
+    response_model=PublicMessage,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def register_professional(
+    registration: ProfessionalRegistration,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+) -> PublicMessage:
+    """Create a professional account without disclosing duplicate identity data.
+
+    Args:
+        registration: Validated professional registration data.
+        request: Current request carrying its correlation identifier.
+        session: Database transaction scope.
+
+    Returns:
+        A generic response for new and repeated registrations.
+    """
+    normalized_email = str(registration.email).strip().casefold()
+    normalized_crm = registration.crm.strip().upper()
+    existing_account = session.scalar(select(Account).where(Account.email == normalized_email))
+    if existing_account is None:
+        existing_professional = session.scalar(
+            select(Professional).where(
+                or_(
+                    Professional.cpf == registration.cpf,
+                    (Professional.crm == normalized_crm) & (Professional.uf == registration.uf),
+                )
+            )
+        )
+        if existing_professional is not None:
+            existing_account = session.get(Account, existing_professional.account_id)
+    if existing_account is not None:
+        session.add(
+            AuditEvent(
+                actor_id=None,
+                action="professional.registration.requested",
+                target_id=audit_identifier(existing_account.id),
+                result="denied",
+                reason="duplicate_suppressed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": "professional"},
+            )
+        )
+        session.commit()
+        return PublicMessage(message=GENERIC_REGISTRATION_MESSAGE)
+
+    account = Account(
+        email=normalized_email,
+        password_hash=password_hasher.hash(registration.password),
+        role="professional",
+        status="awaiting_confirmation",
+    )
+    account.professional = Professional(
+        name=registration.name.strip(),
+        cpf=registration.cpf,
+        birthdate=registration.birthdate,
+        phone=registration.phone.strip(),
+        crm=normalized_crm,
+        uf=registration.uf,
+        specialty=registration.specialty.strip(),
+        institution=registration.institution.strip() if registration.institution else None,
+    )
+    confirmation_code = f"{secrets.randbelow(1_000_000):06d}"
+    session.add(account)
+    session.flush()
+    session.add(
+        EmailVerification(
+            account_id=account.id,
+            code_hash=keyed_digest(confirmation_code),
+            expires_at=datetime.now(UTC) + timedelta(minutes=15),
+        )
+    )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="professional.registration.requested",
+            target_id=audit_identifier(account.id),
+            result="success",
+            reason="registration_created",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": "professional"},
+        )
+    )
+    try:
+        send_confirmation_email(normalized_email, confirmation_code)
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        session.add(
+            AuditEvent(
+                actor_id=None,
+                action="professional.registration.requested",
+                target_id=keyed_digest(normalized_email),
+                result="denied",
+                reason="duplicate_suppressed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": "professional"},
+            )
+        )
+        session.commit()
+    return PublicMessage(message=GENERIC_REGISTRATION_MESSAGE)
+
+
 @app.post("/api/v1/email-verifications", status_code=status.HTTP_204_NO_CONTENT)
 def verify_email(
     verification_request: EmailVerificationRequest,
@@ -1424,7 +1583,7 @@ def confirm_totp(
     )
     credential.confirmed_at = now
     account_session.revoked_at = now
-    account.status = "active"
+    account.status = "pending_validation" if account.role == "professional" else "active"
     session.add(
         AuditEvent(
             actor_id=audit_identifier(account.id),
@@ -1535,6 +1694,37 @@ def create_session(
     if credential is not None:
         secret = secret_cipher.decrypt(credential.secret_ciphertext.encode()).decode()
         totp_valid = pyotp.TOTP(secret).verify(login_request.totp_code, valid_window=1)
+
+    if (
+        account is not None
+        and account.role == "professional"
+        and account.status in {"pending_validation", "rejected"}
+        and password_valid
+        and totp_valid
+    ):
+        response_code = (
+            "professional_pending_validation" if account.status == "pending_validation" else "professional_rejected"
+        )
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="account.login",
+                target_id=audit_identifier(account.id),
+                result="denied",
+                reason="professional_validation_required",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "status": account.status},
+            )
+        )
+        session.commit()
+        return error_response(
+            request,
+            status.HTTP_403_FORBIDDEN,
+            response_code,
+            "Cadastro profissional pendente de validação."
+            if account.status == "pending_validation"
+            else "Cadastro profissional rejeitado.",
+        )
 
     if account is None or account.status != "active" or not password_valid or not totp_valid:
         record_failed_authentication(session, target_id, origin_id, throttle, now)

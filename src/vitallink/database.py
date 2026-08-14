@@ -30,6 +30,7 @@ class Account(Base):
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
     patient: Mapped["Patient"] = relationship(back_populates="account", cascade="all, delete-orphan")
+    professional: Mapped["Professional"] = relationship(back_populates="account", cascade="all, delete-orphan")
 
 
 class Patient(Base):
@@ -47,6 +48,31 @@ class Patient(Base):
     phone: Mapped[str] = mapped_column(String(32), nullable=False)
     blood_type: Mapped[str | None] = mapped_column(String(3))
     account: Mapped[Account] = relationship(back_populates="patient")
+
+
+class Professional(Base):
+    """Professional identity data awaiting or holding manual validation."""
+
+    __tablename__ = "professionals"
+    __table_args__ = (UniqueConstraint("crm", "uf"),)
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), unique=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    cpf: Mapped[str] = mapped_column(String(11), unique=True, nullable=False)
+    birthdate: Mapped[date] = mapped_column(Date, nullable=False)
+    phone: Mapped[str] = mapped_column(String(32), nullable=False)
+    crm: Mapped[str] = mapped_column(String(32), nullable=False)
+    uf: Mapped[str] = mapped_column(String(2), nullable=False)
+    specialty: Mapped[str] = mapped_column(String(120), nullable=False)
+    institution: Mapped[str | None] = mapped_column(String(200))
+    validation_operator_id: Mapped[str | None] = mapped_column(String(64))
+    validation_decision: Mapped[str | None] = mapped_column(String(16))
+    validation_justification: Mapped[str | None] = mapped_column(String(500))
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    account: Mapped[Account] = relationship(back_populates="professional")
 
 
 class EmailVerification(Base):
