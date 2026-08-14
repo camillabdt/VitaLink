@@ -39,5 +39,5 @@ O histórico pode apresentar variações de nome ou e-mail para uma mesma pessoa
 - Commits, pull requests e arquivos demonstram participação versionada, mas não medem isoladamente a qualidade ou a relevância acadêmica da contribuição.
 - Controles descritos como propostos não devem ser apresentados como implementados sem código, teste ou evidência técnica correspondente.
 - Artefatos que estejam somente em branches ou pull requests ainda não integrados não são considerados parte da versão consolidada da `develop`.
-- O CI verde do HEAD atual não substitui a revisão HITL nem as evidências complementares ainda pendentes.
+- O CI verde não substitui a decisão humana de promoção; para a candidata atual, ambos estão registrados na [evidência da issue #66](implementacao-segura/implementacao-issue-66.md).
 - DAST do VitaLink, correlação D01–D08, implantação automatizada e vídeo devem ser registrados somente quando efetivamente realizados.

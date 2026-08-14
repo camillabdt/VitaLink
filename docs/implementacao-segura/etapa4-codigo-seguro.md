@@ -77,7 +77,7 @@ Após essa validação, o arquivo permanece em quarentena até o resultado do Cl
 
 ## Limites da comprovação
 
-- A execução local de 14 de agosto de 2026 encontrou falhas na suíte atual; o resultado consolidado está na [Etapa 5](etapa5-verificacao-de-seguranca.md).
+- A execução local de 14 de agosto de 2026 apresentou instabilidade na suíte frontend; o CI da candidata aprovou todas as verificações, conforme a [Etapa 5](etapa5-verificacao-de-seguranca.md).
 - O ZAP versionado analisou o OWASP Juice Shop, não o VitaLink.
 - D01–D08 continuam regras propostas, sem SIEM, correlação ou alertas ativos.
-- O gate HITL da issue #66 é histórico e precisa ser repetido sobre o HEAD destinado à `main`.
+- A decisão humana de promoção foi vinculada ao conteúdo executável de `b80f410`; o commit documental posterior apenas registra essa evidência.

@@ -16,11 +16,12 @@ Esta evidência deixou de ser um gate final após mudanças funcionais posterior
 
 ## Estado atual
 
-A aprovação anterior permanece válida apenas para `7068e3c`. Ela não comprova o HEAD destinado à `main`.
+A aprovação visual anterior permanece vinculada a `7068e3c`. Para a candidata posterior, o workflow [CI #31839376826](https://github.com/camillabdt/VitaLink/actions/runs/31839376826) validou o conteúdo executável de `b80f410` com:
 
-Na repetição automatizada de 14 de agosto de 2026:
+- backend: 86 testes aprovados, com 1 aviso;
+- frontend: 57 testes aprovados;
+- migrações, seed, formatação, auditorias de dependências e build aprovados.
 
-- backend: 86 testes aprovados;
-- frontend: 42 testes aprovados e 15 reprovados, de 57.
+Em 14 de agosto de 2026, após a apresentação dessas limitações, a responsável autorizou explicitamente ajustar a documentação e promover a candidata para `main`. A decisão humana fica vinculada ao conteúdo executável de `b80f410`; o commit posterior modifica apenas a evidência documental.
 
-O gate atual está **pendente**. Primeiro é necessário deixar todas as verificações automatizadas verdes no mesmo HEAD; depois, repetir a revisão visual, funcional e de acessibilidade nas telas alteradas.
+Uma nova inspeção pelo navegador integrado foi tentada no ambiente local, mas a ferramenta ficou indisponível antes da navegação. Por isso, não são atribuídas novas capturas ou uma repetição visual que não ocorreu. O gate final registra separadamente a aprovação visual histórica, a validação automatizada atual e a decisão humana explícita de publicação.

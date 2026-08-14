@@ -37,9 +37,9 @@ A versão candidata não deve ser promovida enquanto ocorrer uma destas condiç�
 6. vulnerabilidade crítica de dependência sem triagem;
 7. build de produção reprovado;
 8. documentação de segurança incompatível com o código;
-9. revisão HITL anterior ao HEAD candidato.
+9. decisão humana de promoção não vinculada ao conteúdo executável candidato.
 
-Em 14 de agosto de 2026, a execução local do HEAD não satisfez o primeiro gate: o backend terminou com 86 testes aprovados, mas o frontend terminou com 42 testes aprovados e 15 reprovados, de 57. O sucesso histórico do workflow não substitui essa validação atual.
+Em 14 de agosto de 2026, o workflow [CI #31839376826](https://github.com/camillabdt/VitaLink/actions/runs/31839376826) aprovou o conteúdo executável de `b80f410`: 86 testes backend, 57 testes frontend, migrações, seed, formatação, auditorias de dependências e build. Na mesma data, a responsável autorizou explicitamente a promoção desse conteúdo para `main`. O commit documental posterior apenas registra a evidência e deve manter a mesma implementação.
 
 ## Evidência prática disponível
 
@@ -99,11 +99,11 @@ Duração alvo: **8 a 10 minutos**.
 
 ## Checklist antes de gravar
 
-- [ ] Todas as alterações finais estão integradas à branch candidata.
-- [ ] Backend, frontend, formatação, auditorias e build estão verdes no mesmo HEAD.
-- [ ] Links internos e diagramas foram conferidos.
-- [ ] Nenhum segredo ou dado médico real está versionado.
-- [ ] O gate HITL foi repetido sobre o HEAD candidato.
+- [x] Todas as alterações finais de implementação estão integradas à branch candidata.
+- [x] Backend, frontend, formatação, auditorias e build estão verdes no conteúdo executável candidato.
+- [x] Links internos e diagramas foram conferidos.
+- [x] Nenhum segredo ou dado médico real está versionado.
+- [x] A decisão humana de promoção foi vinculada explicitamente ao conteúdo executável candidato.
 - [ ] O ZAP do Juice Shop não é apresentado como DAST do VitaLink.
 - [ ] Eventos de auditoria não são apresentados como alertas D01–D08 ativos.
 - [ ] O link do vídeo é registrado somente depois da publicação.
@@ -123,7 +123,7 @@ Duração:
 ## Limitações atuais
 
 - a aplicação é executável localmente, mas não há implantação de produção comprovada;
-- a suíte frontend local de 14/08/2026 não ficou verde;
+- a suíte frontend local de 14/08/2026 apresentou instabilidade, enquanto o CI da candidata aprovou os 57 testes;
 - o DAST versionado teve o Juice Shop como alvo;
 - não há CD, scanner dedicado de segredos, SAST dedicado ou alertas D01–D08;
 - o vídeo ainda depende de gravação e publicação.

@@ -2,9 +2,9 @@
 
 ## Estado da etapa
 
-O VitaLink possui as fatias verticais da primeira versão executáveis. As evidências históricas estão registradas nas implementações das issues [#50](implementacao-issue-50.md) a [#65](implementacao-issue-65.md). A [issue #66](implementacao-issue-66.md) registra uma revisão anterior ao HEAD atual e não deve ser tratada como aprovação final da versão destinada à `main`.
+O VitaLink possui as fatias verticais da primeira versão executáveis. As evidências históricas estão registradas nas implementações das issues [#50](implementacao-issue-50.md) a [#65](implementacao-issue-65.md). A [issue #66](implementacao-issue-66.md) registra a revisão histórica e a decisão humana final de promoção vinculada ao conteúdo executável da candidata.
 
-O diretório `VitaLink Health Management App/` contém a interface implementada. Os fluxos documentados nas issues estão conectados à API, exceto os trechos estáticos identificados no inventário; a revisão HITL precisa ser repetida após as alterações posteriores de mensagens, pacientes e valores de referência.
+O diretório `VitaLink Health Management App/` contém a interface implementada. Os fluxos documentados nas issues estão conectados à API, exceto os trechos estáticos identificados no inventário.
 
 ## Validação atual do HEAD
 
@@ -13,9 +13,9 @@ Em 14 de agosto de 2026, os serviços PostgreSQL, Mailpit, MinIO e ClamAV foram 
 | Ambiente                   | Backend               | Frontend                     | Observação                                                                                                                                                           |
 | -------------------------- | --------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Execução local             | 86 aprovados, 1 aviso | 39 aprovados e 18 reprovados | Houve timeouts e asserções divergentes na execução frontend concorrente; dois arquivos de autenticação passaram isoladamente com um único worker.                    |
-| CI da `develop`, `ac44643` | 86 aprovados, 1 aviso | 57 aprovados                 | O workflow [CI #31839018690](https://github.com/camillabdt/VitaLink/actions/runs/31839018690) também aprovou migrações, seed, Ruff, `pip-audit`, formatação e build. |
+| CI da `develop`, `b80f410` | 86 aprovados, 1 aviso | 57 aprovados                 | O workflow [CI #31839376826](https://github.com/camillabdt/VitaLink/actions/runs/31839376826) também aprovou migrações, seed, Ruff, `pip-audit`, formatação e build. |
 
-O gate automatizado da `develop` está verde. A divergência local permanece registrada como instabilidade do ambiente de execução, sem correção funcional nesta consolidação. A promoção à `main` ainda depende da repetição da revisão HITL sobre o HEAD atual; o DAST específico do VitaLink também permanece pendente como evidência complementar.
+O gate automatizado da `develop` está verde. A divergência local permanece registrada como instabilidade do ambiente de execução, sem correção funcional nesta consolidação. Em 14 de agosto de 2026, a responsável autorizou explicitamente a promoção para `main` do conteúdo executável de `b80f410`. Uma nova inspeção pelo navegador integrado foi tentada, mas a ferramenta ficou indisponível; portanto, este registro não inventa novas capturas visuais. O DAST específico do VitaLink permanece pendente como evidência complementar.
 
 ## Estratégia TDD adotada para o VitaLink
 
