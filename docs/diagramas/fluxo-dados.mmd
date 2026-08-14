@@ -1,0 +1,38 @@
+flowchart LR
+    patient["Paciente"]
+    professional["Profissional de Saude"]
+
+    subgraph cliente["Fora da fronteira de confianca (cliente)"]
+        app["Aplicacao Web (interface)"]
+    end
+
+    subgraph servidor["Fronteira de confianca (servidor / API)"]
+        api["API REST"]
+        authn["Servico de Autenticacao"]
+        authz["Decisao de Autorizacao"]
+        audit["Registro de Auditoria"]
+    end
+
+    subgraph dados["Dados (persistencia)"]
+        db[("Banco de Dados")]
+        storage[("Armazenamento de Documentos")]
+    end
+
+    notify["Servico externo de Notificacao"]
+
+    patient --> app
+    professional --> app
+    app -->|"HTTPS (todas as requisicoes)"| api
+
+    api --> authn
+    authz -.->|reavalia estado/escopo/periodo| db
+
+    api -->|"F1: solicitacao de acesso (profissional)"| authz
+    api -->|"F2: concessao de autorizacao (paciente)"| authz
+    api -->|"F5: revogacao de autorizacao (paciente)"| authz
+    api -->|"F3: consulta autorizada (dado medico)"| db
+    api -->|"F3: consulta autorizada (documento)"| storage
+    api -->|"F4: upload de documento (arquivo)"| storage
+    api -->|"F4: upload de documento (metadados)"| db
+    api -.->|"F6: registro de auditoria (F1-F5, sem segredo)"| audit
+    api -.->|alerta de seguranca| notify
