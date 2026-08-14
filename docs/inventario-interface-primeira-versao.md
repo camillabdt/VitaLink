@@ -26,6 +26,10 @@ Os perfis próprios de paciente e profissional usam dados persistidos e edição
 
 O paciente gera, copia, lista e revoga códigos temporários próprios. O profissional cria uma solicitação justificada somente pelo código, sem busca por nome, CPF ou e-mail e sem receber acesso antes da decisão. Solicitação e notificação ficam persistidas. Consulte a [evidência da issue #54](implementacao-issue-54.md).
 
+### Validação final da issue #66
+
+As fatias das issues #55 a #65 completaram os destinos e controles restantes deste inventário. A revisão humana final aprovou os treze componentes TSX, as rotas acrescentadas, os três viewports obrigatórios, a acessibilidade e a ausência de controles simulados ou decorativos. Não foram registradas diferenças aceitas nem pendências. Consulte a [evidência HITL da issue #66](implementacao-issue-66.md).
+
 ## Telas e destinos
 
 | Destino                     | Baseline local                                           | Decisão para a primeira versão                              | Comportamento verificável                                                                    |
