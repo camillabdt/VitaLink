@@ -131,5 +131,19 @@ export default function App() {
     )
   }
 
-  return <PatientDashboard onNavigate={navigate} onLogout={logout} />
+  const patientTab =
+    page === "patient-history"
+      ? "observations"
+      : page === "patient-charts"
+        ? "charts"
+        : page === "patient-recommendations"
+          ? "recommendations"
+          : "overview"
+  return (
+    <PatientDashboard
+      onNavigate={navigate}
+      onLogout={logout}
+      initialTab={patientTab}
+    />
+  )
 }

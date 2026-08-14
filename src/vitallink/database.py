@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, UniqueConstraint, create_engine
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
@@ -146,6 +146,27 @@ class AuthorizationRevision(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False)
     justification: Mapped[str] = mapped_column(String(500), nullable=False)
     changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class PersonalObservation(Base):
+    """Versioned health observation authored and owned by one patient."""
+
+    __tablename__ = "personal_observations"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    author_account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
+    )
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    replaces_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("personal_observations.id"), unique=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
 
 
 class Notification(Base):

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Layout from "@/components/shared/Layout"
+import PersonalObservations from "@/components/patient/PersonalObservations"
 import type { Page, UserType } from "@/data/mockData"
 
 interface Props {
@@ -95,7 +96,7 @@ export default function PatientProfile({
   const [profileSaving, setProfileSaving] = useState(false)
   const [editing, setEditing] = useState(false)
   const [activeTab, setActiveTab] =
-    useState<"personal" | "access" | "security">("personal")
+    useState<"personal" | "observations" | "access" | "security">("personal")
   const [accessCodes, setAccessCodes] = useState<AccessCodeMetadata[]>([])
   const [accessCodesLoading, setAccessCodesLoading] = useState(false)
   const [accessCodeError, setAccessCodeError] = useState("")
@@ -786,7 +787,10 @@ export default function PatientProfile({
               {[
                 ["personal", "Informações pessoais"],
                 ...(account.role === "patient"
-                  ? [["access", "Acesso temporário"]]
+                  ? [
+                      ["observations", "Observações pessoais"],
+                      ["access", "Acesso temporário"],
+                    ]
                   : []),
                 ["security", "Segurança"],
               ].map(([id, label]) => (
@@ -796,7 +800,9 @@ export default function PatientProfile({
                   role="tab"
                   aria-selected={activeTab === id}
                   onClick={() =>
-                    setActiveTab(id as "personal" | "access" | "security")
+                    setActiveTab(
+                      id as "personal" | "observations" | "access" | "security",
+                    )
                   }
                   className="px-4 py-2 rounded-lg text-sm font-medium"
                   style={
@@ -866,6 +872,10 @@ export default function PatientProfile({
                   ))}
                 </div>
               </section>
+            )}
+
+            {activeTab === "observations" && account.role === "patient" && (
+              <PersonalObservations onSessionExpired={handleSessionExpired} />
             )}
 
             {activeTab === "access" && account.role === "patient" && (

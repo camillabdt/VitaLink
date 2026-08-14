@@ -40,6 +40,7 @@ from vitallink.database import (
     LoginThrottle,
     Notification,
     Patient,
+    PersonalObservation,
     Professional,
     RecoveryCredential,
     StepUpConfirmation,
@@ -441,6 +442,28 @@ class AuthorizationChangeResponse(BaseModel):
 
     id: UUID
     status: str
+
+
+class PersonalObservationCreate(BaseModel):
+    """Patient-authored personal observation input."""
+
+    text: str = Field(min_length=1, max_length=4000)
+
+
+class PersonalObservationCorrection(PersonalObservationCreate):
+    """Replacement text bound to the version seen by the patient."""
+
+    expected_version: int = Field(ge=1)
+
+
+class PersonalObservationResponse(BaseModel):
+    """One current personal observation with explicit provenance."""
+
+    id: UUID
+    text: str
+    author: str
+    created_at: datetime
+    version: int
 
 
 class AccountSessionResponse(BaseModel):
@@ -2550,6 +2573,255 @@ def authorization_change_denied(
     )
     session.commit()
     return error_response(request, status_code, code, message)
+
+
+def personal_observation_response(observation: PersonalObservation) -> PersonalObservationResponse:
+    """Expose one observation with patient authorship and no account identifier.
+
+    Args:
+        observation: Persisted current observation version.
+
+    Returns:
+        Safe observation representation with explicit provenance.
+    """
+    return PersonalObservationResponse(
+        id=observation.id,
+        text=observation.text,
+        author="patient",
+        created_at=observation.created_at,
+        version=observation.version,
+    )
+
+
+@app.post(
+    "/api/v1/personal-observations",
+    response_model=PersonalObservationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_personal_observation(
+    observation_request: PersonalObservationCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> PersonalObservationResponse | JSONResponse:
+    """Create a personal observation owned and authored by the patient.
+
+    Args:
+        observation_request: Patient-authored text.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The persisted first version or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    text_value = observation_request.text.strip()
+    denial_reason = None
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        denial_reason = "request_verification_failed"
+    elif patient is None:
+        denial_reason = "patient_required"
+    elif not text_value:
+        denial_reason = "text_required"
+    if denial_reason is not None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="personal_observation.created",
+                target_id=None,
+                result="denied",
+                reason=denial_reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        status_code = 403 if denial_reason != "text_required" else 422
+        return error_response(request, status_code, denial_reason, "Não foi possível salvar a observação pessoal.")
+    observation = PersonalObservation(
+        patient_id=patient.id,
+        author_account_id=account.id,
+        text=text_value,
+        version=1,
+        current=True,
+        created_at=now,
+    )
+    session.add(observation)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="personal_observation.created",
+            target_id=audit_identifier(observation.id),
+            result="success",
+            reason="patient_authored",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "version": 1},
+        )
+    )
+    session.commit()
+    return personal_observation_response(observation)
+
+
+@app.get("/api/v1/personal-observations", response_model=list[PersonalObservationResponse])
+def list_personal_observations(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[PersonalObservationResponse] | JSONResponse:
+    """List only current personal observations owned by the patient.
+
+    Args:
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Current owned observation versions or a role-safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="personal_observation.listed",
+                target_id=None,
+                result="denied",
+                reason="patient_required",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, "patient_required", "Apenas pacientes consultam observações pessoais.")
+    observations = session.scalars(
+        select(PersonalObservation)
+        .where(PersonalObservation.patient_id == patient.id, PersonalObservation.current.is_(True))
+        .order_by(PersonalObservation.created_at.desc())
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="personal_observation.listed",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="owner_listed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(observations)},
+        )
+    )
+    session.commit()
+    return [personal_observation_response(observation) for observation in observations]
+
+
+@app.patch(
+    "/api/v1/personal-observations/{observation_id}",
+    response_model=PersonalObservationResponse,
+)
+def correct_personal_observation(
+    observation_id: UUID,
+    correction_request: PersonalObservationCorrection,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> PersonalObservationResponse | JSONResponse:
+    """Create a replacement version for one owned current observation.
+
+    Args:
+        observation_id: Opaque identifier of the version being corrected.
+        correction_request: Replacement text and expected current version.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The new current version or a safe ownership/version denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if not valid_csrf(request, "__Host-vitallink_session") or patient is None:
+        reason = "request_verification_failed" if patient is not None else "patient_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="personal_observation.corrected",
+                target_id=audit_identifier(observation_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, reason, "Não foi possível corrigir a observação pessoal.")
+    observation = session.scalar(
+        select(PersonalObservation)
+        .where(PersonalObservation.id == observation_id, PersonalObservation.patient_id == patient.id)
+        .with_for_update()
+    )
+    if observation is None:
+        reason = "not_found_or_not_owned"
+        status_code = 404
+        code = "personal_observation_not_found"
+    elif not observation.current or observation.version != correction_request.expected_version:
+        reason = "version_conflict"
+        status_code = 409
+        code = "personal_observation_conflict"
+    elif not correction_request.text.strip():
+        reason = "text_required"
+        status_code = 422
+        code = "text_required"
+    else:
+        replacement = PersonalObservation(
+            patient_id=observation.patient_id,
+            author_account_id=observation.author_account_id,
+            text=correction_request.text.strip(),
+            version=observation.version + 1,
+            current=True,
+            replaces_id=observation.id,
+            created_at=now,
+        )
+        observation.current = False
+        session.add(replacement)
+        session.flush()
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="personal_observation.corrected",
+                target_id=audit_identifier(replacement.id),
+                result="success",
+                reason="patient_corrected",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "version": replacement.version},
+            )
+        )
+        session.commit()
+        return personal_observation_response(replacement)
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="personal_observation.corrected",
+            target_id=audit_identifier(observation_id),
+            result="denied",
+            reason=reason,
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return error_response(request, status_code, code, "Não foi possível corrigir a observação pessoal.")
 
 
 @app.get("/api/v1/access-codes", response_model=list[AccessCodeResponse])
