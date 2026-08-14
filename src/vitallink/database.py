@@ -320,6 +320,42 @@ class FollowUpStatus(Base):
     )
 
 
+class ClinicalMessage(Base):
+    """Append-only clinical text exchanged by two authorized professionals."""
+
+    __tablename__ = "clinical_messages"
+    __table_args__ = (
+        CheckConstraint(
+            "sender_professional_id <> recipient_professional_id",
+            name="ck_clinical_messages_distinct_parties",
+        ),
+        CheckConstraint(
+            "(corrects_id IS NULL AND correction_reason IS NULL) OR "
+            "(corrects_id IS NOT NULL AND correction_reason IS NOT NULL)",
+            name="ck_clinical_messages_correction_reason",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    sender_professional_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("professionals.id"), nullable=False
+    )
+    recipient_professional_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("professionals.id"), nullable=False
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    mention_professional_ids: Mapped[list[str]] = mapped_column(JSONB, default=list, nullable=False)
+    corrects_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("clinical_messages.id"), unique=True
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
+    recipient_read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
 class Notification(Base):
     """Internal account notification linked to a domain event."""
 

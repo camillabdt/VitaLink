@@ -10,6 +10,7 @@ export interface Mentionable {
 interface Props {
   value: string
   onChange: (value: string) => void
+  ariaLabel?: string
   placeholder?: string
   rows?: number
   mentionables: Mentionable[]
@@ -18,6 +19,7 @@ interface Props {
 export default function MentionTextarea({
   value,
   onChange,
+  ariaLabel,
   placeholder,
   rows = 4,
   mentionables,
@@ -133,6 +135,7 @@ export default function MentionTextarea({
   return (
     <div className="relative">
       <textarea
+        aria-label={ariaLabel}
         ref={textareaRef}
         value={value}
         onChange={handleChange}

@@ -39,6 +39,7 @@ from vitallink.database import (
     Authorization,
     AuthorizationRevision,
     ClinicalGoal,
+    ClinicalMessage,
     ClinicalResult,
     Document,
     EmailVerification,
@@ -771,6 +772,86 @@ class FollowUpStatusResponse(BaseModel):
     created_at: datetime
 
 
+class ClinicalMessageCreate(BaseModel):
+    """TOTP-confirmed immutable message to one eligible professional."""
+
+    patient_id: UUID
+    recipient_professional_id: UUID
+    content: str = Field(min_length=1, max_length=10_000)
+    mention_professional_ids: list[UUID] = Field(default_factory=list, max_length=20)
+    step_up_confirmation_id: UUID
+
+    @field_validator("content")
+    @classmethod
+    def strip_message_content(cls, value: str) -> str:
+        """Normalize required message text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @field_validator("mention_professional_ids")
+    @classmethod
+    def unique_mentions(cls, value: list[UUID]) -> list[UUID]:
+        """Reject duplicate mention identifiers."""
+        if len(value) != len(set(value)):
+            raise ValueError("mentions must be unique")
+        return value
+
+
+class ClinicalMessageCorrection(BaseModel):
+    """New message linked to one immutable original."""
+
+    content: str = Field(min_length=1, max_length=10_000)
+    mention_professional_ids: list[UUID] = Field(default_factory=list, max_length=20)
+    correction_reason: str = Field(min_length=3, max_length=500)
+    step_up_confirmation_id: UUID
+
+    @field_validator("content", "correction_reason")
+    @classmethod
+    def strip_correction_text(cls, value: str) -> str:
+        """Normalize required correction text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @field_validator("mention_professional_ids")
+    @classmethod
+    def unique_mentions(cls, value: list[UUID]) -> list[UUID]:
+        """Reject duplicate mention identifiers."""
+        if len(value) != len(set(value)):
+            raise ValueError("mentions must be unique")
+        return value
+
+
+class ClinicalMessagePartyResponse(BaseModel):
+    """Minimum professional identity shown in a clinical conversation."""
+
+    id: UUID
+    name: str
+    specialty: str
+
+
+class ClinicalMessageRecipientResponse(ClinicalMessagePartyResponse):
+    """Eligible team member and their persistent unread badge count."""
+
+    unread_count: int
+
+
+class ClinicalMessageResponse(BaseModel):
+    """One append-only message or linked correction."""
+
+    id: UUID
+    content: str
+    mention_professional_ids: list[UUID]
+    sender: ClinicalMessagePartyResponse
+    recipient: ClinicalMessagePartyResponse
+    corrects_id: UUID | None
+    correction_reason: str | None
+    created_at: datetime
+
+
 class AccountSessionResponse(BaseModel):
     """Safe session metadata visible only to its account owner."""
 
@@ -785,7 +866,7 @@ class StepUpConfirmationRequest(BaseModel):
     """TOTP proof bound to one supported sensitive action."""
 
     action: str = Field(
-        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download|clinical_record_create|clinical_goal_write)$"
+        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download|clinical_record_create|clinical_goal_write|clinical_message_write)$"
     )
     totp_code: str = Field(pattern=r"^\d{6}$")
 
@@ -4140,6 +4221,388 @@ def correct_follow_up_status(
     )
     session.commit()
     return follow_up_response(session, replacement)
+
+
+def clinical_message_party(professional: Professional) -> ClinicalMessagePartyResponse:
+    """Build the minimum professional identity used by conversations."""
+    return ClinicalMessagePartyResponse(
+        id=professional.id,
+        name=professional.name,
+        specialty=professional.specialty,
+    )
+
+
+def clinical_message_response(session: Session, message: ClinicalMessage) -> ClinicalMessageResponse:
+    """Expose one append-only message with both professional parties."""
+    sender = session.get(Professional, message.sender_professional_id)
+    recipient = session.get(Professional, message.recipient_professional_id)
+    assert sender is not None and recipient is not None
+    return ClinicalMessageResponse(
+        id=message.id,
+        content=message.content,
+        mention_professional_ids=[UUID(value) for value in message.mention_professional_ids],
+        sender=clinical_message_party(sender),
+        recipient=clinical_message_party(recipient),
+        corrects_id=message.corrects_id,
+        correction_reason=message.correction_reason,
+        created_at=message.created_at,
+    )
+
+
+def consume_message_confirmation(
+    session: Session,
+    confirmation_id: UUID,
+    account_session: AccountSession,
+    account: Account,
+    now: datetime,
+) -> bool:
+    """Consume one session-bound TOTP proof for a message write."""
+    confirmation = session.scalar(
+        select(StepUpConfirmation)
+        .where(
+            StepUpConfirmation.id == confirmation_id,
+            StepUpConfirmation.account_id == account.id,
+            StepUpConfirmation.session_id == account_session.id,
+            StepUpConfirmation.action == "clinical_message_write",
+            StepUpConfirmation.used_at.is_(None),
+            StepUpConfirmation.expires_at > now,
+        )
+        .with_for_update()
+    )
+    if confirmation is None:
+        return False
+    confirmation.used_at = now
+    return True
+
+
+def messaging_professional(session: Session, account: Account) -> Professional | None:
+    """Resolve only an active professional account for messaging."""
+    if account.role != "professional" or account.status != "active":
+        return None
+    return session.scalar(select(Professional).where(Professional.account_id == account.id))
+
+
+def eligible_message_professionals(
+    session: Session,
+    patient_id: UUID,
+    current_professional_id: UUID,
+    operation: str,
+    now: datetime,
+) -> list[Professional]:
+    """List only peers with a live messaging grant for an operation."""
+    return list(
+        session.scalars(
+            select(Professional)
+            .join(Authorization, Authorization.professional_id == Professional.id)
+            .where(
+                Authorization.patient_id == patient_id,
+                Authorization.status == "active",
+                Authorization.starts_at <= now,
+                Authorization.expires_at > now,
+                Authorization.categories.contains(["mensagens"]),
+                Authorization.operations.contains([operation]),
+                Professional.id != current_professional_id,
+            )
+            .order_by(Professional.name, Professional.id)
+        ).unique()
+    )
+
+
+def mentions_are_eligible(mention_ids: list[UUID], eligible: list[Professional]) -> bool:
+    """Ensure mentions reveal no professional outside the eligible team."""
+    eligible_ids = {professional.id for professional in eligible}
+    return set(mention_ids).issubset(eligible_ids)
+
+
+@app.get(
+    "/api/v1/clinical-message-recipients",
+    response_model=list[ClinicalMessageRecipientResponse],
+)
+def list_clinical_message_recipients(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID, Query()],
+) -> list[ClinicalMessageRecipientResponse] | JSONResponse:
+    """List only professionals mutually eligible to exchange messages."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    professional = messaging_professional(session, account)
+    authorized = (
+        professional is not None
+        and active_authorization(session, professional.id, patient_id, "mensagens", "consultar", now) is not None
+        and active_authorization(session, professional.id, patient_id, "mensagens", "anexar", now) is not None
+    )
+    if not authorized or professional is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_message_recipients.listed",
+                target_id=audit_identifier(patient_id), result="denied", reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "message_team_not_found", "Equipe não encontrada.")
+    recipients = eligible_message_professionals(session, patient_id, professional.id, "anexar", now)
+    response = []
+    for recipient in recipients:
+        unread_count = session.scalar(
+            select(func.count(ClinicalMessage.id)).where(
+                ClinicalMessage.patient_id == patient_id,
+                ClinicalMessage.sender_professional_id == recipient.id,
+                ClinicalMessage.recipient_professional_id == professional.id,
+                ClinicalMessage.recipient_read_at.is_(None),
+            )
+        )
+        response.append(
+            ClinicalMessageRecipientResponse(
+                **clinical_message_party(recipient).model_dump(),
+                unread_count=unread_count or 0,
+            )
+        )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_message_recipients.listed",
+            target_id=audit_identifier(patient_id), result="success", reason="mutual_scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(response)},
+        )
+    )
+    session.commit()
+    return response
+
+
+@app.post("/api/v1/clinical-messages", response_model=ClinicalMessageResponse, status_code=status.HTTP_201_CREATED)
+def create_clinical_message(
+    message_request: ClinicalMessageCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ClinicalMessageResponse | JSONResponse:
+    """Send an immutable message when both professionals hold messaging scope."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    sender = messaging_professional(session, account)
+    sender_allowed = sender is not None and active_authorization(
+        session, sender.id, message_request.patient_id, "mensagens", "anexar", now
+    ) is not None
+    recipient_allowed = active_authorization(
+        session,
+        message_request.recipient_professional_id,
+        message_request.patient_id,
+        "mensagens",
+        "anexar",
+        now,
+    ) is not None
+    eligible = [] if sender is None else eligible_message_professionals(
+        session, message_request.patient_id, sender.id, "anexar", now
+    )
+    request_valid = (
+        valid_csrf(request, "__Host-vitallink_session")
+        and sender_allowed
+        and recipient_allowed
+        and sender is not None
+        and sender.id != message_request.recipient_professional_id
+        and message_request.recipient_professional_id in {peer.id for peer in eligible}
+        and mentions_are_eligible(message_request.mention_professional_ids, eligible)
+    )
+    confirmed = request_valid and consume_message_confirmation(
+        session, message_request.step_up_confirmation_id, account_session, account, now
+    )
+    if not request_valid or not confirmed or sender is None:
+        reason = "not_found_or_not_authorized" if not request_valid else "action_confirmation_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_message.created",
+                target_id=audit_identifier(message_request.patient_id), result="denied", reason=reason,
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404 if not request_valid else 403, reason, "Não foi possível enviar a mensagem.")
+    recipient = session.get(Professional, message_request.recipient_professional_id)
+    assert recipient is not None
+    message = ClinicalMessage(
+        patient_id=message_request.patient_id,
+        sender_professional_id=sender.id,
+        recipient_professional_id=recipient.id,
+        content=message_request.content,
+        mention_professional_ids=[str(value) for value in message_request.mention_professional_ids],
+        created_at=now,
+    )
+    session.add(message)
+    session.flush()
+    session.add(
+        Notification(
+            account_id=recipient.account_id,
+            kind="clinical_message",
+            subject_id=message.id,
+            created_at=now,
+        )
+    )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_message.created",
+            target_id=audit_identifier(message.id), result="success", reason="mutual_scope_and_totp_confirmed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "mention_count": len(message_request.mention_professional_ids)},
+        )
+    )
+    session.commit()
+    return clinical_message_response(session, message)
+
+
+@app.get("/api/v1/clinical-messages", response_model=list[ClinicalMessageResponse])
+def list_clinical_messages(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID, Query()],
+    peer_professional_id: Annotated[UUID, Query()],
+) -> list[ClinicalMessageResponse] | JSONResponse:
+    """Read one authorized conversation and persist recipient read state."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    professional = messaging_professional(session, account)
+    allowed = (
+        professional is not None
+        and professional.id != peer_professional_id
+        and active_authorization(session, professional.id, patient_id, "mensagens", "consultar", now) is not None
+        and active_authorization(session, peer_professional_id, patient_id, "mensagens", "consultar", now) is not None
+    )
+    if not allowed or professional is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_message.listed",
+                target_id=audit_identifier(patient_id), result="denied", reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "clinical_messages_not_found", "Conversa não encontrada.")
+    messages = session.scalars(
+        select(ClinicalMessage)
+        .where(
+            ClinicalMessage.patient_id == patient_id,
+            or_(
+                (
+                    (ClinicalMessage.sender_professional_id == professional.id)
+                    & (ClinicalMessage.recipient_professional_id == peer_professional_id)
+                ),
+                (
+                    (ClinicalMessage.sender_professional_id == peer_professional_id)
+                    & (ClinicalMessage.recipient_professional_id == professional.id)
+                ),
+            ),
+        )
+        .order_by(ClinicalMessage.created_at, ClinicalMessage.id)
+        .with_for_update()
+    ).all()
+    for message in messages:
+        if message.recipient_professional_id == professional.id and message.recipient_read_at is None:
+            message.recipient_read_at = now
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_message.listed",
+            target_id=audit_identifier(patient_id), result="success", reason="mutual_scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(messages)},
+        )
+    )
+    session.commit()
+    return [clinical_message_response(session, message) for message in messages]
+
+
+@app.post(
+    "/api/v1/clinical-messages/{message_id}/corrections",
+    response_model=ClinicalMessageResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def correct_clinical_message(
+    message_id: UUID,
+    correction: ClinicalMessageCorrection,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ClinicalMessageResponse | JSONResponse:
+    """Create one linked correction without changing the original message."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    sender = messaging_professional(session, account)
+    original = session.scalar(select(ClinicalMessage).where(ClinicalMessage.id == message_id).with_for_update())
+    existing = session.scalar(select(ClinicalMessage.id).where(ClinicalMessage.corrects_id == message_id))
+    allowed = (
+        sender is not None
+        and original is not None
+        and original.sender_professional_id == sender.id
+        and existing is None
+        and active_authorization(session, sender.id, original.patient_id, "mensagens", "atualizar", now) is not None
+        and active_authorization(
+            session, original.recipient_professional_id, original.patient_id, "mensagens", "atualizar", now
+        ) is not None
+    )
+    eligible = [] if sender is None or original is None else eligible_message_professionals(
+        session, original.patient_id, sender.id, "atualizar", now
+    )
+    request_valid = (
+        valid_csrf(request, "__Host-vitallink_session")
+        and allowed
+        and mentions_are_eligible(correction.mention_professional_ids, eligible)
+    )
+    confirmed = request_valid and consume_message_confirmation(
+        session, correction.step_up_confirmation_id, account_session, account, now
+    )
+    if not request_valid or not confirmed or original is None:
+        reason = "not_found_or_not_authorized" if not request_valid else "action_confirmation_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_message.corrected",
+                target_id=audit_identifier(message_id), result="denied", reason=reason,
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404 if not request_valid else 403, reason, "Mensagem não encontrada.")
+    replacement = ClinicalMessage(
+        patient_id=original.patient_id,
+        sender_professional_id=original.sender_professional_id,
+        recipient_professional_id=original.recipient_professional_id,
+        content=correction.content,
+        mention_professional_ids=[str(value) for value in correction.mention_professional_ids],
+        corrects_id=original.id,
+        correction_reason=correction.correction_reason,
+        created_at=now,
+    )
+    session.add(replacement)
+    session.flush()
+    recipient = session.get(Professional, original.recipient_professional_id)
+    assert recipient is not None
+    session.add(
+        Notification(
+            account_id=recipient.account_id,
+            kind="clinical_message_correction",
+            subject_id=replacement.id,
+            created_at=now,
+        )
+    )
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_message.corrected",
+            target_id=audit_identifier(replacement.id), result="success", reason="linked_correction_created",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "mention_count": len(correction.mention_professional_ids)},
+        )
+    )
+    session.commit()
+    return clinical_message_response(session, replacement)
 
 
 def professional_record_category(kind: str) -> str:
