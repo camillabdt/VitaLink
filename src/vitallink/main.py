@@ -46,6 +46,7 @@ from vitallink.database import (
     Patient,
     PersonalObservation,
     Professional,
+    ProfessionalRecord,
     RecoveryCredential,
     StepUpConfirmation,
     TotpCredential,
@@ -571,6 +572,82 @@ class ClinicalResultCorrection(BaseModel):
         return self
 
 
+class ProfessionalRecordCreate(BaseModel):
+    """TOTP-confirmed professional entry for an authorized patient."""
+
+    patient_id: UUID
+    kind: Literal["consultation", "note", "recommendation"]
+    occurred_at: datetime
+    content: str = Field(min_length=3, max_length=10_000)
+    justification: str = Field(min_length=10, max_length=500)
+    step_up_confirmation_id: UUID
+
+    @field_validator("content", "justification")
+    @classmethod
+    def strip_record_text(cls, value: str) -> str:
+        """Normalize required professional text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @field_validator("occurred_at")
+    @classmethod
+    def require_record_timezone(cls, value: datetime) -> datetime:
+        """Store an unambiguous professional event time in UTC."""
+        if value.tzinfo is None:
+            raise ValueError("timezone is required")
+        return value.astimezone(UTC)
+
+
+class ProfessionalRecordAuthorResponse(BaseModel):
+    """Minimum professional attribution shown with a clinical record."""
+
+    name: str
+    specialty: str
+
+
+class ProfessionalRecordResponse(BaseModel):
+    """Current professional record with provenance and authorship."""
+
+    id: UUID
+    kind: str
+    occurred_at: datetime
+    content: str
+    justification: str
+    origin: str
+    author: ProfessionalRecordAuthorResponse
+    version: int
+    created_at: datetime
+
+
+class ProfessionalRecordCorrection(BaseModel):
+    """Replacement content bound to the version seen by its professional author."""
+
+    occurred_at: datetime
+    content: str = Field(min_length=3, max_length=10_000)
+    justification: str = Field(min_length=10, max_length=500)
+    expected_version: int = Field(ge=1)
+    correction_reason: str = Field(min_length=3, max_length=500)
+
+    @field_validator("content", "justification", "correction_reason")
+    @classmethod
+    def strip_correction_text(cls, value: str) -> str:
+        """Normalize required correction text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @field_validator("occurred_at")
+    @classmethod
+    def require_correction_timezone(cls, value: datetime) -> datetime:
+        """Store an unambiguous replacement event time in UTC."""
+        if value.tzinfo is None:
+            raise ValueError("timezone is required")
+        return value.astimezone(UTC)
+
+
 class AccountSessionResponse(BaseModel):
     """Safe session metadata visible only to its account owner."""
 
@@ -585,7 +662,7 @@ class StepUpConfirmationRequest(BaseModel):
     """TOTP proof bound to one supported sensitive action."""
 
     action: str = Field(
-        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download)$"
+        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download|clinical_record_create)$"
     )
     totp_code: str = Field(pattern=r"^\d{6}$")
 
@@ -3520,6 +3597,321 @@ def correct_clinical_result(
     )
     session.commit()
     return clinical_result_response(session, replacement)
+
+
+def professional_record_category(kind: str) -> str:
+    """Map a professional record kind to its authorization category.
+
+    Args:
+        kind: Validated record kind.
+
+    Returns:
+        Normative authorization category.
+    """
+    return "recomendações" if kind == "recommendation" else "consultas"
+
+
+def professional_record_response(session: Session, record: ProfessionalRecord) -> ProfessionalRecordResponse:
+    """Expose one professional record with its original attribution.
+
+    Args:
+        session: Database transaction scope.
+        record: Current immutable professional record version.
+
+    Returns:
+        Safe clinical record response.
+    """
+    professional = session.scalar(
+        select(Professional).where(Professional.account_id == record.author_account_id)
+    )
+    assert professional is not None
+    return ProfessionalRecordResponse(
+        id=record.id,
+        kind=record.kind,
+        occurred_at=record.occurred_at,
+        content=record.content,
+        justification=record.justification,
+        origin=record.origin,
+        author=ProfessionalRecordAuthorResponse(name=professional.name, specialty=professional.specialty),
+        version=record.version,
+        created_at=record.created_at,
+    )
+
+
+@app.post(
+    "/api/v1/professional-records",
+    response_model=ProfessionalRecordResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_professional_record(
+    record_request: ProfessionalRecordCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ProfessionalRecordResponse | JSONResponse:
+    """Create one TOTP-confirmed professional record within active scope.
+
+    Args:
+        record_request: Record content, provenance fields, and action proof.
+        request: Authenticated same-origin request.
+        session: Database transaction scope.
+        now: Server-controlled operation time.
+
+    Returns:
+        Persisted first version or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    category = professional_record_category(record_request.kind)
+    patient = authorized_document_patient(session, account, record_request.patient_id, category, "anexar", now)
+    csrf_valid = valid_csrf(request, "__Host-vitallink_session")
+    if not csrf_valid or account.role != "professional" or patient is None:
+        reason = "request_verification_failed" if not csrf_valid else "not_authorized"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="professional_record.created",
+                target_id=audit_identifier(record_request.patient_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "kind": record_request.kind},
+            )
+        )
+        session.commit()
+        code = "request_verification_failed" if reason == "request_verification_failed" else "patient_not_found"
+        return error_response(request, 403 if reason == "request_verification_failed" else 404, code, "Não foi possível registrar.")
+    confirmation = session.scalar(
+        select(StepUpConfirmation)
+        .where(
+            StepUpConfirmation.id == record_request.step_up_confirmation_id,
+            StepUpConfirmation.account_id == account.id,
+            StepUpConfirmation.session_id == account_session.id,
+            StepUpConfirmation.action == "clinical_record_create",
+            StepUpConfirmation.used_at.is_(None),
+            StepUpConfirmation.expires_at > now,
+        )
+        .with_for_update()
+    )
+    if confirmation is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="professional_record.created",
+                target_id=audit_identifier(patient.id),
+                result="denied",
+                reason="action_confirmation_required",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "kind": record_request.kind},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, "action_confirmation_required", "Confirme novamente esta ação.")
+    confirmation.used_at = now
+    record = ProfessionalRecord(
+        patient_id=patient.id,
+        author_account_id=account.id,
+        kind=record_request.kind,
+        content=record_request.content,
+        justification=record_request.justification,
+        occurred_at=record_request.occurred_at,
+        origin="professional_entry",
+        version=1,
+        current=True,
+        created_at=now,
+    )
+    session.add(record)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="professional_record.created",
+            target_id=audit_identifier(record.id),
+            result="success",
+            reason="scope_and_totp_confirmed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "kind": record.kind, "version": record.version},
+        )
+    )
+    session.commit()
+    return professional_record_response(session, record)
+
+
+@app.get("/api/v1/professional-records", response_model=list[ProfessionalRecordResponse])
+def list_professional_records(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID | None, Query()] = None,
+) -> list[ProfessionalRecordResponse] | JSONResponse:
+    """List current records visible to the patient or an authorized professional.
+
+    Args:
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled operation time.
+        patient_id: Explicit target required from a professional.
+
+    Returns:
+        Current authorized record versions or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    allowed_categories: set[str]
+    if account.role == "patient":
+        patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+        if patient is not None and patient_id not in (None, patient.id):
+            patient = None
+        allowed_categories = {"consultas", "recomendações"}
+    else:
+        professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+        patient = session.get(Patient, patient_id) if patient_id is not None else None
+        allowed_categories = {
+            category
+            for category in ("consultas", "recomendações")
+            if professional is not None
+            and patient is not None
+            and active_authorization(session, professional.id, patient.id, category, "consultar", now) is not None
+        }
+    if patient is None or not allowed_categories:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="professional_record.listed",
+                target_id=audit_identifier(patient_id) if patient_id is not None else None,
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "professional_records_not_found", "Registros não encontrados.")
+    records = session.scalars(
+        select(ProfessionalRecord)
+        .where(ProfessionalRecord.patient_id == patient.id, ProfessionalRecord.current.is_(True))
+        .order_by(ProfessionalRecord.occurred_at.desc(), ProfessionalRecord.created_at.desc())
+    ).all()
+    visible = [record for record in records if professional_record_category(record.kind) in allowed_categories]
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="professional_record.listed",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(visible)},
+        )
+    )
+    session.commit()
+    return [professional_record_response(session, record) for record in visible]
+
+
+@app.patch("/api/v1/professional-records/{record_id}", response_model=ProfessionalRecordResponse)
+def correct_professional_record(
+    record_id: UUID,
+    correction_request: ProfessionalRecordCorrection,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ProfessionalRecordResponse | JSONResponse:
+    """Create a successor version for an authorized author's current record.
+
+    Args:
+        record_id: Opaque identifier of the version being corrected.
+        correction_request: Replacement, reason, and expected version.
+        request: Authenticated same-origin request.
+        session: Database transaction scope.
+        now: Server-controlled operation time.
+
+    Returns:
+        Replacement version or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    original = session.scalar(select(ProfessionalRecord).where(ProfessionalRecord.id == record_id).with_for_update())
+    patient = None
+    if original is not None and account.role == "professional" and original.author_account_id == account.id:
+        patient = authorized_document_patient(
+            session,
+            account,
+            original.patient_id,
+            professional_record_category(original.kind),
+            "atualizar",
+            now,
+        )
+    csrf_valid = valid_csrf(request, "__Host-vitallink_session")
+    if not csrf_valid or original is None or patient is None:
+        reason = "request_verification_failed" if not csrf_valid else "not_found_or_not_authorized"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="professional_record.corrected",
+                target_id=audit_identifier(record_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(
+            request,
+            403 if reason == "request_verification_failed" else 404,
+            reason,
+            "Registro não encontrado.",
+        )
+    if not original.current or original.version != correction_request.expected_version:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="professional_record.corrected",
+                target_id=audit_identifier(record_id),
+                result="denied",
+                reason="version_conflict",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "expected_version": correction_request.expected_version},
+            )
+        )
+        session.commit()
+        return error_response(request, 409, "professional_record_conflict", "O registro possui versão mais recente.")
+    replacement = ProfessionalRecord(
+        patient_id=original.patient_id,
+        author_account_id=original.author_account_id,
+        kind=original.kind,
+        content=correction_request.content,
+        justification=correction_request.justification,
+        occurred_at=correction_request.occurred_at,
+        origin=original.origin,
+        version=original.version + 1,
+        current=True,
+        replaces_id=original.id,
+        correction_reason=correction_request.correction_reason,
+        created_at=now,
+    )
+    original.current = False
+    session.add(replacement)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="professional_record.corrected",
+            target_id=audit_identifier(replacement.id),
+            result="success",
+            reason="replacement_created",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "kind": replacement.kind, "version": replacement.version},
+        )
+    )
+    session.commit()
+    return professional_record_response(session, replacement)
 
 
 @app.post(

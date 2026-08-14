@@ -27,6 +27,7 @@ import type { StoredDocument } from "@/components/shared/DocumentUploadModal"
 import DocumentViewerModal from "@/components/shared/DocumentViewerModal"
 import PersonalObservations from "@/components/patient/PersonalObservations"
 import ClinicalResults from "@/components/patient/ClinicalResults"
+import ProfessionalRecords from "@/components/shared/ProfessionalRecords"
 
 interface Props {
   onNavigate: (page: Page) => void
@@ -251,6 +252,10 @@ export default function PatientDashboard({
             mode="history"
             onSessionExpired={handleSessionExpired}
           />
+          <ProfessionalRecords
+            mode="history"
+            onSessionExpired={handleSessionExpired}
+          />
         </div>
       )}
       {activeTab === "charts" && (
@@ -259,7 +264,12 @@ export default function PatientDashboard({
           onSessionExpired={handleSessionExpired}
         />
       )}
-      {activeTab === "recommendations" && <RecommendationsTab />}
+      {activeTab === "recommendations" && (
+        <ProfessionalRecords
+          mode="recommendations"
+          onSessionExpired={handleSessionExpired}
+        />
+      )}
     </Layout>
   )
 }

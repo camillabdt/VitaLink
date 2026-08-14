@@ -130,6 +130,12 @@ test("professional sees only authorized patients and revalidates detail", async 
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
 
   render(<DoctorDashboard onNavigate={vi.fn()} onLogout={vi.fn()} />)
 
@@ -140,7 +146,7 @@ test("professional sees only authorized patients and revalidates detail", async 
   )
   await user.click(screen.getByRole("button", { name: "Ver detalhes" }))
   expect(await screen.findByText("+5553999999999")).toBeInTheDocument()
-  expect(globalThis.fetch).toHaveBeenLastCalledWith(
+  expect(globalThis.fetch).toHaveBeenCalledWith(
     "/api/v1/patients/99999999-9999-4999-8999-999999999999",
     expect.objectContaining({ credentials: "same-origin" }),
   )
@@ -177,6 +183,12 @@ test("professional clears loaded detail when focus revalidation loses access", a
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
+    )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
     )
     .mockResolvedValueOnce(new Response("[]", { status: 200 }))
 

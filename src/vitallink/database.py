@@ -236,6 +236,38 @@ class ClinicalResult(Base):
     )
 
 
+class ProfessionalRecord(Base):
+    """Immutable version of a patient record authored by a professional."""
+
+    __tablename__ = "professional_records"
+    __table_args__ = (
+        CheckConstraint(
+            "kind IN ('consultation', 'note', 'recommendation')",
+            name="ck_professional_records_kind",
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    author_account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
+    )
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    justification: Mapped[str] = mapped_column(String(500), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    origin: Mapped[str] = mapped_column(String(32), nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    replaces_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("professional_records.id"), unique=True
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
 class Notification(Base):
     """Internal account notification linked to a domain event."""
 

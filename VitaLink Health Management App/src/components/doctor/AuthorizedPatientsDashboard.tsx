@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Layout from "@/components/shared/Layout"
+import DocumentUploadModal from "@/components/shared/DocumentUploadModal"
+import ProfessionalRecords from "@/components/shared/ProfessionalRecords"
 import type { Page } from "@/data/mockData"
 
 interface Props {
@@ -149,7 +151,10 @@ export default function AuthorizedPatientsDashboard({
       }
     >
       {selectedPatient ? (
-        <PatientDetail patient={selectedPatient} />
+        <PatientDetail
+          patient={selectedPatient}
+          onSessionExpired={handleSessionExpired}
+        />
       ) : (
         <PatientList
           patients={filteredPatients}
@@ -477,37 +482,78 @@ function PatientCard({
   )
 }
 
-function PatientDetail({ patient }: { patient: AuthorizedPatientDetail }) {
+function PatientDetail({
+  patient,
+  onSessionExpired,
+}: {
+  patient: AuthorizedPatientDetail
+  onSessionExpired: () => void
+}) {
+  const [showUpload, setShowUpload] = useState(false)
+
   return (
-    <section
-      className="max-w-3xl rounded-2xl border bg-white p-6"
-      style={{ borderColor: "var(--border)" }}
-    >
-      <h2 className="text-lg font-semibold text-gray-900">
-        Dados autorizados do paciente
-      </h2>
-      <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-        <DetailItem label="Nome" value={patient.name} />
-        <DetailItem label="Nascimento" value={formatDate(patient.birthdate)} />
-        <DetailItem label="Telefone" value={patient.phone} />
-        <DetailItem
-          label="Tipo sanguíneo"
-          value={patient.blood_type || "Não informado"}
+    <div className="space-y-6">
+      <section
+        className="max-w-3xl rounded-2xl border bg-white p-6"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <h2 className="text-lg font-semibold text-gray-900">
+          Dados autorizados do paciente
+        </h2>
+        <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+          <DetailItem label="Nome" value={patient.name} />
+          <DetailItem
+            label="Nascimento"
+            value={formatDate(patient.birthdate)}
+          />
+          <DetailItem label="Telefone" value={patient.phone} />
+          <DetailItem
+            label="Tipo sanguíneo"
+            value={patient.blood_type || "Não informado"}
+          />
+        </dl>
+        <div className="mt-6 border-t pt-5">
+          <h3 className="text-sm font-semibold text-gray-900">
+            Escopo vigente
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Categorias: {patient.categories.join(", ")}
+          </p>
+          <p className="mt-1 text-sm text-gray-600">
+            Operações: {patient.operations.join(", ")}
+          </p>
+          <p className="mt-1 text-sm text-gray-600">
+            Expira em {new Date(patient.expires_at).toLocaleString("pt-BR")}
+          </p>
+        </div>
+        {patient.operations.includes("anexar") &&
+          patient.categories.some((category) =>
+            ["exames", "receitas", "laudos", "imagens"].includes(category),
+          ) && (
+            <button
+              type="button"
+              onClick={() => setShowUpload(true)}
+              className="mt-5 rounded-xl px-4 py-2.5 text-sm font-semibold text-white"
+              style={{ background: "var(--primary)" }}
+            >
+              Anexar documento
+            </button>
+          )}
+      </section>
+      <ProfessionalRecords
+        patientId={patient.id}
+        categories={patient.categories}
+        operations={patient.operations}
+        onSessionExpired={onSessionExpired}
+      />
+      {showUpload && (
+        <DocumentUploadModal
+          patientId={patient.id}
+          onClose={() => setShowUpload(false)}
+          onSave={() => setShowUpload(false)}
         />
-      </dl>
-      <div className="mt-6 border-t pt-5">
-        <h3 className="text-sm font-semibold text-gray-900">Escopo vigente</h3>
-        <p className="mt-2 text-sm text-gray-600">
-          Categorias: {patient.categories.join(", ")}
-        </p>
-        <p className="mt-1 text-sm text-gray-600">
-          Operações: {patient.operations.join(", ")}
-        </p>
-        <p className="mt-1 text-sm text-gray-600">
-          Expira em {new Date(patient.expires_at).toLocaleString("pt-BR")}
-        </p>
-      </div>
-    </section>
+      )}
+    </div>
   )
 }
 

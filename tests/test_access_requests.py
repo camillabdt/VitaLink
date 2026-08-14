@@ -18,14 +18,14 @@ from vitallink.database import AccessCode, AccessRequest, Account, AuditEvent, N
 from vitallink.main import app
 
 
-def activate_professional(client: TestClient) -> dict[str, str]:
+def activate_professional_with_totp(client: TestClient) -> tuple[dict[str, str], pyotp.TOTP]:
     """Activate one synthetic professional through the public boundaries.
 
     Args:
         client: HTTP client retaining the professional session.
 
     Returns:
-        Same-origin CSRF headers for authenticated mutations.
+        Same-origin CSRF headers and the synthetic authenticator.
     """
     registration = professional_registration_data(uuid4().hex)
     client.post("/api/v1/professional-registrations", json=registration)
@@ -74,10 +74,26 @@ def activate_professional(client: TestClient) -> dict[str, str]:
         },
     )
     assert login.status_code == 204
-    return {
-        "Origin": "https://testserver",
-        "X-CSRF-Token": login.headers["X-CSRF-Token"],
-    }
+    return (
+        {
+            "Origin": "https://testserver",
+            "X-CSRF-Token": login.headers["X-CSRF-Token"],
+        },
+        totp,
+    )
+
+
+def activate_professional(client: TestClient) -> dict[str, str]:
+    """Activate a synthetic professional and return mutation headers.
+
+    Args:
+        client: HTTP client retaining the professional session.
+
+    Returns:
+        Same-origin CSRF headers for authenticated mutations.
+    """
+    headers, _ = activate_professional_with_totp(client)
+    return headers
 
 
 def test_patient_generates_a_single_use_access_code() -> None:
