@@ -208,9 +208,7 @@ class ClinicalResult(Base):
     """Confirmed versioned measurement with immutable authorship and origin."""
 
     __tablename__ = "clinical_results"
-    __table_args__ = (
-        CheckConstraint("reference_min <= reference_max", name="ck_clinical_results_reference_order"),
-    )
+    __table_args__ = (CheckConstraint("reference_min <= reference_max", name="ck_clinical_results_reference_order"),)
 
     id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
     patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)

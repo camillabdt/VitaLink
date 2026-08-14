@@ -6,7 +6,6 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select, text
-from sqlalchemy.exc import DBAPIError
 from test_account_recovery import activate_patient
 from test_authorizations import create_pending_request, grant_pending_request
 
@@ -37,10 +36,14 @@ def patient_session(client: TestClient, prefix: str) -> tuple[dict[str, str], Ac
     with SessionFactory() as session:
         account = session.scalar(select(Account).where(Account.email == email))
         patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
-    return {
-        "Origin": "https://testserver",
-        "X-CSRF-Token": login.headers["X-CSRF-Token"],
-    }, account, patient
+    return (
+        {
+            "Origin": "https://testserver",
+            "X-CSRF-Token": login.headers["X-CSRF-Token"],
+        },
+        account,
+        patient,
+    )
 
 
 def test_notifications_are_private_persisted_and_individually_read() -> None:
@@ -177,7 +180,9 @@ def test_required_operation_rolls_back_when_audit_insert_fails() -> None:
     with TestClient(app, base_url="https://testserver") as client:
         headers, _, patient = patient_session(client, "audit-atomicity")
         with SessionFactory() as session:
-            before = session.scalar(select(func.count()).select_from(AccessCode).where(AccessCode.patient_id == patient.id))
+            before = session.scalar(
+                select(func.count()).select_from(AccessCode).where(AccessCode.patient_id == patient.id)
+            )
         with engine.begin() as connection:
             connection.execute(
                 text(
@@ -197,13 +202,16 @@ def test_required_operation_rolls_back_when_audit_insert_fails() -> None:
                 )
             )
         try:
-            with pytest.raises(DBAPIError, match="synthetic audit failure"):
-                client.post("/api/v1/access-codes", headers=headers)
+            response = client.post("/api/v1/access-codes", headers=headers)
         finally:
             with engine.begin() as connection:
                 connection.execute(text("DROP TRIGGER IF EXISTS reject_test_audit_insert ON audit_events"))
                 connection.execute(text("DROP FUNCTION IF EXISTS reject_test_audit_insert"))
         with SessionFactory() as session:
-            after = session.scalar(select(func.count()).select_from(AccessCode).where(AccessCode.patient_id == patient.id))
+            after = session.scalar(
+                select(func.count()).select_from(AccessCode).where(AccessCode.patient_id == patient.id)
+            )
 
+    assert response.status_code == 503
+    assert response.json()["code"] == "dependency_unavailable"
     assert after == before

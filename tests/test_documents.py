@@ -14,9 +14,7 @@ from test_personal_observations import patient_session
 from vitallink.database import AuditEvent, Document, Notification, SessionFactory
 from vitallink.main import app, settings
 
-PNG_1X1 = b64decode(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
-)
+PNG_1X1 = b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
 
 
 def test_patient_uploads_a_png_that_is_approved_after_scanning() -> None:

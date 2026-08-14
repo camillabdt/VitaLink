@@ -25,7 +25,7 @@ from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, Uplo
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
 
@@ -51,6 +51,7 @@ from vitallink.database import (
     Professional,
     ProfessionalRecord,
     RecoveryCredential,
+    SessionFactory,
     StepUpConfirmation,
     TotpCredential,
     get_session,
@@ -3115,11 +3116,7 @@ def create_transcription(
         return error_response(request, 401, "authentication_required", "Entre novamente.")
     _, account = context
     patient = authorized_document_patient(session, account, patient_id, category, operation, now)
-    if (
-        account.role != "professional"
-        or patient is None
-        or not valid_csrf(request, "__Host-vitallink_session")
-    ):
+    if account.role != "professional" or patient is None or not valid_csrf(request, "__Host-vitallink_session"):
         return transcription_error(
             request,
             session,
@@ -3171,15 +3168,36 @@ def create_transcription(
         )
     except NoSpeechError:
         return transcription_error(
-            request, session, account, patient_id, "no_speech_detected", 422, "no_speech_detected", "Nenhuma fala foi detectada."
+            request,
+            session,
+            account,
+            patient_id,
+            "no_speech_detected",
+            422,
+            "no_speech_detected",
+            "Nenhuma fala foi detectada.",
         )
     except TranscriptionTimeoutError:
         return transcription_error(
-            request, session, account, patient_id, "transcription_timeout", 504, "transcription_timeout", "A transcrição excedeu o tempo limite."
+            request,
+            session,
+            account,
+            patient_id,
+            "transcription_timeout",
+            504,
+            "transcription_timeout",
+            "A transcrição excedeu o tempo limite.",
         )
     except TranscriptionUnavailableError:
         return transcription_error(
-            request, session, account, patient_id, "transcription_unavailable", 503, "transcription_unavailable", "A transcrição local está indisponível."
+            request,
+            session,
+            account,
+            patient_id,
+            "transcription_unavailable",
+            503,
+            "transcription_unavailable",
+            "A transcrição local está indisponível.",
         )
     session.add(
         AuditEvent(
@@ -3317,7 +3335,9 @@ async def create_document(
     except Exception:
         session.rollback()
         http_logger.exception("Document quarantine failed")
-        return error_response(request, 503, "document_storage_unavailable", "O envio está temporariamente indisponível.")
+        return error_response(
+            request, 503, "document_storage_unavailable", "O envio está temporariamente indisponível."
+        )
 
     try:
         scan_result = clamav_scan(content)
@@ -3421,11 +3441,15 @@ def list_documents(
     _, account = context
     if account.role == "patient":
         patient = authorized_document_patient(session, account, patient_id, "histórico", "consultar", now)
-        documents = [] if patient is None else session.scalars(
-            select(Document)
-            .where(Document.patient_id == patient.id, Document.status == "approved")
-            .order_by(Document.created_at.desc())
-        ).all()
+        documents = (
+            []
+            if patient is None
+            else session.scalars(
+                select(Document)
+                .where(Document.patient_id == patient.id, Document.status == "approved")
+                .order_by(Document.created_at.desc())
+            ).all()
+        )
     else:
         professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
         if professional is None or patient_id is None:
@@ -3544,10 +3568,14 @@ def read_document_content(
             return error_response(request, 403, "action_confirmation_required", "Confirme novamente esta ação.")
         confirmation.used_at = now
     try:
-        content = storage_client().get_object(
-            Bucket=settings.s3_approved_bucket,
-            Key=document.storage_key,
-        )["Body"].read()
+        content = (
+            storage_client()
+            .get_object(
+                Bucket=settings.s3_approved_bucket,
+                Key=document.storage_key,
+            )["Body"]
+            .read()
+        )
     except Exception:
         http_logger.exception("Approved document read failed")
         session.add(
@@ -3562,7 +3590,9 @@ def read_document_content(
             )
         )
         session.commit()
-        return error_response(request, 503, "document_storage_unavailable", "O documento está temporariamente indisponível.")
+        return error_response(
+            request, 503, "document_storage_unavailable", "O documento está temporariamente indisponível."
+        )
     if not hmac.compare_digest(hashlib.sha256(content).hexdigest(), document.sha256):
         session.add(
             AuditEvent(
@@ -3576,7 +3606,9 @@ def read_document_content(
             )
         )
         session.commit()
-        return error_response(request, 503, "document_integrity_failed", "O documento está temporariamente indisponível.")
+        return error_response(
+            request, 503, "document_integrity_failed", "O documento está temporariamente indisponível."
+        )
     action = "document.downloaded" if download else "document.viewed"
     session.add(
         AuditEvent(
@@ -3628,11 +3660,15 @@ def list_document_authorized_professionals(
         return error_response(request, 401, "authentication_required", "Entre novamente.")
     _, account = context
     patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
-    document = None if patient is None else session.scalar(
-        select(Document).where(
-            Document.id == document_id,
-            Document.patient_id == patient.id,
-            Document.status == "approved",
+    document = (
+        None
+        if patient is None
+        else session.scalar(
+            select(Document).where(
+                Document.id == document_id,
+                Document.patient_id == patient.id,
+                Document.status == "approved",
+            )
         )
     )
     if document is None:
@@ -4050,15 +4086,18 @@ def goal_exam_exists(session: Session, patient_id: UUID, exam_name: str, unit: s
     Returns:
         Whether a current confirmed result matches both exam and unit.
     """
-    return session.scalar(
-        select(ClinicalResult.id).where(
-            ClinicalResult.patient_id == patient_id,
-            ClinicalResult.current.is_(True),
-            ClinicalResult.confirmed.is_(True),
-            func.lower(ClinicalResult.exam_name) == exam_name.casefold(),
-            func.lower(ClinicalResult.unit) == unit.casefold(),
+    return (
+        session.scalar(
+            select(ClinicalResult.id).where(
+                ClinicalResult.patient_id == patient_id,
+                ClinicalResult.current.is_(True),
+                ClinicalResult.confirmed.is_(True),
+                func.lower(ClinicalResult.exam_name) == exam_name.casefold(),
+                func.lower(ClinicalResult.unit) == unit.casefold(),
+            )
         )
-    ) is not None
+        is not None
+    )
 
 
 @app.post("/api/v1/clinical-goals", response_model=ClinicalGoalResponse, status_code=status.HTTP_201_CREATED)
@@ -4074,40 +4113,63 @@ def create_clinical_goal(
         return error_response(request, 401, "authentication_required", "Entre novamente.")
     account_session, account = context
     patient = authorized_document_patient(session, account, goal_request.patient_id, "metas", "anexar", now)
-    allowed = (
-        valid_csrf(request, "__Host-vitallink_session")
-        and account.role == "professional"
-        and patient is not None
-    )
+    allowed = valid_csrf(request, "__Host-vitallink_session") and account.role == "professional" and patient is not None
     compatible = patient is not None and goal_exam_exists(
         session, patient.id, goal_request.exam_name, goal_request.unit
     )
-    confirmed = allowed and compatible and consume_goal_confirmation(
-        session, goal_request.step_up_confirmation_id, account_session, account, now
+    confirmed = (
+        allowed
+        and compatible
+        and consume_goal_confirmation(session, goal_request.step_up_confirmation_id, account_session, account, now)
     )
     if not allowed or not compatible or not confirmed:
-        reason = "not_authorized" if not allowed else "incompatible_exam_unit" if not compatible else "action_confirmation_required"
+        reason = (
+            "not_authorized"
+            if not allowed
+            else "incompatible_exam_unit"
+            if not compatible
+            else "action_confirmation_required"
+        )
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_goal.created",
-                target_id=audit_identifier(goal_request.patient_id), result="denied", reason=reason,
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="clinical_goal.created",
+                target_id=audit_identifier(goal_request.patient_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
-        return error_response(request, 404 if not allowed else 422 if not compatible else 403, reason, "Não foi possível registrar a meta.")
+        return error_response(
+            request,
+            404 if not allowed else 422 if not compatible else 403,
+            reason,
+            "Não foi possível registrar a meta.",
+        )
     goal = ClinicalGoal(
-        patient_id=patient.id, author_account_id=account.id, exam_name=goal_request.exam_name,
-        minimum=goal_request.minimum, maximum=goal_request.maximum, unit=goal_request.unit,
-        justification=goal_request.justification, effective_at=goal_request.effective_at,
-        version=1, current=True, created_at=now,
+        patient_id=patient.id,
+        author_account_id=account.id,
+        exam_name=goal_request.exam_name,
+        minimum=goal_request.minimum,
+        maximum=goal_request.maximum,
+        unit=goal_request.unit,
+        justification=goal_request.justification,
+        effective_at=goal_request.effective_at,
+        version=1,
+        current=True,
+        created_at=now,
     )
     session.add(goal)
     session.flush()
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_goal.created",
-            target_id=audit_identifier(goal.id), result="success", reason="scope_and_totp_confirmed",
+            actor_id=audit_identifier(account.id),
+            action="clinical_goal.created",
+            target_id=audit_identifier(goal.id),
+            result="success",
+            reason="scope_and_totp_confirmed",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "version": goal.version},
         )
@@ -4132,22 +4194,29 @@ def list_clinical_goals(
     if patient is None:
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_goal.listed",
-                target_id=audit_identifier(patient_id) if patient_id else None, result="denied",
-                reason="not_found_or_not_authorized", correlation_id=request.state.correlation_id,
+                actor_id=audit_identifier(account.id),
+                action="clinical_goal.listed",
+                target_id=audit_identifier(patient_id) if patient_id else None,
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
                 event_metadata={"role": account.role},
             )
         )
         session.commit()
         return error_response(request, 404, "clinical_goals_not_found", "Metas não encontradas.")
     goals = session.scalars(
-        select(ClinicalGoal).where(ClinicalGoal.patient_id == patient.id, ClinicalGoal.current.is_(True))
+        select(ClinicalGoal)
+        .where(ClinicalGoal.patient_id == patient.id, ClinicalGoal.current.is_(True))
         .order_by(ClinicalGoal.effective_at.desc(), ClinicalGoal.created_at.desc())
     ).all()
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_goal.listed",
-            target_id=audit_identifier(patient.id), result="success", reason="scope_reevaluated",
+            actor_id=audit_identifier(account.id),
+            action="clinical_goal.listed",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="scope_reevaluated",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "count": len(goals)},
         )
@@ -4174,26 +4243,48 @@ def correct_clinical_goal(
     if original is not None and original.author_account_id == account.id:
         patient = authorized_document_patient(session, account, original.patient_id, "metas", "atualizar", now)
     allowed = valid_csrf(request, "__Host-vitallink_session") and patient is not None
-    compatible = original is not None and goal_exam_exists(session, original.patient_id, original.exam_name, correction.unit)
-    confirmed = allowed and compatible and consume_goal_confirmation(
-        session, correction.step_up_confirmation_id, account_session, account, now
+    compatible = original is not None and goal_exam_exists(
+        session, original.patient_id, original.exam_name, correction.unit
+    )
+    confirmed = (
+        allowed
+        and compatible
+        and consume_goal_confirmation(session, correction.step_up_confirmation_id, account_session, account, now)
     )
     if original is None or not allowed or not compatible or not confirmed:
-        reason = "not_found_or_not_authorized" if original is None or not allowed else "incompatible_exam_unit" if not compatible else "action_confirmation_required"
+        reason = (
+            "not_found_or_not_authorized"
+            if original is None or not allowed
+            else "incompatible_exam_unit"
+            if not compatible
+            else "action_confirmation_required"
+        )
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_goal.corrected",
-                target_id=audit_identifier(goal_id), result="denied", reason=reason,
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="clinical_goal.corrected",
+                target_id=audit_identifier(goal_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
-        return error_response(request, 404 if original is None or not allowed else 422 if not compatible else 403, reason, "Meta não encontrada.")
+        return error_response(
+            request,
+            404 if original is None or not allowed else 422 if not compatible else 403,
+            reason,
+            "Meta não encontrada.",
+        )
     if not original.current or original.version != correction.expected_version:
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_goal.corrected",
-                target_id=audit_identifier(goal_id), result="denied", reason="version_conflict",
+                actor_id=audit_identifier(account.id),
+                action="clinical_goal.corrected",
+                target_id=audit_identifier(goal_id),
+                result="denied",
+                reason="version_conflict",
                 correlation_id=request.state.correlation_id,
                 event_metadata={"role": account.role, "expected_version": correction.expected_version},
             )
@@ -4201,19 +4292,30 @@ def correct_clinical_goal(
         session.commit()
         return error_response(request, 409, "clinical_goal_conflict", "A meta possui versão mais recente.")
     replacement = ClinicalGoal(
-        patient_id=original.patient_id, author_account_id=original.author_account_id,
-        exam_name=original.exam_name, minimum=correction.minimum, maximum=correction.maximum,
-        unit=correction.unit, justification=correction.justification, effective_at=correction.effective_at,
-        version=original.version + 1, current=True, replaces_id=original.id,
-        correction_reason=correction.correction_reason, created_at=now,
+        patient_id=original.patient_id,
+        author_account_id=original.author_account_id,
+        exam_name=original.exam_name,
+        minimum=correction.minimum,
+        maximum=correction.maximum,
+        unit=correction.unit,
+        justification=correction.justification,
+        effective_at=correction.effective_at,
+        version=original.version + 1,
+        current=True,
+        replaces_id=original.id,
+        correction_reason=correction.correction_reason,
+        created_at=now,
     )
     original.current = False
     session.add(replacement)
     session.flush()
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_goal.corrected",
-            target_id=audit_identifier(replacement.id), result="success", reason="replacement_created",
+            actor_id=audit_identifier(account.id),
+            action="clinical_goal.corrected",
+            target_id=audit_identifier(replacement.id),
+            result="success",
+            reason="replacement_created",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "version": replacement.version},
         )
@@ -4224,9 +4326,7 @@ def correct_clinical_goal(
 
 def follow_up_response(session: Session, follow_up: FollowUpStatus) -> FollowUpStatusResponse:
     """Expose one manual state with its immutable professional author."""
-    professional = session.scalar(
-        select(Professional).where(Professional.account_id == follow_up.author_account_id)
-    )
+    professional = session.scalar(select(Professional).where(Professional.account_id == follow_up.author_account_id))
     assert professional is not None
     return FollowUpStatusResponse(
         id=follow_up.id,
@@ -4264,24 +4364,38 @@ def create_follow_up_status(
         reason = "not_authorized" if not allowed else "action_confirmation_required"
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="follow_up_status.created",
-                target_id=audit_identifier(status_request.patient_id), result="denied", reason=reason,
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="follow_up_status.created",
+                target_id=audit_identifier(status_request.patient_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
-        return error_response(request, 404 if not allowed else 403, reason, "Não foi possível registrar o acompanhamento.")
+        return error_response(
+            request, 404 if not allowed else 403, reason, "Não foi possível registrar o acompanhamento."
+        )
     follow_up = FollowUpStatus(
-        patient_id=patient.id, author_account_id=account.id, status=status_request.status,
-        justification=status_request.justification, recorded_at=status_request.recorded_at,
-        version=1, current=True, created_at=now,
+        patient_id=patient.id,
+        author_account_id=account.id,
+        status=status_request.status,
+        justification=status_request.justification,
+        recorded_at=status_request.recorded_at,
+        version=1,
+        current=True,
+        created_at=now,
     )
     session.add(follow_up)
     session.flush()
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="follow_up_status.created",
-            target_id=audit_identifier(follow_up.id), result="success", reason="manual_scope_and_totp_confirmed",
+            actor_id=audit_identifier(account.id),
+            action="follow_up_status.created",
+            target_id=audit_identifier(follow_up.id),
+            result="success",
+            reason="manual_scope_and_totp_confirmed",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "version": follow_up.version},
         )
@@ -4306,9 +4420,12 @@ def list_follow_up_statuses(
     if patient is None:
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="follow_up_status.listed",
-                target_id=audit_identifier(patient_id) if patient_id else None, result="denied",
-                reason="not_found_or_not_authorized", correlation_id=request.state.correlation_id,
+                actor_id=audit_identifier(account.id),
+                action="follow_up_status.listed",
+                target_id=audit_identifier(patient_id) if patient_id else None,
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
                 event_metadata={"role": account.role},
             )
         )
@@ -4321,8 +4438,11 @@ def list_follow_up_statuses(
     ).all()
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="follow_up_status.listed",
-            target_id=audit_identifier(patient.id), result="success", reason="scope_reevaluated",
+            actor_id=audit_identifier(account.id),
+            action="follow_up_status.listed",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="scope_reevaluated",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "count": len(statuses)},
         )
@@ -4356,18 +4476,27 @@ def correct_follow_up_status(
         reason = "not_found_or_not_authorized" if original is None or not allowed else "action_confirmation_required"
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="follow_up_status.corrected",
-                target_id=audit_identifier(status_id), result="denied", reason=reason,
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="follow_up_status.corrected",
+                target_id=audit_identifier(status_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
-        return error_response(request, 404 if original is None or not allowed else 403, reason, "Acompanhamento não encontrado.")
+        return error_response(
+            request, 404 if original is None or not allowed else 403, reason, "Acompanhamento não encontrado."
+        )
     if not original.current or original.version != correction.expected_version:
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="follow_up_status.corrected",
-                target_id=audit_identifier(status_id), result="denied", reason="version_conflict",
+                actor_id=audit_identifier(account.id),
+                action="follow_up_status.corrected",
+                target_id=audit_identifier(status_id),
+                result="denied",
+                reason="version_conflict",
                 correlation_id=request.state.correlation_id,
                 event_metadata={"role": account.role, "expected_version": correction.expected_version},
             )
@@ -4375,18 +4504,27 @@ def correct_follow_up_status(
         session.commit()
         return error_response(request, 409, "follow_up_status_conflict", "O acompanhamento possui versão mais recente.")
     replacement = FollowUpStatus(
-        patient_id=original.patient_id, author_account_id=original.author_account_id,
-        status=correction.status, justification=correction.justification,
-        recorded_at=correction.recorded_at, version=original.version + 1, current=True,
-        replaces_id=original.id, correction_reason=correction.correction_reason, created_at=now,
+        patient_id=original.patient_id,
+        author_account_id=original.author_account_id,
+        status=correction.status,
+        justification=correction.justification,
+        recorded_at=correction.recorded_at,
+        version=original.version + 1,
+        current=True,
+        replaces_id=original.id,
+        correction_reason=correction.correction_reason,
+        created_at=now,
     )
     original.current = False
     session.add(replacement)
     session.flush()
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="follow_up_status.corrected",
-            target_id=audit_identifier(replacement.id), result="success", reason="replacement_created",
+            actor_id=audit_identifier(account.id),
+            action="follow_up_status.corrected",
+            target_id=audit_identifier(replacement.id),
+            result="success",
+            reason="replacement_created",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "version": replacement.version},
         )
@@ -4510,9 +4648,13 @@ def list_clinical_message_recipients(
     if not authorized or professional is None:
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_message_recipients.listed",
-                target_id=audit_identifier(patient_id), result="denied", reason="not_found_or_not_authorized",
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="clinical_message_recipients.listed",
+                target_id=audit_identifier(patient_id),
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
@@ -4536,8 +4678,11 @@ def list_clinical_message_recipients(
         )
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_message_recipients.listed",
-            target_id=audit_identifier(patient_id), result="success", reason="mutual_scope_reevaluated",
+            actor_id=audit_identifier(account.id),
+            action="clinical_message_recipients.listed",
+            target_id=audit_identifier(patient_id),
+            result="success",
+            reason="mutual_scope_reevaluated",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "count": len(response)},
         )
@@ -4559,19 +4704,25 @@ def create_clinical_message(
         return error_response(request, 401, "authentication_required", "Entre novamente.")
     account_session, account = context
     sender = messaging_professional(session, account)
-    sender_allowed = sender is not None and active_authorization(
-        session, sender.id, message_request.patient_id, "mensagens", "anexar", now
-    ) is not None
-    recipient_allowed = active_authorization(
-        session,
-        message_request.recipient_professional_id,
-        message_request.patient_id,
-        "mensagens",
-        "anexar",
-        now,
-    ) is not None
-    eligible = [] if sender is None else eligible_message_professionals(
-        session, message_request.patient_id, sender.id, "anexar", now
+    sender_allowed = (
+        sender is not None
+        and active_authorization(session, sender.id, message_request.patient_id, "mensagens", "anexar", now) is not None
+    )
+    recipient_allowed = (
+        active_authorization(
+            session,
+            message_request.recipient_professional_id,
+            message_request.patient_id,
+            "mensagens",
+            "anexar",
+            now,
+        )
+        is not None
+    )
+    eligible = (
+        []
+        if sender is None
+        else eligible_message_professionals(session, message_request.patient_id, sender.id, "anexar", now)
     )
     request_valid = (
         valid_csrf(request, "__Host-vitallink_session")
@@ -4589,9 +4740,13 @@ def create_clinical_message(
         reason = "not_found_or_not_authorized" if not request_valid else "action_confirmation_required"
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_message.created",
-                target_id=audit_identifier(message_request.patient_id), result="denied", reason=reason,
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="clinical_message.created",
+                target_id=audit_identifier(message_request.patient_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
@@ -4618,8 +4773,11 @@ def create_clinical_message(
     )
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_message.created",
-            target_id=audit_identifier(message.id), result="success", reason="mutual_scope_and_totp_confirmed",
+            actor_id=audit_identifier(account.id),
+            action="clinical_message.created",
+            target_id=audit_identifier(message.id),
+            result="success",
+            reason="mutual_scope_and_totp_confirmed",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "mention_count": len(message_request.mention_professional_ids)},
         )
@@ -4651,9 +4809,13 @@ def list_clinical_messages(
     if not allowed or professional is None:
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_message.listed",
-                target_id=audit_identifier(patient_id), result="denied", reason="not_found_or_not_authorized",
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="clinical_message.listed",
+                target_id=audit_identifier(patient_id),
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
@@ -4681,8 +4843,11 @@ def list_clinical_messages(
             message.recipient_read_at = now
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_message.listed",
-            target_id=audit_identifier(patient_id), result="success", reason="mutual_scope_reevaluated",
+            actor_id=audit_identifier(account.id),
+            action="clinical_message.listed",
+            target_id=audit_identifier(patient_id),
+            result="success",
+            reason="mutual_scope_reevaluated",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "count": len(messages)},
         )
@@ -4719,10 +4884,13 @@ def correct_clinical_message(
         and active_authorization(session, sender.id, original.patient_id, "mensagens", "atualizar", now) is not None
         and active_authorization(
             session, original.recipient_professional_id, original.patient_id, "mensagens", "atualizar", now
-        ) is not None
+        )
+        is not None
     )
-    eligible = [] if sender is None or original is None else eligible_message_professionals(
-        session, original.patient_id, sender.id, "atualizar", now
+    eligible = (
+        []
+        if sender is None or original is None
+        else eligible_message_professionals(session, original.patient_id, sender.id, "atualizar", now)
     )
     request_valid = (
         valid_csrf(request, "__Host-vitallink_session")
@@ -4736,9 +4904,13 @@ def correct_clinical_message(
         reason = "not_found_or_not_authorized" if not request_valid else "action_confirmation_required"
         session.add(
             AuditEvent(
-                actor_id=audit_identifier(account.id), action="clinical_message.corrected",
-                target_id=audit_identifier(message_id), result="denied", reason=reason,
-                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+                actor_id=audit_identifier(account.id),
+                action="clinical_message.corrected",
+                target_id=audit_identifier(message_id),
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
             )
         )
         session.commit()
@@ -4767,8 +4939,11 @@ def correct_clinical_message(
     )
     session.add(
         AuditEvent(
-            actor_id=audit_identifier(account.id), action="clinical_message.corrected",
-            target_id=audit_identifier(replacement.id), result="success", reason="linked_correction_created",
+            actor_id=audit_identifier(account.id),
+            action="clinical_message.corrected",
+            target_id=audit_identifier(replacement.id),
+            result="success",
+            reason="linked_correction_created",
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "mention_count": len(correction.mention_professional_ids)},
         )
@@ -4799,9 +4974,7 @@ def professional_record_response(session: Session, record: ProfessionalRecord) -
     Returns:
         Safe clinical record response.
     """
-    professional = session.scalar(
-        select(Professional).where(Professional.account_id == record.author_account_id)
-    )
+    professional = session.scalar(select(Professional).where(Professional.account_id == record.author_account_id))
     assert professional is not None
     return ProfessionalRecordResponse(
         id=record.id,
@@ -4860,7 +5033,9 @@ def create_professional_record(
         )
         session.commit()
         code = "request_verification_failed" if reason == "request_verification_failed" else "patient_not_found"
-        return error_response(request, 403 if reason == "request_verification_failed" else 404, code, "Não foi possível registrar.")
+        return error_response(
+            request, 403 if reason == "request_verification_failed" else 404, code, "Não foi possível registrar."
+        )
     confirmation = session.scalar(
         select(StepUpConfirmation)
         .where(
@@ -6612,6 +6787,89 @@ def current_account(
     return response
 
 
+def api_rate_limit_response(request: Request, now: datetime) -> JSONResponse | None:
+    """Count authenticated API calls by account and server-resolved origin.
+
+    Args:
+        request: Request that may contain a full opaque session cookie.
+        now: Server-controlled time for the fixed request window.
+
+    Returns:
+        A safe D03 response after the configured limit, otherwise None.
+    """
+    raw_token = request.cookies.get("__Host-vitallink_session")
+    if raw_token is None or not request.url.path.startswith("/api/"):
+        return None
+    with SessionFactory() as session:
+        account_session = session.scalar(
+            select(AccountSession).where(
+                AccountSession.token_hash == keyed_digest(raw_token),
+                AccountSession.purpose == "authenticated",
+                AccountSession.revoked_at.is_(None),
+                AccountSession.expires_at > now,
+            )
+        )
+        if account_session is None:
+            return None
+        account = session.get(Account, account_session.account_id)
+        if account is None or account.status != "active":
+            return None
+        target_id = keyed_digest(f"api:{account.id}")
+        origin_id = keyed_digest(request.client.host if request.client is not None else "unknown")
+        session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtextextended(:key, 0))"),
+            {"key": f"{target_id}:{origin_id}"},
+        )
+        bucket = session.scalar(
+            select(LoginThrottle).where(
+                LoginThrottle.target_id == target_id,
+                LoginThrottle.origin_id == origin_id,
+            )
+        )
+        window = timedelta(seconds=settings.api_rate_limit_window_seconds)
+        if bucket is None:
+            bucket = LoginThrottle(
+                target_id=target_id,
+                origin_id=origin_id,
+                failed_count=1,
+                window_started_at=now,
+            )
+            session.add(bucket)
+            session.commit()
+            return None
+        if bucket.window_started_at <= now - window:
+            bucket.failed_count = 1
+            bucket.window_started_at = now
+            bucket.blocked_until = None
+            session.commit()
+            return None
+        if bucket.failed_count < settings.api_rate_limit_requests:
+            bucket.failed_count += 1
+            session.commit()
+            return None
+        bucket.blocked_until = bucket.window_started_at + window
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="api.request.rate_limited",
+                target_id=target_id,
+                result="denied",
+                reason="D03",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        retry_after = math.ceil((bucket.blocked_until - now).total_seconds())
+    return error_response(
+        request,
+        status.HTTP_429_TOO_MANY_REQUESTS,
+        "api_temporarily_limited",
+        "Aguarde antes de tentar novamente.",
+        {"Retry-After": str(max(1, retry_after))},
+    )
+
+
 @app.middleware("http")
 async def log_request(
     request: Request,
@@ -6630,7 +6888,16 @@ async def log_request(
     request.state.correlation_id = uuid4()
     response_status = 500
     try:
-        response = await call_next(request)
+        try:
+            response = api_rate_limit_response(request, datetime.now(UTC)) or await call_next(request)
+        except SQLAlchemyError:
+            http_logger.exception("API rate-limit dependency failed")
+            response = error_response(
+                request,
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "dependency_unavailable",
+                "O serviço está temporariamente indisponível.",
+            )
         response_status = response.status_code
     finally:
         route = getattr(request.scope.get("route"), "path", "unmatched")

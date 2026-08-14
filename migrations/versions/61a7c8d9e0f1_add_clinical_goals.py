@@ -41,6 +41,8 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("replaces_id"),
     )
+
+
 def downgrade() -> None:
     """Remove clinical goals."""
     op.drop_table("clinical_goals")

@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     clamav_port: int = 3310
     document_max_bytes: int = 20 * 1024 * 1024
     patient_document_quota_bytes: int = 200 * 1024 * 1024
+    api_rate_limit_requests: int = Field(default=20, ge=1)
+    api_rate_limit_window_seconds: int = Field(default=60, ge=1)
     transcription_model: str = "Systran/faster-whisper-small"
     transcription_revision: str = "536b0662742c02347bc0e980a01041f333bce120"
     transcription_device: str = "cpu"

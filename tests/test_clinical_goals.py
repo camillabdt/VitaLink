@@ -96,9 +96,7 @@ def test_professional_creates_and_corrects_a_goal_with_immutable_authorship() ->
         deletion = professional_client.delete(
             f"/api/v1/clinical-goals/{corrected.json()['id']}", headers=professional_headers
         )
-        professional_list = professional_client.get(
-            "/api/v1/clinical-goals", params={"patient_id": patient_id}
-        )
+        professional_list = professional_client.get("/api/v1/clinical-goals", params={"patient_id": patient_id})
         patient_list = patient_client.get("/api/v1/clinical-goals")
 
     assert created.status_code == 201
@@ -173,9 +171,7 @@ def test_follow_up_is_manual_justified_and_versioned_per_professional() -> None:
     assert patient_list.json() == [corrected.json()]
     with SessionFactory() as session:
         versions = session.scalars(
-            select(FollowUpStatus)
-            .where(FollowUpStatus.patient_id == patient_id)
-            .order_by(FollowUpStatus.version)
+            select(FollowUpStatus).where(FollowUpStatus.patient_id == patient_id).order_by(FollowUpStatus.version)
         ).all()
     assert len(versions) == 2
     assert versions[1].replaces_id == versions[0].id
@@ -226,9 +222,7 @@ def test_goal_rejects_missing_exam_invalid_limits_unit_and_reused_proof() -> Non
         incompatible_unit = professional_client.post(
             "/api/v1/clinical-goals", headers=headers, json={**base, "unit": "mmol/L"}
         )
-        inverted = professional_client.post(
-            "/api/v1/clinical-goals", headers=headers, json={**base, "minimum": "200"}
-        )
+        inverted = professional_client.post("/api/v1/clinical-goals", headers=headers, json={**base, "minimum": "200"})
         created = professional_client.post("/api/v1/clinical-goals", headers=headers, json=base)
         reused = professional_client.post("/api/v1/clinical-goals", headers=headers, json=base)
 
@@ -273,9 +267,7 @@ def test_goal_and_follow_up_deny_idor_and_revoked_scope_without_leaking_content(
             headers=outsider_headers,
             json={"action": "clinical_goal_write", "totp_code": outsider_totp.now()},
         ).json()["id"]
-        outsider_read = outsider_client.get(
-            "/api/v1/follow-up-statuses", params={"patient_id": patient_id}
-        )
+        outsider_read = outsider_client.get("/api/v1/follow-up-statuses", params={"patient_id": patient_id})
         outsider_correction = outsider_client.patch(
             f"/api/v1/follow-up-statuses/{created.json()['id']}",
             headers=outsider_headers,
@@ -302,9 +294,7 @@ def test_goal_and_follow_up_deny_idor_and_revoked_scope_without_leaking_content(
                 "step_up_confirmation_id": revocation_proof,
             },
         )
-        read_after = professional_client.get(
-            "/api/v1/follow-up-statuses", params={"patient_id": patient_id}
-        )
+        read_after = professional_client.get("/api/v1/follow-up-statuses", params={"patient_id": patient_id})
 
     assert created.status_code == 201
     assert outsider_read.status_code == outsider_correction.status_code == 404

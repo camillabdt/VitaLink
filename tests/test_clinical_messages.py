@@ -92,12 +92,8 @@ def test_eligible_professionals_exchange_and_correct_an_immutable_message() -> N
         sender_headers, sender_totp, patient_id, sender_id = authorize_professional(
             patient_client, patient_headers, patient_totp, sender_client
         )
-        _, _, _, recipient_id = authorize_professional(
-            patient_client, patient_headers, patient_totp, recipient_client
-        )
-        team = sender_client.get(
-            "/api/v1/clinical-message-recipients", params={"patient_id": patient_id}
-        )
+        _, _, _, recipient_id = authorize_professional(patient_client, patient_headers, patient_totp, recipient_client)
+        team = sender_client.get("/api/v1/clinical-message-recipients", params={"patient_id": patient_id})
         proof = sender_client.post(
             "/api/v1/step-up-confirmations",
             headers=sender_headers,
@@ -144,9 +140,7 @@ def test_eligible_professionals_exchange_and_correct_an_immutable_message() -> N
     assert corrected.json()["sender"]["id"] == sender_id
     with SessionFactory() as session:
         messages = session.scalars(
-            select(ClinicalMessage)
-            .where(ClinicalMessage.patient_id == patient_id)
-            .order_by(ClinicalMessage.created_at)
+            select(ClinicalMessage).where(ClinicalMessage.patient_id == patient_id).order_by(ClinicalMessage.created_at)
         ).all()
     assert [message.content for message in messages] == [
         "Mensagem clínica sintética para @Profissional elegível.",
@@ -195,9 +189,7 @@ def test_other_scope_mentions_idor_and_revocation_never_reveal_or_delete_message
                 "step_up_confirmation_id": proof,
             },
         )
-        outsider_team = outsider_client.get(
-            "/api/v1/clinical-message-recipients", params={"patient_id": patient_id}
-        )
+        outsider_team = outsider_client.get("/api/v1/clinical-message-recipients", params={"patient_id": patient_id})
         outsider_read = outsider_client.get(
             "/api/v1/clinical-messages",
             params={"patient_id": patient_id, "peer_professional_id": sender_id},
@@ -251,9 +243,7 @@ def test_other_scope_mentions_idor_and_revocation_never_reveal_or_delete_message
                 "step_up_confirmation_id": revoke_proof,
             },
         )
-        team_after = sender_client.get(
-            "/api/v1/clinical-message-recipients", params={"patient_id": patient_id}
-        )
+        team_after = sender_client.get("/api/v1/clinical-message-recipients", params={"patient_id": patient_id})
         read_after = sender_client.get(
             "/api/v1/clinical-messages",
             params={"patient_id": patient_id, "peer_professional_id": recipient_id},

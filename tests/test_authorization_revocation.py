@@ -67,9 +67,9 @@ def test_patient_revokes_access_and_the_next_professional_read_is_denied() -> No
     assert repeated.status_code == 200
     with SessionFactory() as session:
         revision_count = session.scalar(
-            select(func.count()).select_from(AuthorizationRevision).where(
-                AuthorizationRevision.authorization_id == authorization["id"]
-            )
+            select(func.count())
+            .select_from(AuthorizationRevision)
+            .where(AuthorizationRevision.authorization_id == authorization["id"])
         )
         d02 = session.scalar(
             select(AuditEvent)
