@@ -268,6 +268,58 @@ class ProfessionalRecord(Base):
     )
 
 
+class ClinicalGoal(Base):
+    """Immutable professional-authored target for one structured exam."""
+
+    __tablename__ = "clinical_goals"
+    __table_args__ = (CheckConstraint("minimum <= maximum", name="ck_clinical_goals_limit_order"),)
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    author_account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
+    )
+    exam_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    minimum: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    maximum: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    unit: Mapped[str] = mapped_column(String(32), nullable=False)
+    justification: Mapped[str] = mapped_column(String(500), nullable=False)
+    effective_at: Mapped[date] = mapped_column(Date, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    replaces_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("clinical_goals.id"), unique=True
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
+class FollowUpStatus(Base):
+    """Immutable manual follow-up state authored by one professional."""
+
+    __tablename__ = "follow_up_statuses"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    author_account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(120), nullable=False)
+    justification: Mapped[str] = mapped_column(String(500), nullable=False)
+    recorded_at: Mapped[date] = mapped_column(Date, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    replaces_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("follow_up_statuses.id"), unique=True
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
 class Notification(Base):
     """Internal account notification linked to a domain event."""
 

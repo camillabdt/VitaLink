@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react"
 import Layout from "@/components/shared/Layout"
 import DocumentUploadModal from "@/components/shared/DocumentUploadModal"
+import ClinicalGoals from "@/components/shared/ClinicalGoals"
 import ProfessionalRecords from "@/components/shared/ProfessionalRecords"
 import type { Page } from "@/data/mockData"
 
@@ -546,6 +547,14 @@ function PatientDetail({
         operations={patient.operations}
         onSessionExpired={onSessionExpired}
       />
+      {patient.categories.includes("metas") && (
+        <ClinicalGoals
+          patientId={patient.id}
+          categories={patient.categories}
+          operations={patient.operations}
+          onSessionExpired={onSessionExpired}
+        />
+      )}
       {showUpload && (
         <DocumentUploadModal
           patientId={patient.id}

@@ -38,9 +38,11 @@ from vitallink.database import (
     AuditEvent,
     Authorization,
     AuthorizationRevision,
+    ClinicalGoal,
     ClinicalResult,
     Document,
     EmailVerification,
+    FollowUpStatus,
     LoginThrottle,
     Notification,
     Patient,
@@ -648,6 +650,127 @@ class ProfessionalRecordCorrection(BaseModel):
         return value.astimezone(UTC)
 
 
+class ClinicalGoalCreate(BaseModel):
+    """TOTP-confirmed target tied to an existing structured exam."""
+
+    patient_id: UUID
+    exam_name: str = Field(min_length=1, max_length=200)
+    minimum: Decimal = Field(max_digits=18, decimal_places=6)
+    maximum: Decimal = Field(max_digits=18, decimal_places=6)
+    unit: str = Field(min_length=1, max_length=32)
+    justification: str = Field(min_length=10, max_length=500)
+    effective_at: date
+    step_up_confirmation_id: UUID
+
+    @field_validator("exam_name", "unit", "justification")
+    @classmethod
+    def strip_goal_text(cls, value: str) -> str:
+        """Normalize required goal text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @model_validator(mode="after")
+    def validate_limit_order(self) -> "ClinicalGoalCreate":
+        """Require ordered goal limits."""
+        if self.minimum > self.maximum:
+            raise ValueError("goal limits are invalid")
+        return self
+
+
+class ClinicalGoalCorrection(BaseModel):
+    """Replacement limits bound to the version seen by the author."""
+
+    minimum: Decimal = Field(max_digits=18, decimal_places=6)
+    maximum: Decimal = Field(max_digits=18, decimal_places=6)
+    unit: str = Field(min_length=1, max_length=32)
+    justification: str = Field(min_length=10, max_length=500)
+    effective_at: date
+    expected_version: int = Field(ge=1)
+    correction_reason: str = Field(min_length=3, max_length=500)
+    step_up_confirmation_id: UUID
+
+    @field_validator("unit", "justification", "correction_reason")
+    @classmethod
+    def strip_goal_text(cls, value: str) -> str:
+        """Normalize required correction text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @model_validator(mode="after")
+    def validate_limit_order(self) -> "ClinicalGoalCorrection":
+        """Require ordered replacement limits."""
+        if self.minimum > self.maximum:
+            raise ValueError("goal limits are invalid")
+        return self
+
+
+class ClinicalGoalResponse(BaseModel):
+    """Current goal with immutable professional attribution."""
+
+    id: UUID
+    exam_name: str
+    minimum: float
+    maximum: float
+    unit: str
+    justification: str
+    effective_at: date
+    author: ProfessionalRecordAuthorResponse
+    version: int
+    created_at: datetime
+
+
+class FollowUpStatusCreate(BaseModel):
+    """Explicit professional follow-up state, never a computed classification."""
+
+    patient_id: UUID
+    status: str = Field(min_length=1, max_length=120)
+    justification: str = Field(min_length=10, max_length=500)
+    recorded_at: date
+    step_up_confirmation_id: UUID
+
+    @field_validator("status", "justification")
+    @classmethod
+    def strip_follow_up_text(cls, value: str) -> str:
+        """Normalize required manual follow-up text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+
+class FollowUpStatusCorrection(FollowUpStatusCreate):
+    """Replacement manual state bound to the version seen by its author."""
+
+    patient_id: UUID | None = Field(default=None, exclude=True)
+    expected_version: int = Field(ge=1)
+    correction_reason: str = Field(min_length=3, max_length=500)
+
+    @field_validator("correction_reason")
+    @classmethod
+    def strip_reason(cls, value: str) -> str:
+        """Normalize the required correction reason."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+
+class FollowUpStatusResponse(BaseModel):
+    """Current manual status with professional attribution."""
+
+    id: UUID
+    status: str
+    justification: str
+    recorded_at: date
+    author: ProfessionalRecordAuthorResponse
+    version: int
+    created_at: datetime
+
+
 class AccountSessionResponse(BaseModel):
     """Safe session metadata visible only to its account owner."""
 
@@ -662,7 +785,7 @@ class StepUpConfirmationRequest(BaseModel):
     """TOTP proof bound to one supported sensitive action."""
 
     action: str = Field(
-        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download|clinical_record_create)$"
+        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download|clinical_record_create|clinical_goal_write)$"
     )
     totp_code: str = Field(pattern=r"^\d{6}$")
 
@@ -3597,6 +3720,426 @@ def correct_clinical_result(
     )
     session.commit()
     return clinical_result_response(session, replacement)
+
+
+def clinical_goal_response(session: Session, goal: ClinicalGoal) -> ClinicalGoalResponse:
+    """Expose one goal without merging professional authors.
+
+    Args:
+        session: Database transaction scope.
+        goal: Current immutable goal version.
+
+    Returns:
+        Goal with its professional attribution.
+    """
+    professional = session.scalar(select(Professional).where(Professional.account_id == goal.author_account_id))
+    assert professional is not None
+    return ClinicalGoalResponse(
+        id=goal.id,
+        exam_name=goal.exam_name,
+        minimum=float(goal.minimum),
+        maximum=float(goal.maximum),
+        unit=goal.unit,
+        justification=goal.justification,
+        effective_at=goal.effective_at,
+        author=ProfessionalRecordAuthorResponse(name=professional.name, specialty=professional.specialty),
+        version=goal.version,
+        created_at=goal.created_at,
+    )
+
+
+def consume_goal_confirmation(
+    session: Session,
+    confirmation_id: UUID,
+    account_session: AccountSession,
+    account: Account,
+    now: datetime,
+) -> bool:
+    """Consume one session-bound TOTP proof for a clinical-goal write.
+
+    Args:
+        session: Database transaction scope.
+        confirmation_id: Submitted opaque proof identifier.
+        account_session: Current authenticated session.
+        account: Current professional account.
+        now: Server-controlled operation time.
+
+    Returns:
+        Whether a fresh matching proof was consumed.
+    """
+    confirmation = session.scalar(
+        select(StepUpConfirmation)
+        .where(
+            StepUpConfirmation.id == confirmation_id,
+            StepUpConfirmation.account_id == account.id,
+            StepUpConfirmation.session_id == account_session.id,
+            StepUpConfirmation.action == "clinical_goal_write",
+            StepUpConfirmation.used_at.is_(None),
+            StepUpConfirmation.expires_at > now,
+        )
+        .with_for_update()
+    )
+    if confirmation is None:
+        return False
+    confirmation.used_at = now
+    return True
+
+
+def goal_exam_exists(session: Session, patient_id: UUID, exam_name: str, unit: str) -> bool:
+    """Check that a goal uses the unit of a confirmed structured exam.
+
+    Args:
+        session: Database transaction scope.
+        patient_id: Goal patient owner.
+        exam_name: Submitted exam label.
+        unit: Submitted measurement unit.
+
+    Returns:
+        Whether a current confirmed result matches both exam and unit.
+    """
+    return session.scalar(
+        select(ClinicalResult.id).where(
+            ClinicalResult.patient_id == patient_id,
+            ClinicalResult.current.is_(True),
+            ClinicalResult.confirmed.is_(True),
+            func.lower(ClinicalResult.exam_name) == exam_name.casefold(),
+            func.lower(ClinicalResult.unit) == unit.casefold(),
+        )
+    ) is not None
+
+
+@app.post("/api/v1/clinical-goals", response_model=ClinicalGoalResponse, status_code=status.HTTP_201_CREATED)
+def create_clinical_goal(
+    goal_request: ClinicalGoalCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ClinicalGoalResponse | JSONResponse:
+    """Create one professional goal for a compatible structured exam."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    patient = authorized_document_patient(session, account, goal_request.patient_id, "metas", "anexar", now)
+    allowed = (
+        valid_csrf(request, "__Host-vitallink_session")
+        and account.role == "professional"
+        and patient is not None
+    )
+    compatible = patient is not None and goal_exam_exists(
+        session, patient.id, goal_request.exam_name, goal_request.unit
+    )
+    confirmed = allowed and compatible and consume_goal_confirmation(
+        session, goal_request.step_up_confirmation_id, account_session, account, now
+    )
+    if not allowed or not compatible or not confirmed:
+        reason = "not_authorized" if not allowed else "incompatible_exam_unit" if not compatible else "action_confirmation_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_goal.created",
+                target_id=audit_identifier(goal_request.patient_id), result="denied", reason=reason,
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404 if not allowed else 422 if not compatible else 403, reason, "Não foi possível registrar a meta.")
+    goal = ClinicalGoal(
+        patient_id=patient.id, author_account_id=account.id, exam_name=goal_request.exam_name,
+        minimum=goal_request.minimum, maximum=goal_request.maximum, unit=goal_request.unit,
+        justification=goal_request.justification, effective_at=goal_request.effective_at,
+        version=1, current=True, created_at=now,
+    )
+    session.add(goal)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_goal.created",
+            target_id=audit_identifier(goal.id), result="success", reason="scope_and_totp_confirmed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "version": goal.version},
+        )
+    )
+    session.commit()
+    return clinical_goal_response(session, goal)
+
+
+@app.get("/api/v1/clinical-goals", response_model=list[ClinicalGoalResponse])
+def list_clinical_goals(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID | None, Query()] = None,
+) -> list[ClinicalGoalResponse] | JSONResponse:
+    """List current goals while preserving one row per professional author."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = authorized_document_patient(session, account, patient_id, "metas", "consultar", now)
+    if patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_goal.listed",
+                target_id=audit_identifier(patient_id) if patient_id else None, result="denied",
+                reason="not_found_or_not_authorized", correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "clinical_goals_not_found", "Metas não encontradas.")
+    goals = session.scalars(
+        select(ClinicalGoal).where(ClinicalGoal.patient_id == patient.id, ClinicalGoal.current.is_(True))
+        .order_by(ClinicalGoal.effective_at.desc(), ClinicalGoal.created_at.desc())
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_goal.listed",
+            target_id=audit_identifier(patient.id), result="success", reason="scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(goals)},
+        )
+    )
+    session.commit()
+    return [clinical_goal_response(session, goal) for goal in goals]
+
+
+@app.patch("/api/v1/clinical-goals/{goal_id}", response_model=ClinicalGoalResponse)
+def correct_clinical_goal(
+    goal_id: UUID,
+    correction: ClinicalGoalCorrection,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ClinicalGoalResponse | JSONResponse:
+    """Replace an author's current goal while retaining its prior version."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    original = session.scalar(select(ClinicalGoal).where(ClinicalGoal.id == goal_id).with_for_update())
+    patient = None
+    if original is not None and original.author_account_id == account.id:
+        patient = authorized_document_patient(session, account, original.patient_id, "metas", "atualizar", now)
+    allowed = valid_csrf(request, "__Host-vitallink_session") and patient is not None
+    compatible = original is not None and goal_exam_exists(session, original.patient_id, original.exam_name, correction.unit)
+    confirmed = allowed and compatible and consume_goal_confirmation(
+        session, correction.step_up_confirmation_id, account_session, account, now
+    )
+    if original is None or not allowed or not compatible or not confirmed:
+        reason = "not_found_or_not_authorized" if original is None or not allowed else "incompatible_exam_unit" if not compatible else "action_confirmation_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_goal.corrected",
+                target_id=audit_identifier(goal_id), result="denied", reason=reason,
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404 if original is None or not allowed else 422 if not compatible else 403, reason, "Meta não encontrada.")
+    if not original.current or original.version != correction.expected_version:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="clinical_goal.corrected",
+                target_id=audit_identifier(goal_id), result="denied", reason="version_conflict",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "expected_version": correction.expected_version},
+            )
+        )
+        session.commit()
+        return error_response(request, 409, "clinical_goal_conflict", "A meta possui versão mais recente.")
+    replacement = ClinicalGoal(
+        patient_id=original.patient_id, author_account_id=original.author_account_id,
+        exam_name=original.exam_name, minimum=correction.minimum, maximum=correction.maximum,
+        unit=correction.unit, justification=correction.justification, effective_at=correction.effective_at,
+        version=original.version + 1, current=True, replaces_id=original.id,
+        correction_reason=correction.correction_reason, created_at=now,
+    )
+    original.current = False
+    session.add(replacement)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="clinical_goal.corrected",
+            target_id=audit_identifier(replacement.id), result="success", reason="replacement_created",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "version": replacement.version},
+        )
+    )
+    session.commit()
+    return clinical_goal_response(session, replacement)
+
+
+def follow_up_response(session: Session, follow_up: FollowUpStatus) -> FollowUpStatusResponse:
+    """Expose one manual state with its immutable professional author."""
+    professional = session.scalar(
+        select(Professional).where(Professional.account_id == follow_up.author_account_id)
+    )
+    assert professional is not None
+    return FollowUpStatusResponse(
+        id=follow_up.id,
+        status=follow_up.status,
+        justification=follow_up.justification,
+        recorded_at=follow_up.recorded_at,
+        author=ProfessionalRecordAuthorResponse(name=professional.name, specialty=professional.specialty),
+        version=follow_up.version,
+        created_at=follow_up.created_at,
+    )
+
+
+@app.post(
+    "/api/v1/follow-up-statuses",
+    response_model=FollowUpStatusResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_follow_up_status(
+    status_request: FollowUpStatusCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> FollowUpStatusResponse | JSONResponse:
+    """Persist an explicitly entered, justified follow-up state."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    patient = authorized_document_patient(session, account, status_request.patient_id, "metas", "anexar", now)
+    allowed = valid_csrf(request, "__Host-vitallink_session") and account.role == "professional" and patient is not None
+    confirmed = allowed and consume_goal_confirmation(
+        session, status_request.step_up_confirmation_id, account_session, account, now
+    )
+    if not allowed or not confirmed:
+        reason = "not_authorized" if not allowed else "action_confirmation_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="follow_up_status.created",
+                target_id=audit_identifier(status_request.patient_id), result="denied", reason=reason,
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404 if not allowed else 403, reason, "Não foi possível registrar o acompanhamento.")
+    follow_up = FollowUpStatus(
+        patient_id=patient.id, author_account_id=account.id, status=status_request.status,
+        justification=status_request.justification, recorded_at=status_request.recorded_at,
+        version=1, current=True, created_at=now,
+    )
+    session.add(follow_up)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="follow_up_status.created",
+            target_id=audit_identifier(follow_up.id), result="success", reason="manual_scope_and_totp_confirmed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "version": follow_up.version},
+        )
+    )
+    session.commit()
+    return follow_up_response(session, follow_up)
+
+
+@app.get("/api/v1/follow-up-statuses", response_model=list[FollowUpStatusResponse])
+def list_follow_up_statuses(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID | None, Query()] = None,
+) -> list[FollowUpStatusResponse] | JSONResponse:
+    """List current manual states without deriving or aggregating them."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = authorized_document_patient(session, account, patient_id, "metas", "consultar", now)
+    if patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="follow_up_status.listed",
+                target_id=audit_identifier(patient_id) if patient_id else None, result="denied",
+                reason="not_found_or_not_authorized", correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "follow_up_statuses_not_found", "Acompanhamento não encontrado.")
+    statuses = session.scalars(
+        select(FollowUpStatus)
+        .where(FollowUpStatus.patient_id == patient.id, FollowUpStatus.current.is_(True))
+        .order_by(FollowUpStatus.recorded_at.desc(), FollowUpStatus.created_at.desc())
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="follow_up_status.listed",
+            target_id=audit_identifier(patient.id), result="success", reason="scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(statuses)},
+        )
+    )
+    session.commit()
+    return [follow_up_response(session, item) for item in statuses]
+
+
+@app.patch("/api/v1/follow-up-statuses/{status_id}", response_model=FollowUpStatusResponse)
+def correct_follow_up_status(
+    status_id: UUID,
+    correction: FollowUpStatusCorrection,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> FollowUpStatusResponse | JSONResponse:
+    """Correct a manual state by creating an immutable successor."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    original = session.scalar(select(FollowUpStatus).where(FollowUpStatus.id == status_id).with_for_update())
+    patient = None
+    if original is not None and original.author_account_id == account.id:
+        patient = authorized_document_patient(session, account, original.patient_id, "metas", "atualizar", now)
+    allowed = valid_csrf(request, "__Host-vitallink_session") and patient is not None
+    confirmed = allowed and consume_goal_confirmation(
+        session, correction.step_up_confirmation_id, account_session, account, now
+    )
+    if original is None or not allowed or not confirmed:
+        reason = "not_found_or_not_authorized" if original is None or not allowed else "action_confirmation_required"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="follow_up_status.corrected",
+                target_id=audit_identifier(status_id), result="denied", reason=reason,
+                correlation_id=request.state.correlation_id, event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404 if original is None or not allowed else 403, reason, "Acompanhamento não encontrado.")
+    if not original.current or original.version != correction.expected_version:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id), action="follow_up_status.corrected",
+                target_id=audit_identifier(status_id), result="denied", reason="version_conflict",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "expected_version": correction.expected_version},
+            )
+        )
+        session.commit()
+        return error_response(request, 409, "follow_up_status_conflict", "O acompanhamento possui versão mais recente.")
+    replacement = FollowUpStatus(
+        patient_id=original.patient_id, author_account_id=original.author_account_id,
+        status=correction.status, justification=correction.justification,
+        recorded_at=correction.recorded_at, version=original.version + 1, current=True,
+        replaces_id=original.id, correction_reason=correction.correction_reason, created_at=now,
+    )
+    original.current = False
+    session.add(replacement)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id), action="follow_up_status.corrected",
+            target_id=audit_identifier(replacement.id), result="success", reason="replacement_created",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "version": replacement.version},
+        )
+    )
+    session.commit()
+    return follow_up_response(session, replacement)
 
 
 def professional_record_category(kind: str) -> str:
