@@ -323,7 +323,12 @@ export default function Sidebar({
         <div className="h-px bg-gray-100 mb-3" />
         <button
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors"
-          onClick={() => {}}
+          onClick={() => {
+            onNavigate(
+              userType === "patient" ? "patient-profile" : "doctor-profile",
+            )
+            onClose?.()
+          }}
         >
           <svg
             width="18"

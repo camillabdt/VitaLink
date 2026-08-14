@@ -9,7 +9,11 @@ import DoctorDashboard from "@/components/doctor/DoctorDashboard"
 import ImportExamPage from "@/components/exam/ImportExamPage"
 
 export default function App() {
-  const [page, setPage] = useState<Page>("login")
+  const [page, setPage] = useState<Page>(() =>
+    ["/reset-password", "/recover-totp"].includes(window.location.pathname)
+      ? "forgot-password"
+      : "login",
+  )
   const [userType, setUserType] = useState<UserType>("patient")
 
   const navigate = (nextPage: Page, nextUserType?: UserType) => {

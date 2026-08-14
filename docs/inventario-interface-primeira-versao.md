@@ -10,6 +10,10 @@ Segurança, domínio e acessibilidade prevalecem quando exigirem mudança em rel
 
 O cadastro, a confirmação de e-mail, a ativação TOTP, o login e o logout do paciente estão conectados à API e cobertos por testes. Login profissional, recuperação e as demais telas permanecem associados às issues indicadas neste inventário. Para evitar controles simulados visíveis, os seletores profissionais foram retirados temporariamente dos formulários desta fatia e retornam com comportamento real na issue #52. Consulte a [evidência de implementação](implementacao-issue-50.md).
 
+### Progresso da issue #51
+
+A recuperação de senha, a recuperação reforçada do TOTP, a troca de senha com step-up, a listagem e o encerramento de sessões próprias e o direcionamento de Configurações estão conectados à API. Os temporizadores, sessões fixas e botões inertes desses trechos foram removidos. A recuperação automática reforçada é exclusiva do paciente; profissional retorna à validação manual. Consulte a [evidência da issue #51](implementacao-issue-51.md).
+
 ## Telas e destinos
 
 | Destino                     | Baseline local                                           | Decisão para a primeira versão                              | Comportamento verificável                                                                    |
