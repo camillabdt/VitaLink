@@ -11,6 +11,8 @@ interface Props {
   title?: string
   subtitle?: string
   action?: React.ReactNode
+  userName?: string
+  userSubtitle?: string
 }
 
 export default function Layout({
@@ -22,6 +24,8 @@ export default function Layout({
   title,
   subtitle,
   action,
+  userName,
+  userSubtitle,
 }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -41,6 +45,9 @@ export default function Layout({
             userType={userType}
             onNavigate={onNavigate}
             onLogout={onLogout}
+            patientName={userType === "patient" ? userName : undefined}
+            doctorName={userType === "doctor" ? userName : undefined}
+            userSubtitle={userSubtitle}
           />
         </div>
       </div>
@@ -58,6 +65,9 @@ export default function Layout({
               userType={userType}
               onNavigate={onNavigate}
               onLogout={onLogout}
+              patientName={userType === "patient" ? userName : undefined}
+              doctorName={userType === "doctor" ? userName : undefined}
+              userSubtitle={userSubtitle}
               mobile
               onClose={() => setSidebarOpen(false)}
             />

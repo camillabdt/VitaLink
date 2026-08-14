@@ -18,6 +18,10 @@ A recuperação de senha, a recuperação reforçada do TOTP, a troca de senha c
 
 O cadastro profissional, a confirmação de e-mail, a ativação TOTP, a decisão manual auditada e o login após aprovação estão conectados à API. Os seletores profissionais retornaram aos formulários com comportamento real. Contas pendentes ou rejeitadas recebem estado explícito sem sessão, e a rota após login usa o perfil informado pelo servidor. Consulte a [evidência da issue #52](implementacao-issue-52.md).
 
+### Progresso da issue #53
+
+Os perfis próprios de paciente e profissional usam dados persistidos e edição limitada pela API. Configurações abre a rota adequada de cada papel e reutiliza troca de senha e sessões. Controles simulados pertencentes a autorizações, observações e auditoria foram retirados até as respectivas issues. Consulte a [evidência da issue #53](implementacao-issue-53.md).
+
 ## Telas e destinos
 
 | Destino                     | Baseline local                                           | Decisão para a primeira versão                              | Comportamento verificável                                                                    |

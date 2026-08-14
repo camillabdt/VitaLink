@@ -201,7 +201,8 @@ def test_identified_operator_approves_professional_idempotently() -> None:
     assert email not in first_decision.stdout + first_decision.stderr
     assert registration["cpf"] not in first_decision.stdout + first_decision.stderr
     assert login.status_code == 204
-    assert current_account.json() == {"role": "professional", "status": "active"}
+    assert current_account.json()["role"] == "professional"
+    assert current_account.json()["status"] == "active"
 
 
 def test_rejection_is_final_and_audited_without_operator_profile() -> None:

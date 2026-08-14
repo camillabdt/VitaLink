@@ -2,9 +2,9 @@
 
 ## Estado da etapa
 
-O VitaLink possui fatias verticais executáveis para cadastro, ativação TOTP, login, recuperação de conta, troca de senha e gestão de sessões do paciente. As evidências estão registradas em [Implementação da issue #50](implementacao-issue-50.md) e [Implementação da issue #51](implementacao-issue-51.md). Elas não comprovam as demais telas, perfis ou controles planejados.
+O VitaLink possui fatias verticais executáveis para cadastro, ativação TOTP, login, recuperação de conta, troca de senha, gestão de sessões e perfis próprios. As evidências estão registradas nas implementações das issues [#50](implementacao-issue-50.md), [#51](implementacao-issue-51.md), [#52](implementacao-issue-52.md) e [#53](implementacao-issue-53.md). Elas não comprovam as demais telas ou controles planejados.
 
-O diretório `VitaLink Health Management App/` continua sendo a baseline visual exportada do Figma Make. Os componentes de autenticação, recuperação e segurança da conta do paciente foram conectados à API; as demais áreas ainda contêm partes simuladas e só serão consideradas implementadas quando suas issues produzirem testes e evidências próprias.
+O diretório `VitaLink Health Management App/` continua sendo a baseline visual exportada do Figma Make. Os componentes de autenticação, recuperação, segurança da conta e perfis próprios foram conectados à API; as demais áreas ainda contêm partes simuladas e só serão consideradas implementadas quando suas issues produzirem testes e evidências próprias.
 
 ## Estratégia TDD adotada para o VitaLink
 

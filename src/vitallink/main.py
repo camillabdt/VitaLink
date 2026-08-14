@@ -21,7 +21,7 @@ from argon2.exceptions import VerificationError
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.exceptions import RequestValidationError
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from sqlalchemy import or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -237,11 +237,57 @@ class LoginRequest(BaseModel):
     totp_code: str = Field(pattern=r"^\d{6}$")
 
 
+class PatientProfileResponse(BaseModel):
+    """Patient profile exposed only to its authenticated owner."""
+
+    name: str
+    email: EmailStr
+    cpf: str
+    birthdate: date
+    phone: str
+    blood_type: str | None
+
+
+class ProfessionalProfileResponse(BaseModel):
+    """Professional profile exposed only to its authenticated owner."""
+
+    name: str
+    email: EmailStr
+    cpf: str
+    birthdate: date
+    phone: str
+    crm: str
+    uf: str
+    specialty: str
+    institution: str | None
+
+
 class CurrentAccountResponse(BaseModel):
-    """Minimal account state exposed to the authenticated owner."""
+    """Account and owned profile state exposed to the authenticated owner."""
 
     role: str
     status: str
+    version: int
+    profile: PatientProfileResponse | ProfessionalProfileResponse
+
+
+class OwnedProfileUpdate(BaseModel):
+    """Editable owned-profile fields plus an optimistic concurrency version."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    expected_version: int = Field(ge=1)
+    name: str | None = Field(default=None, min_length=2, max_length=200)
+    birthdate: date | None = None
+    phone: str | None = Field(default=None, min_length=8, max_length=32)
+    blood_type: str | None = Field(default=None, pattern=r"^(A|B|AB|O)[+-]$")
+    institution: str | None = Field(default=None, max_length=200)
+    email: str | None = None
+    cpf: str | None = None
+    crm: str | None = None
+    uf: str | None = None
+    role: str | None = None
+    status: str | None = None
 
 
 class AccountSessionResponse(BaseModel):
@@ -2177,13 +2223,156 @@ def delete_owned_session(
     return response
 
 
+def owned_profile_response(session: Session, account: Account) -> CurrentAccountResponse | None:
+    """Build the authenticated owner's profile response.
+
+    Args:
+        session: Database transaction scope.
+        account: Authenticated account whose profile is requested.
+
+    Returns:
+        The owned profile response, or None when persistence is inconsistent.
+    """
+    if account.role == "patient":
+        patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+        if patient is None:
+            return None
+        return CurrentAccountResponse(
+            role=account.role,
+            status=account.status,
+            version=patient.version,
+            profile=PatientProfileResponse(
+                name=patient.name,
+                email=account.email,
+                cpf=patient.cpf,
+                birthdate=patient.birthdate,
+                phone=patient.phone,
+                blood_type=patient.blood_type,
+            ),
+        )
+    professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+    if professional is None:
+        return None
+    return CurrentAccountResponse(
+        role=account.role,
+        status=account.status,
+        version=professional.version,
+        profile=ProfessionalProfileResponse(
+            name=professional.name,
+            email=account.email,
+            cpf=professional.cpf,
+            birthdate=professional.birthdate,
+            phone=professional.phone,
+            crm=professional.crm,
+            uf=professional.uf,
+            specialty=professional.specialty,
+            institution=professional.institution,
+        ),
+    )
+
+
+@app.patch("/api/v1/me", response_model=CurrentAccountResponse)
+def update_current_profile(
+    profile_update: OwnedProfileUpdate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> CurrentAccountResponse | JSONResponse:
+    """Update editable fields on the authenticated owner's profile.
+
+    Args:
+        profile_update: Editable values and the version previously read.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The updated owned profile or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="profile.updated",
+                target_id=audit_identifier(account.id),
+                result="denied",
+                reason="request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return csrf_denied_response(request)
+    changed_fields = profile_update.model_fields_set - {"expected_version"}
+    allowed_fields = {"name", "birthdate", "phone", "blood_type"}
+    if account.role == "patient":
+        profile = session.scalar(select(Patient).where(Patient.account_id == account.id).with_for_update())
+    else:
+        allowed_fields = {"phone", "institution"}
+        profile = session.scalar(select(Professional).where(Professional.account_id == account.id).with_for_update())
+    if profile is None:
+        return error_response(request, 500, "profile_unavailable", "Não foi possível carregar o perfil.")
+    if not changed_fields or not changed_fields <= allowed_fields:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="profile.updated",
+                target_id=audit_identifier(profile.id),
+                result="denied",
+                reason="field_not_editable",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 422, "profile_field_not_editable", "Revise os campos informados.")
+    if profile.version != profile_update.expected_version:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="profile.updated",
+                target_id=audit_identifier(profile.id),
+                result="denied",
+                reason="version_conflict",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 409, "profile_version_conflict", "O perfil foi alterado em outra sessão.")
+
+    for field in changed_fields:
+        setattr(profile, field, getattr(profile_update, field))
+    profile.version += 1
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="profile.updated",
+            target_id=audit_identifier(profile.id),
+            result="success",
+            reason="owner_updated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "fields": ",".join(sorted(changed_fields))},
+        )
+    )
+    session.commit()
+    response = owned_profile_response(session, account)
+    if response is None:
+        return error_response(request, 500, "profile_unavailable", "Não foi possível carregar o perfil.")
+    return response
+
+
 @app.get("/api/v1/me", response_model=CurrentAccountResponse)
 def current_account(
     request: Request,
     session: Annotated[Session, Depends(get_session)],
     now: Annotated[datetime, Depends(current_time)],
 ) -> CurrentAccountResponse | JSONResponse:
-    """Return the minimal state of the currently authenticated account.
+    """Return the state of the currently authenticated account and profile.
 
     Args:
         request: Request containing the opaque full-session cookie.
@@ -2197,7 +2386,10 @@ def current_account(
     if context is None:
         return error_response(request, 401, "authentication_required", "Entre novamente.")
     _, account = context
-    return CurrentAccountResponse(role=account.role, status=account.status)
+    response = owned_profile_response(session, account)
+    if response is None:
+        return error_response(request, 500, "profile_unavailable", "Não foi possível carregar o perfil.")
+    return response
 
 
 @app.middleware("http")

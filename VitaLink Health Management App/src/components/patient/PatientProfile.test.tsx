@@ -8,10 +8,100 @@ afterEach(() => {
   sessionStorage.clear()
 })
 
+function patientProfileResponse() {
+  return new Response(
+    JSON.stringify({
+      role: "patient",
+      status: "active",
+      version: 1,
+      profile: {
+        name: "Paciente de Teste",
+        email: "profile@example.com",
+        cpf: "12345678909",
+        birthdate: "1990-04-12",
+        phone: "+5553999999999",
+        blood_type: "AB+",
+      },
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  )
+}
+
+test("patient profile renders persisted owner data", async () => {
+  vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(patientProfileResponse())
+
+  render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    "/api/v1/me",
+    expect.objectContaining({ credentials: "same-origin" }),
+  )
+  expect(
+    await screen.findByRole("heading", { name: "Paciente de Teste" }),
+  ).toBeInTheDocument()
+  expect(screen.getAllByText("profile@example.com")).not.toHaveLength(0)
+  expect(screen.getByText("Tipo AB+")).toBeInTheDocument()
+})
+
+test("patient saves editable profile fields through the API", async () => {
+  const user = userEvent.setup()
+  sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          role: "patient",
+          status: "active",
+          version: 2,
+          profile: {
+            name: "Paciente de Teste",
+            email: "profile@example.com",
+            cpf: "12345678909",
+            birthdate: "1990-04-12",
+            phone: "+5553988888888",
+            blood_type: "AB+",
+          },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+  render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("button", { name: "Editar" }))
+  const phone = screen.getByDisplayValue("+5553999999999")
+  await user.clear(phone)
+  await user.type(phone, "+5553988888888")
+  await user.click(screen.getByRole("button", { name: "Salvar" }))
+
+  expect(globalThis.fetch).toHaveBeenLastCalledWith(
+    "/api/v1/me",
+    expect.objectContaining({
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": "session-csrf-token",
+      },
+      body: JSON.stringify({
+        expected_version: 1,
+        name: "Paciente de Teste",
+        birthdate: "1990-04-12",
+        phone: "+5553988888888",
+        blood_type: "AB+",
+      }),
+    }),
+  )
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "Perfil atualizado.",
+  )
+})
+
 test("patient loads and ends an owned active session", async () => {
   const user = userEvent.setup()
   sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
   vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
     .mockResolvedValueOnce(
       new Response(
         JSON.stringify([
@@ -36,7 +126,8 @@ test("patient loads and ends an owned active session", async () => {
     .mockResolvedValueOnce(new Response(null, { status: 204 }))
   render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
 
-  await user.click(screen.getByRole("button", { name: "Segurança" }))
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("tab", { name: "Segurança" }))
   expect(globalThis.fetch).toHaveBeenCalledWith(
     "/api/v1/sessions",
     expect.objectContaining({ credentials: "same-origin" }),
@@ -60,6 +151,7 @@ test("patient changes password after a TOTP step-up", async () => {
   const user = userEvent.setup()
   sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
   vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
     .mockResolvedValueOnce(
       new Response("[]", {
         status: 200,
@@ -78,7 +170,8 @@ test("patient changes password after a TOTP step-up", async () => {
     .mockResolvedValueOnce(new Response(null, { status: 204 }))
   render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
 
-  await user.click(screen.getByRole("button", { name: "Segurança" }))
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("tab", { name: "Segurança" }))
   await user.type(
     screen.getByLabelText("Senha atual"),
     "senha atual segura 2026",
@@ -95,7 +188,7 @@ test("patient changes password after a TOTP step-up", async () => {
   await user.click(screen.getByRole("button", { name: "Atualizar senha" }))
 
   expect(globalThis.fetch).toHaveBeenNthCalledWith(
-    2,
+    3,
     "/api/v1/step-up-confirmations",
     expect.objectContaining({
       method: "POST",
@@ -106,7 +199,7 @@ test("patient changes password after a TOTP step-up", async () => {
     }),
   )
   expect(globalThis.fetch).toHaveBeenNthCalledWith(
-    3,
+    4,
     "/api/v1/me/password",
     expect.objectContaining({
       method: "PATCH",

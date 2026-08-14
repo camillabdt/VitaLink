@@ -47,6 +47,7 @@ class Patient(Base):
     birthdate: Mapped[date] = mapped_column(Date, nullable=False)
     phone: Mapped[str] = mapped_column(String(32), nullable=False)
     blood_type: Mapped[str | None] = mapped_column(String(3))
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     account: Mapped[Account] = relationship(back_populates="patient")
 
 
@@ -72,6 +73,7 @@ class Professional(Base):
     validation_decision: Mapped[str | None] = mapped_column(String(16))
     validation_justification: Mapped[str | None] = mapped_column(String(500))
     validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     account: Mapped[Account] = relationship(back_populates="professional")
 
 

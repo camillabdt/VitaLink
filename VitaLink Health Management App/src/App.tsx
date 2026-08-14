@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { Page, UserType } from "@/data/mockData"
 import LoginPage from "@/components/auth/LoginPage"
 import RegisterPage from "@/components/auth/RegisterPage"
@@ -9,12 +9,48 @@ import DoctorDashboard from "@/components/doctor/DoctorDashboard"
 import ImportExamPage from "@/components/exam/ImportExamPage"
 
 export default function App() {
+  const recoveryPath = ["/reset-password", "/recover-totp"].includes(
+    window.location.pathname,
+  )
   const [page, setPage] = useState<Page>(() =>
-    ["/reset-password", "/recover-totp"].includes(window.location.pathname)
-      ? "forgot-password"
-      : "login",
+    recoveryPath ? "forgot-password" : "login",
   )
   const [userType, setUserType] = useState<UserType>("patient")
+  const [checkingSession, setCheckingSession] = useState(
+    () => !recoveryPath && Boolean(sessionStorage.getItem("vitallink.csrf")),
+  )
+
+  useEffect(() => {
+    if (!checkingSession) return
+    let active = true
+    fetch("/api/v1/me", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (response.status === 401) {
+          sessionStorage.removeItem("vitallink.csrf")
+          return null
+        }
+        if (!response.ok) throw new Error("session unavailable")
+        return (await response.json()) as { role: "patient" | "professional" }
+      })
+      .then((account) => {
+        if (!active || !account) return
+        const restoredUserType =
+          account.role === "professional" ? "doctor" : "patient"
+        setUserType(restoredUserType)
+        setPage(
+          account.role === "professional"
+            ? "doctor-dashboard"
+            : "patient-dashboard",
+        )
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setCheckingSession(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [checkingSession])
 
   const navigate = (nextPage: Page, nextUserType?: UserType) => {
     if (nextUserType) setUserType(nextUserType)
@@ -45,6 +81,16 @@ export default function App() {
     }
   }
 
+  if (checkingSession) {
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <p role="status" className="text-sm text-gray-500">
+          Verificando sessão...
+        </p>
+      </main>
+    )
+  }
+
   if (page === "login") return <LoginPage onNavigate={navigate} />
   if (page === "register") return <RegisterPage onNavigate={navigate} />
   if (page === "forgot-password")
@@ -60,13 +106,29 @@ export default function App() {
     )
   }
 
+  if (page === "doctor-profile") {
+    return (
+      <PatientProfile
+        userType="doctor"
+        onNavigate={navigate}
+        onLogout={logout}
+      />
+    )
+  }
+
   if (userType === "doctor") {
     return <DoctorDashboard onNavigate={navigate} onLogout={logout} />
   }
 
   // Patient views
   if (page === "patient-profile") {
-    return <PatientProfile onNavigate={navigate} onLogout={logout} />
+    return (
+      <PatientProfile
+        userType="patient"
+        onNavigate={navigate}
+        onLogout={logout}
+      />
+    )
   }
 
   return <PatientDashboard onNavigate={navigate} onLogout={logout} />
