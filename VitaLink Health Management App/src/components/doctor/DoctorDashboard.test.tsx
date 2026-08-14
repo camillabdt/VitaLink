@@ -107,8 +107,15 @@ test("professional sees only authorized patients and revalidates detail", async 
           {
             id: "99999999-9999-4999-8999-999999999999",
             name: "Paciente Autorizada",
-            categories: ["histórico"],
-            operations: ["consultar"],
+            categories: [
+              "histórico",
+              "consultas",
+              "exames",
+              "recomendações",
+              "metas",
+              "mensagens",
+            ],
+            operations: ["consultar", "anexar", "atualizar"],
             expires_at: "2026-09-13T05:00:00Z",
           },
         ]),
@@ -123,8 +130,15 @@ test("professional sees only authorized patients and revalidates detail", async 
           birthdate: "1992-08-13",
           phone: "+5553999999999",
           blood_type: "O+",
-          categories: ["histórico"],
-          operations: ["consultar"],
+          categories: [
+            "histórico",
+            "consultas",
+            "exames",
+            "recomendações",
+            "metas",
+            "mensagens",
+          ],
+          operations: ["consultar", "anexar", "atualizar"],
           expires_at: "2026-09-13T05:00:00Z",
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
@@ -146,6 +160,16 @@ test("professional sees only authorized patients and revalidates detail", async 
   )
   await user.click(screen.getByRole("button", { name: "Ver detalhes" }))
   expect(await screen.findByText("+5553999999999")).toBeInTheDocument()
+  for (const tab of [
+    "Visão Geral",
+    "Exames",
+    "Consultas",
+    "Notas",
+    "Metas clínicas",
+    "Equipe médica",
+  ]) {
+    expect(screen.getByRole("button", { name: tab })).toBeInTheDocument()
+  }
   expect(globalThis.fetch).toHaveBeenCalledWith(
     "/api/v1/patients/99999999-9999-4999-8999-999999999999",
     expect.objectContaining({ credentials: "same-origin" }),

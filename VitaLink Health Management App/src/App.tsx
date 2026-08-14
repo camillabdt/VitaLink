@@ -117,7 +117,13 @@ export default function App() {
   }
 
   if (userType === "doctor") {
-    return <DoctorDashboard onNavigate={navigate} onLogout={logout} />
+    return (
+      <DoctorDashboard
+        currentPage={page}
+        onNavigate={navigate}
+        onLogout={logout}
+      />
+    )
   }
 
   // Patient views

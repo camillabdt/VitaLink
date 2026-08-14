@@ -164,3 +164,60 @@ test("professional settings opens the persisted professional profile", async () 
   ).toBeInTheDocument()
   expect(screen.getByText("CRM123/RS")).toBeInTheDocument()
 })
+
+test("professional opens the clinical messages destination", async () => {
+  const user = userEvent.setup()
+  vi.spyOn(window, "scrollTo").mockImplementation(() => undefined)
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(null, {
+        status: 204,
+        headers: { "X-CSRF-Token": "session-csrf-token" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ role: "professional", status: "active" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            id: "99999999-9999-4999-8999-999999999999",
+            name: "Paciente com mensagens",
+            categories: ["mensagens"],
+            operations: ["consultar", "anexar", "atualizar"],
+            expires_at: "2026-09-13T05:00:00Z",
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+
+  render(<App />)
+
+  await user.click(
+    screen.getByRole("button", { name: "Profissional de saúde" }),
+  )
+  await user.type(screen.getByLabelText("E-mail"), "professional@example.com")
+  await user.type(
+    screen.getByLabelText("Senha"),
+    "uma senha profissional segura 2026",
+  )
+  await user.type(screen.getByLabelText("Código do autenticador"), "123456")
+  await user.click(screen.getByRole("button", { name: "Entrar" }))
+  await user.click(await screen.findByRole("button", { name: /^Mensagens/ }))
+
+  expect(
+    await screen.findByRole("heading", { name: "Mensagens" }),
+  ).toBeInTheDocument()
+  expect(screen.getByText("Paciente com mensagens")).toBeInTheDocument()
+})

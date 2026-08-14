@@ -26,7 +26,7 @@ interface Props {
   patientId?: string
   categories?: string[]
   operations?: string[]
-  mode?: "all" | "history" | "recommendations"
+  mode?: "all" | "history" | "recommendations" | "consultations" | "notes"
   onSessionExpired?: () => void
 }
 
@@ -54,8 +54,18 @@ export default function ProfessionalRecords({
     const values: ProfessionalRecord["kind"][] = []
     if (categories.includes("consultas")) values.push("consultation", "note")
     if (categories.includes("recomendações")) values.push("recommendation")
+    if (mode === "recommendations")
+      return values.filter((value) => value === "recommendation")
+    if (mode === "history")
+      return values.filter((value) => value !== "recommendation")
+    if (mode === "consultations")
+      return values.filter((value) => value === "consultation")
+    if (mode === "notes")
+      return values.filter(
+        (value) => value === "note" || value === "recommendation",
+      )
     return values
-  }, [categories])
+  }, [categories, mode])
   const canCreate = Boolean(
     patientId && operations.includes("anexar") && allowedKinds.length,
   )
@@ -155,6 +165,9 @@ export default function ProfessionalRecords({
   const visible = records.filter((record) => {
     if (mode === "recommendations") return record.kind === "recommendation"
     if (mode === "history") return record.kind !== "recommendation"
+    if (mode === "consultations") return record.kind === "consultation"
+    if (mode === "notes")
+      return record.kind === "note" || record.kind === "recommendation"
     return true
   })
 

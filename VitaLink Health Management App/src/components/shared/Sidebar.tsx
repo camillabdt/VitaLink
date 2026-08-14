@@ -308,14 +308,6 @@ export default function Sidebar({
                 {item.icon}
               </span>
               {item.label}
-              {item.id === "doctor-messages" && (
-                <span
-                  className="ml-auto w-5 h-5 rounded-full text-xs font-bold text-white flex items-center justify-center"
-                  style={{ background: "#EF4444" }}
-                >
-                  1
-                </span>
-              )}
             </button>
           )
         })}

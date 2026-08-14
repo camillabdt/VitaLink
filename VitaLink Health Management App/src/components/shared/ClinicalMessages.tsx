@@ -28,6 +28,7 @@ interface Props {
   categories: string[]
   operations: string[]
   onSessionExpired?: () => void
+  showHeading?: boolean
 }
 
 export default function ClinicalMessages({
@@ -35,6 +36,7 @@ export default function ClinicalMessages({
   categories,
   operations,
   onSessionExpired,
+  showHeading = true,
 }: Props) {
   const [team, setTeam] = useState<MessageRecipient[]>([])
   const [selected, setSelected] = useState<MessageRecipient | null>(null)
@@ -251,14 +253,16 @@ export default function ClinicalMessages({
       className="rounded-2xl border bg-white p-6"
       style={{ borderColor: "var(--border)" }}
     >
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Equipe e mensagens
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Somente profissionais com autorização vigente para este paciente.
-        </p>
-      </div>
+      {showHeading && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Equipe e mensagens
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            Somente profissionais com autorização vigente para este paciente.
+          </p>
+        </div>
+      )}
       {loading ? (
         <p role="status" className="mt-4 text-sm text-gray-500">
           Carregando equipe...

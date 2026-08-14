@@ -281,9 +281,11 @@ function ResultField({
 
 export default function ClinicalResults({
   mode,
+  patientId,
   onSessionExpired,
 }: {
   mode: "history" | "charts"
+  patientId?: string
   onSessionExpired?: () => void
 }) {
   const [results, setResults] = useState<ClinicalResult[]>([])
@@ -294,7 +296,10 @@ export default function ClinicalResults({
   const [correctionReason, setCorrectionReason] = useState("")
 
   useEffect(() => {
-    fetch("/api/v1/clinical-results", { credentials: "same-origin" })
+    const query = patientId
+      ? `?patient_id=${encodeURIComponent(patientId)}`
+      : ""
+    fetch(`/api/v1/clinical-results${query}`, { credentials: "same-origin" })
       .then(async (response) => {
         if (response.status === 401) onSessionExpired?.()
         if (!response.ok)
@@ -304,7 +309,7 @@ export default function ClinicalResults({
       .then(setResults)
       .catch((caught: Error) => setError(caught.message))
       .finally(() => setLoading(false))
-  }, [onSessionExpired])
+  }, [onSessionExpired, patientId])
 
   const series = useMemo(() => {
     const grouped = new Map<string, ClinicalResult[]>()
