@@ -18,8 +18,27 @@ export default function App() {
     window.scrollTo(0, 0)
   }
 
-  const logout = () => {
-    setPage("login")
+  const logout = async () => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      window.alert("Não foi possível validar a sessão. Recarregue a página.")
+      return
+    }
+    try {
+      const response = await fetch("/api/v1/sessions/current", {
+        method: "DELETE",
+        credentials: "same-origin",
+        headers: { "X-CSRF-Token": csrfToken },
+      })
+      if (!response.ok) {
+        window.alert("Não foi possível sair com segurança. Tente novamente.")
+        return
+      }
+      sessionStorage.removeItem("vitallink.csrf")
+      setPage("login")
+    } catch {
+      window.alert("Não foi possível sair com segurança. Tente novamente.")
+    }
   }
 
   if (page === "login") return <LoginPage onNavigate={navigate} />
