@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useEffect, useState } from "react"
 import {
   LineChart,
   Line,
@@ -14,17 +14,16 @@ import {
   AreaChart,
 } from "recharts"
 import Layout from "@/components/shared/Layout"
-import type { Page, DocType, MedicalDocument } from "@/data/mockData"
+import type { Page } from "@/data/mockData"
 import {
   examHistory,
   recentExams,
   doctorRecommendations,
   currentPatient,
   fmtDate,
-  patientDocuments as initialPatientDocuments,
-  patientDoctorAccess,
 } from "@/data/mockData"
 import DocumentUploadModal from "@/components/shared/DocumentUploadModal"
+import type { StoredDocument } from "@/components/shared/DocumentUploadModal"
 import DocumentViewerModal from "@/components/shared/DocumentViewerModal"
 import PersonalObservations from "@/components/patient/PersonalObservations"
 
@@ -243,7 +242,7 @@ export default function PatientDashboard({
       </div>
 
       {activeTab === "overview" && <OverviewTab summaryCards={summaryCards} />}
-      {activeTab === "documents" && <DocumentsTab onNavigate={onNavigate} />}
+      {activeTab === "documents" && <DocumentsTab />}
       {activeTab === "observations" && (
         <PersonalObservations onSessionExpired={handleSessionExpired} />
       )}
@@ -621,13 +620,13 @@ function OverviewTab({ summaryCards }: { summaryCards: any[] }) {
   )
 }
 
-const docTypeConfig: Record<DocType, {
+const docTypeConfig: Record<StoredDocument["category"], {
   label: string
   bg: string
   text: string
   icon: React.ReactNode
 }> = {
-  exam: {
+  exames: {
     label: "Exame",
     bg: "#CCFBF1",
     text: "#0E7490",
@@ -650,7 +649,7 @@ const docTypeConfig: Record<DocType, {
       </svg>
     ),
   },
-  prescription: {
+  receitas: {
     label: "Receita",
     bg: "#DBEAFE",
     text: "#1D4ED8",
@@ -670,7 +669,7 @@ const docTypeConfig: Record<DocType, {
       </svg>
     ),
   },
-  report: {
+  laudos: {
     label: "Laudo",
     bg: "#FEF9C3",
     text: "#92400E",
@@ -692,7 +691,7 @@ const docTypeConfig: Record<DocType, {
       </svg>
     ),
   },
-  image: {
+  imagens: {
     label: "Imagem",
     bg: "#EDE9FE",
     text: "#5B21B6",
@@ -715,29 +714,56 @@ const docTypeConfig: Record<DocType, {
   },
 }
 
-function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
-  const [docFilter, setDocFilter] = useState<"all" | DocType>("all")
-  const [docs, setDocs] = useState<MedicalDocument[]>(initialPatientDocuments)
+function DocumentsTab() {
+  const [docFilter, setDocFilter] =
+    useState<"all" | StoredDocument["category"]>("all")
+  const [docs, setDocs] = useState<StoredDocument[]>([])
   const [showUpload, setShowUpload] = useState(false)
-  const [viewing, setViewing] = useState<MedicalDocument | null>(null)
+  const [viewing, setViewing] = useState<StoredDocument | null>(null)
+  const [loadError, setLoadError] = useState("")
 
-  const filterChips: Array<{ id: "all" | DocType } & { label: string }> = [
+  useEffect(() => {
+    fetch("/api/v1/documents", { credentials: "same-origin" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("documents unavailable")
+        return (await response.json()) as StoredDocument[]
+      })
+      .then(setDocs)
+      .catch(() => setLoadError("Não foi possível carregar os documentos."))
+  }, [])
+
+  const filterChips: Array<{
+    id: "all" | StoredDocument["category"]
+    label: string
+  }> = [
     { id: "all", label: "Todos" },
-    { id: "exam", label: "Exames" },
-    { id: "prescription", label: "Receitas" },
-    { id: "report", label: "Laudos" },
-    { id: "image", label: "Imagens" },
+    { id: "exames", label: "Exames" },
+    { id: "receitas", label: "Receitas" },
+    { id: "laudos", label: "Laudos" },
+    { id: "imagens", label: "Imagens" },
   ]
 
   const filtered =
-    docFilter === "all" ? docs : docs.filter((d) => d.type === docFilter)
+    docFilter === "all"
+      ? docs
+      : docs.filter((document) => document.category === docFilter)
 
   const counts: Record<string, number> = { all: docs.length }
-  for (const d of docs) counts[d.type] = (counts[d.type] ?? 0) + 1
+  for (const document of docs) {
+    counts[document.category] = (counts[document.category] ?? 0) + 1
+  }
 
   return (
     <>
       <div className="space-y-5">
+        {loadError && (
+          <p
+            role="alert"
+            className="rounded-xl bg-red-50 p-3 text-sm text-red-700"
+          >
+            {loadError}
+          </p>
+        )}
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2 flex-wrap">
             {filterChips.map((chip) => (
@@ -822,7 +848,7 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
         ) : (
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map((doc) => {
-              const cfg = docTypeConfig[doc.type]
+              const cfg = docTypeConfig[doc.category]
               return (
                 <div
                   key={doc.id}
@@ -846,10 +872,10 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
                   <div>
                     <div className="font-semibold text-gray-900 text-sm truncate">
-                      {doc.name}
+                      {doc.original_name}
                     </div>
                     <div className="text-xs text-gray-500 mt-0.5">
-                      {fmtDate(doc.date)} · {doc.doctor}
+                      {fmtDate(doc.created_at.slice(0, 10))}
                     </div>
                   </div>
 
@@ -858,35 +884,12 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
                       className="text-xs px-2 py-0.5 rounded font-mono font-medium uppercase"
                       style={{ background: "#F1F5F9", color: "#64748B" }}
                     >
-                      {doc.fileType}
+                      {doc.content_type.split("/")[1].replace("jpeg", "jpg")}
                     </span>
-                    {doc.size !== "—" && (
-                      <span className="text-xs text-gray-400">{doc.size}</span>
-                    )}
+                    <span className="text-xs text-gray-400">
+                      {(doc.size / 1024 / 1024).toFixed(1)} MB
+                    </span>
                   </div>
-
-                  {doc.sharedWith.length > 0 && (
-                    <div className="text-xs text-gray-400 flex items-center gap-1">
-                      <svg
-                        width="11"
-                        height="11"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="18" cy="5" r="3" />
-                        <circle cx="6" cy="12" r="3" />
-                        <circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                      </svg>
-                      Compartilhado com {doc.sharedWith.length} médico
-                      {doc.sharedWith.length !== 1 ? "s" : ""}
-                    </div>
-                  )}
 
                   <div
                     className="flex items-center gap-2 mt-auto pt-2 border-t"
@@ -912,28 +915,6 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
                       </svg>
                       Visualizar
                     </button>
-                    <button
-                      className="w-8 h-8 rounded-lg border flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0"
-                      style={{ borderColor: "var(--border)", color: "#64748B" }}
-                      title="Compartilhar"
-                    >
-                      <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="18" cy="5" r="3" />
-                        <circle cx="6" cy="12" r="3" />
-                        <circle cx="18" cy="19" r="3" />
-                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
-                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
-                      </svg>
-                    </button>
                   </div>
                 </div>
               )
@@ -944,7 +925,6 @@ function DocumentsTab({ onNavigate }: { onNavigate: (page: Page) => void }) {
 
       {showUpload && (
         <DocumentUploadModal
-          doctors={patientDoctorAccess}
           onSave={(doc) => {
             setDocs((prev) => [doc, ...prev])
             setShowUpload(false)

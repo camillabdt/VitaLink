@@ -15,6 +15,15 @@ class Settings(BaseSettings):
     smtp_host: str = "localhost"
     smtp_port: int = 1025
     public_origin: str = "https://localhost"
+    s3_endpoint: str = "http://localhost:9000"
+    s3_access_key: str = "vitallink"
+    s3_secret_key: SecretStr = SecretStr("vitallink-development-secret")
+    s3_quarantine_bucket: str = "vitallink-quarantine"
+    s3_approved_bucket: str = "vitallink-approved"
+    clamav_host: str = "localhost"
+    clamav_port: int = 3310
+    document_max_bytes: int = 20 * 1024 * 1024
+    patient_document_quota_bytes: int = 200 * 1024 * 1024
     secret_key: SecretStr
 
 

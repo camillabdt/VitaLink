@@ -13,16 +13,17 @@ from datetime import UTC, date, datetime, timedelta
 from email.message import EmailMessage
 from time import perf_counter
 from typing import Annotated
+from urllib.parse import quote
 from uuid import UUID, uuid4
 
 import pyotp
 from argon2 import PasswordHasher
 from argon2.exceptions import VerificationError
 from cryptography.fernet import Fernet
-from fastapi import Depends, FastAPI, Request, Response, status
+from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
-from sqlalchemy import or_, select, text
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from starlette.responses import JSONResponse
@@ -36,6 +37,7 @@ from vitallink.database import (
     AuditEvent,
     Authorization,
     AuthorizationRevision,
+    Document,
     EmailVerification,
     LoginThrottle,
     Notification,
@@ -47,6 +49,7 @@ from vitallink.database import (
     TotpCredential,
     get_session,
 )
+from vitallink.document_storage import clamav_scan, document_content_type, ensure_private_buckets, storage_client
 
 GENERIC_REGISTRATION_MESSAGE = "Se os dados puderem ser cadastrados, enviaremos as instruções de confirmação."
 GENERIC_RECOVERY_MESSAGE = "Se a conta puder ser recuperada, enviaremos as instruções por e-mail."
@@ -466,6 +469,28 @@ class PersonalObservationResponse(BaseModel):
     version: int
 
 
+class DocumentResponse(BaseModel):
+    """Safe document metadata without private storage coordinates."""
+
+    id: UUID
+    category: str
+    original_name: str
+    content_type: str
+    size: int
+    status: str
+    created_at: datetime
+
+
+class DocumentAuthorizedProfessionalResponse(BaseModel):
+    """Professional currently authorized to consult one document."""
+
+    id: UUID
+    name: str
+    specialty: str
+    institution: str | None
+    expires_at: datetime
+
+
 class AccountSessionResponse(BaseModel):
     """Safe session metadata visible only to its account owner."""
 
@@ -479,7 +504,9 @@ class AccountSessionResponse(BaseModel):
 class StepUpConfirmationRequest(BaseModel):
     """TOTP proof bound to one supported sensitive action."""
 
-    action: str = Field(pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke)$")
+    action: str = Field(
+        pattern=r"^(password_change|authorization_grant|authorization_reduce|authorization_revoke|document_download)$"
+    )
     totp_code: str = Field(pattern=r"^\d{6}$")
 
 
@@ -2591,6 +2618,539 @@ def personal_observation_response(observation: PersonalObservation) -> PersonalO
         created_at=observation.created_at,
         version=observation.version,
     )
+
+
+def document_response(document: Document) -> DocumentResponse:
+    """Expose document metadata without storage coordinates.
+
+    Args:
+        document: Persisted document metadata.
+
+    Returns:
+        Safe document representation.
+    """
+    return DocumentResponse(
+        id=document.id,
+        category=document.category,
+        original_name=document.original_name,
+        content_type=document.content_type,
+        size=document.size,
+        status=document.status,
+        created_at=document.created_at,
+    )
+
+
+def authorized_document_patient(
+    session: Session,
+    account: Account,
+    patient_id: UUID | None,
+    category: str,
+    operation: str,
+    now: datetime,
+) -> Patient | None:
+    """Resolve the patient only when the actor may perform a document operation.
+
+    Args:
+        session: Database transaction scope.
+        account: Authenticated actor.
+        patient_id: Explicit target for professional operations.
+        category: Document category being accessed.
+        operation: Normative operation being performed.
+        now: Server-controlled operation time.
+
+    Returns:
+        Authorized patient or None without revealing the denial reason.
+    """
+    if account.role == "patient":
+        patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+        return patient if patient is not None and patient_id in (None, patient.id) else None
+    professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+    if professional is None or patient_id is None:
+        return None
+    authorization = active_authorization(session, professional.id, patient_id, category, operation, now)
+    return session.get(Patient, patient_id) if authorization is not None else None
+
+
+@app.post("/api/v1/documents", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
+async def create_document(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    category: Annotated[str, Form()],
+    file: Annotated[UploadFile, File()],
+    patient_id: Annotated[UUID | None, Form()] = None,
+) -> DocumentResponse | JSONResponse:
+    """Validate, scan, and privately store one patient document.
+
+    Args:
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+        category: Normative clinical category for later authorization checks.
+        file: Bounded PDF, PNG, or JPEG upload.
+        patient_id: Explicit target required for professional uploads.
+
+    Returns:
+        Approved metadata or a safe rejection while quarantine remains private.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = authorized_document_patient(session, account, patient_id, category, "anexar", now)
+    if not valid_csrf(request, "__Host-vitallink_session") or patient is None:
+        reason = "request_verification_failed" if patient is not None else "not_authorized"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.uploaded",
+                target_id=None,
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, reason, "Não foi possível enviar o documento.")
+    patient = session.scalar(select(Patient).where(Patient.id == patient.id).with_for_update())
+    assert patient is not None
+
+    content = await file.read(settings.document_max_bytes + 1)
+    detected_type = document_content_type(content)
+    original_name = (file.filename or "").replace("\\", "/").rsplit("/", 1)[-1]
+    allowed_extensions = {"application/pdf": ".pdf", "image/png": ".png", "image/jpeg": (".jpg", ".jpeg")}
+    expected_extensions = allowed_extensions.get(detected_type, ())
+    if isinstance(expected_extensions, str):
+        expected_extensions = (expected_extensions,)
+    invalid_upload = (
+        not content
+        or len(content) > settings.document_max_bytes
+        or detected_type is None
+        or file.content_type != detected_type
+        or not original_name.casefold().endswith(expected_extensions)
+        or len(original_name) > 255
+        or any(ord(character) < 32 for character in original_name)
+        or category not in {"exames", "laudos", "receitas", "imagens"}
+    )
+    used_bytes = session.scalar(
+        select(func.coalesce(func.sum(Document.size), 0)).where(
+            Document.patient_id == patient.id,
+            Document.status.in_(("quarantine", "approved")),
+        )
+    )
+    if invalid_upload or used_bytes + len(content) > settings.patient_document_quota_bytes:
+        reason = "invalid_file" if invalid_upload else "patient_quota_exceeded"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.uploaded",
+                target_id=None,
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "category": category},
+            )
+        )
+        session.commit()
+        return error_response(request, 422, reason, "O documento não atende aos requisitos de envio.")
+
+    client = storage_client()
+    try:
+        ensure_private_buckets(client)
+        document = Document(
+            patient_id=patient.id,
+            uploaded_by_account_id=account.id,
+            category=category,
+            original_name=original_name,
+            storage_key=uuid4().hex,
+            content_type=detected_type,
+            size=len(content),
+            sha256=hashlib.sha256(content).hexdigest(),
+            status="quarantine",
+            created_at=now,
+        )
+        client.put_object(
+            Bucket=settings.s3_quarantine_bucket,
+            Key=document.storage_key,
+            Body=content,
+            ContentType="application/octet-stream",
+        )
+        session.add(document)
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.uploaded",
+                target_id=audit_identifier(document.id),
+                result="success",
+                reason="quarantined",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "category": document.category, "size": document.size},
+            )
+        )
+        session.commit()
+    except Exception:
+        session.rollback()
+        http_logger.exception("Document quarantine failed")
+        return error_response(request, 503, "document_storage_unavailable", "O envio está temporariamente indisponível.")
+
+    try:
+        scan_result = clamav_scan(content)
+    except OSError:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.scanned",
+                target_id=audit_identifier(document.id),
+                result="failed",
+                reason="scanner_unavailable",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 503, "document_scan_unavailable", "O documento permanece em quarentena.")
+
+    if scan_result == "infected":
+        document.status = "rejected"
+        try:
+            client.delete_object(Bucket=settings.s3_quarantine_bucket, Key=document.storage_key)
+        except Exception:
+            http_logger.exception("Rejected document cleanup failed")
+        result = "denied"
+        reason = "malware_detected"
+    else:
+        try:
+            client.copy_object(
+                Bucket=settings.s3_approved_bucket,
+                Key=document.storage_key,
+                CopySource={"Bucket": settings.s3_quarantine_bucket, "Key": document.storage_key},
+                ContentType=document.content_type,
+                MetadataDirective="REPLACE",
+            )
+            client.delete_object(Bucket=settings.s3_quarantine_bucket, Key=document.storage_key)
+        except Exception:
+            http_logger.exception("Document promotion failed")
+            session.add(
+                AuditEvent(
+                    actor_id=audit_identifier(account.id),
+                    action="document.scanned",
+                    target_id=audit_identifier(document.id),
+                    result="failed",
+                    reason="promotion_failed",
+                    correlation_id=request.state.correlation_id,
+                    event_metadata={"role": account.role},
+                )
+            )
+            session.commit()
+            return error_response(request, 503, "document_storage_unavailable", "O documento permanece em quarentena.")
+        document.status = "approved"
+        result = "success"
+        reason = "clean"
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="document.scanned",
+            target_id=audit_identifier(document.id),
+            result=result,
+            reason=reason,
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "content_type": document.content_type},
+        )
+    )
+    session.commit()
+    if document.status == "rejected":
+        return error_response(request, 422, "malware_detected", "O documento foi rejeitado com segurança.")
+    return document_response(document)
+
+
+@app.get("/api/v1/documents", response_model=list[DocumentResponse])
+def list_documents(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID | None, Query()] = None,
+) -> list[DocumentResponse] | JSONResponse:
+    """List approved documents after reevaluating ownership or authorization.
+
+    Args:
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+        patient_id: Explicit target required for professional access.
+
+    Returns:
+        Currently readable document metadata or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    if account.role == "patient":
+        patient = authorized_document_patient(session, account, patient_id, "histórico", "consultar", now)
+        documents = [] if patient is None else session.scalars(
+            select(Document)
+            .where(Document.patient_id == patient.id, Document.status == "approved")
+            .order_by(Document.created_at.desc())
+        ).all()
+    else:
+        professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+        if professional is None or patient_id is None:
+            documents = []
+        else:
+            candidates = session.scalars(
+                select(Document)
+                .where(Document.patient_id == patient_id, Document.status == "approved")
+                .order_by(Document.created_at.desc())
+            ).all()
+            documents = [
+                document
+                for document in candidates
+                if active_authorization(
+                    session,
+                    professional.id,
+                    document.patient_id,
+                    document.category,
+                    "consultar",
+                    now,
+                )
+                is not None
+            ]
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="document.listed",
+            target_id=audit_identifier(patient_id) if patient_id is not None else None,
+            result="success",
+            reason="scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(documents)},
+        )
+    )
+    session.commit()
+    return [document_response(document) for document in documents]
+
+
+@app.get("/api/v1/documents/{document_id}/content", response_model=None)
+def read_document_content(
+    document_id: UUID,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    download: Annotated[bool, Query()] = False,
+    step_up_confirmation_id: Annotated[UUID | None, Query()] = None,
+) -> Response:
+    """Return approved bytes after fresh authorization and optional download step-up.
+
+    Args:
+        document_id: Opaque document identifier.
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+        download: Whether to force a local attachment download.
+        step_up_confirmation_id: Single-use TOTP proof required for downloads.
+
+    Returns:
+        Isolated content bytes or a safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    document = session.scalar(select(Document).where(Document.id == document_id, Document.status == "approved"))
+    patient = None
+    if document is not None:
+        patient = authorized_document_patient(
+            session,
+            account,
+            document.patient_id,
+            document.category,
+            "consultar",
+            now,
+        )
+    if document is None or patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.read",
+                target_id=audit_identifier(document_id),
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "document_not_found", "Documento não encontrado.")
+    if download:
+        confirmation = session.scalar(
+            select(StepUpConfirmation)
+            .where(
+                StepUpConfirmation.id == step_up_confirmation_id,
+                StepUpConfirmation.account_id == account.id,
+                StepUpConfirmation.session_id == account_session.id,
+                StepUpConfirmation.action == "document_download",
+                StepUpConfirmation.used_at.is_(None),
+                StepUpConfirmation.expires_at > now,
+            )
+            .with_for_update()
+        )
+        if confirmation is None:
+            session.add(
+                AuditEvent(
+                    actor_id=audit_identifier(account.id),
+                    action="document.downloaded",
+                    target_id=audit_identifier(document.id),
+                    result="denied",
+                    reason="action_confirmation_required",
+                    correlation_id=request.state.correlation_id,
+                    event_metadata={"role": account.role, "category": document.category},
+                )
+            )
+            session.commit()
+            return error_response(request, 403, "action_confirmation_required", "Confirme novamente esta ação.")
+        confirmation.used_at = now
+    try:
+        content = storage_client().get_object(
+            Bucket=settings.s3_approved_bucket,
+            Key=document.storage_key,
+        )["Body"].read()
+    except Exception:
+        http_logger.exception("Approved document read failed")
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.read",
+                target_id=audit_identifier(document.id),
+                result="failed",
+                reason="storage_unavailable",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 503, "document_storage_unavailable", "O documento está temporariamente indisponível.")
+    if not hmac.compare_digest(hashlib.sha256(content).hexdigest(), document.sha256):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.read",
+                target_id=audit_identifier(document.id),
+                result="failed",
+                reason="integrity_mismatch",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 503, "document_integrity_failed", "O documento está temporariamente indisponível.")
+    action = "document.downloaded" if download else "document.viewed"
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action=action,
+            target_id=audit_identifier(document.id),
+            result="success",
+            reason="scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "category": document.category},
+        )
+    )
+    session.commit()
+    disposition = "attachment" if download else "inline"
+    return Response(
+        content=content,
+        media_type=document.content_type,
+        headers={
+            "Content-Disposition": f"{disposition}; filename*=UTF-8''{quote(document.original_name)}",
+            "Content-Security-Policy": "default-src 'none'; sandbox",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
+@app.get(
+    "/api/v1/documents/{document_id}/authorized-professionals",
+    response_model=list[DocumentAuthorizedProfessionalResponse],
+)
+def list_document_authorized_professionals(
+    document_id: UUID,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[DocumentAuthorizedProfessionalResponse] | JSONResponse:
+    """List professionals who currently may consult an owned document.
+
+    Args:
+        document_id: Opaque owned document identifier.
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Current authorized professionals or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    document = None if patient is None else session.scalar(
+        select(Document).where(
+            Document.id == document_id,
+            Document.patient_id == patient.id,
+            Document.status == "approved",
+        )
+    )
+    if document is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="document.authorized_professionals.listed",
+                target_id=audit_identifier(document_id),
+                result="denied",
+                reason="not_found_or_not_owned",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "document_not_found", "Documento não encontrado.")
+    rows = session.execute(
+        select(Authorization, Professional)
+        .join(Professional, Professional.id == Authorization.professional_id)
+        .where(
+            Authorization.patient_id == patient.id,
+            Authorization.status == "active",
+            Authorization.starts_at <= now,
+            Authorization.expires_at > now,
+            Authorization.categories.contains([document.category]),
+            Authorization.operations.contains(["consultar"]),
+        )
+        .order_by(Professional.name)
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="document.authorized_professionals.listed",
+            target_id=audit_identifier(document.id),
+            result="success",
+            reason="owner_listed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(rows)},
+        )
+    )
+    session.commit()
+    return [
+        DocumentAuthorizedProfessionalResponse(
+            id=professional.id,
+            name=professional.name,
+            specialty=professional.specialty,
+            institution=professional.institution,
+            expires_at=authorization.expires_at,
+        )
+        for authorization, professional in rows
+    ]
 
 
 @app.post(
