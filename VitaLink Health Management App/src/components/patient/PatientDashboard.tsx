@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import {
   LineChart,
   Line,
@@ -26,6 +26,7 @@ import DocumentUploadModal from "@/components/shared/DocumentUploadModal"
 import type { StoredDocument } from "@/components/shared/DocumentUploadModal"
 import DocumentViewerModal from "@/components/shared/DocumentViewerModal"
 import PersonalObservations from "@/components/patient/PersonalObservations"
+import ClinicalResults from "@/components/patient/ClinicalResults"
 
 interface Props {
   onNavigate: (page: Page) => void
@@ -73,10 +74,10 @@ export default function PatientDashboard({
 }: Props) {
   const [activeTab, setActiveTab] = useState<PatientTab>(initialTab)
 
-  const handleSessionExpired = () => {
+  const handleSessionExpired = useCallback(() => {
     sessionStorage.removeItem("vitallink.csrf")
     onNavigate("login")
-  }
+  }, [onNavigate])
 
   const tabs = [
     { id: "overview", label: "Visão Geral" },
@@ -244,9 +245,20 @@ export default function PatientDashboard({
       {activeTab === "overview" && <OverviewTab summaryCards={summaryCards} />}
       {activeTab === "documents" && <DocumentsTab />}
       {activeTab === "observations" && (
-        <PersonalObservations onSessionExpired={handleSessionExpired} />
+        <div className="space-y-6">
+          <PersonalObservations onSessionExpired={handleSessionExpired} />
+          <ClinicalResults
+            mode="history"
+            onSessionExpired={handleSessionExpired}
+          />
+        </div>
       )}
-      {activeTab === "charts" && <ChartsTab />}
+      {activeTab === "charts" && (
+        <ClinicalResults
+          mode="charts"
+          onSessionExpired={handleSessionExpired}
+        />
+      )}
       {activeTab === "recommendations" && <RecommendationsTab />}
     </Layout>
   )

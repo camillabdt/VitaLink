@@ -2,6 +2,7 @@ import { useState } from "react"
 import Layout from "@/components/shared/Layout"
 import DocumentUploadModal from "@/components/shared/DocumentUploadModal"
 import type { StoredDocument } from "@/components/shared/DocumentUploadModal"
+import { ClinicalResultForm } from "@/components/patient/ClinicalResults"
 import type { Page, UserType } from "@/data/mockData"
 
 interface Props {
@@ -18,6 +19,7 @@ export default function ImportExamPage({
   const [showUpload, setShowUpload] = useState(false)
   const [patientId, setPatientId] = useState("")
   const [saved, setSaved] = useState<StoredDocument | null>(null)
+  const [savedResultCount, setSavedResultCount] = useState(0)
   const backPage =
     userType === "patient" ? "patient-dashboard" : "doctor-dashboard"
 
@@ -87,6 +89,26 @@ export default function ImportExamPage({
             Voltar
           </button>
         </div>
+      </section>
+
+      <section
+        className="mx-auto mt-5 max-w-4xl rounded-2xl border bg-white p-6"
+        style={{ borderColor: "var(--border)" }}
+      >
+        <ClinicalResultForm
+          patientId={userType === "doctor" ? patientId : undefined}
+          onSaved={(results) =>
+            setSavedResultCount((count) => count + results.length)
+          }
+        />
+        {savedResultCount > 0 && (
+          <p role="status" className="mt-4 text-sm text-emerald-700">
+            {savedResultCount} resultado{savedResultCount === 1 ? "" : "s"}{" "}
+            confirmado
+            {savedResultCount === 1 ? "" : "s"} e persistido
+            {savedResultCount === 1 ? "" : "s"}.
+          </p>
+        )}
       </section>
 
       {showUpload && (

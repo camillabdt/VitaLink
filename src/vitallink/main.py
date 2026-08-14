@@ -10,9 +10,10 @@ import smtplib
 from base64 import urlsafe_b64encode
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from email.message import EmailMessage
 from time import perf_counter
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
@@ -22,7 +23,7 @@ from argon2.exceptions import VerificationError
 from cryptography.fernet import Fernet
 from fastapi import Depends, FastAPI, File, Form, Query, Request, Response, UploadFile, status
 from fastapi.exceptions import RequestValidationError
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator, model_validator
 from sqlalchemy import func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -37,6 +38,7 @@ from vitallink.database import (
     AuditEvent,
     Authorization,
     AuthorizationRevision,
+    ClinicalResult,
     Document,
     EmailVerification,
     LoginThrottle,
@@ -489,6 +491,84 @@ class DocumentAuthorizedProfessionalResponse(BaseModel):
     specialty: str
     institution: str | None
     expires_at: datetime
+
+
+class ClinicalResultCreate(BaseModel):
+    """Explicitly confirmed structured measurement input."""
+
+    exam_name: str = Field(min_length=1, max_length=200)
+    value: Decimal = Field(max_digits=18, decimal_places=6)
+    unit: str = Field(min_length=1, max_length=32)
+    measured_at: date
+    origin: str = Field(min_length=1, max_length=200)
+    reference_min: Decimal = Field(max_digits=18, decimal_places=6)
+    reference_max: Decimal = Field(max_digits=18, decimal_places=6)
+    confirmed: Literal[True]
+    patient_id: UUID | None = None
+
+    @field_validator("exam_name", "unit", "origin")
+    @classmethod
+    def strip_required_text(cls, value: str) -> str:
+        """Normalize required text while rejecting whitespace-only values."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @model_validator(mode="after")
+    def validate_reference_order(self) -> "ClinicalResultCreate":
+        """Require an ordered laboratory interval."""
+        if self.reference_min > self.reference_max:
+            raise ValueError("reference interval is invalid")
+        return self
+
+
+class ClinicalResultResponse(BaseModel):
+    """Current confirmed result with provenance and neutral range position."""
+
+    id: UUID
+    exam_name: str
+    value: float
+    unit: str
+    measured_at: date
+    origin: str
+    reference_min: float
+    reference_max: float
+    confirmed: bool
+    range_position: str
+    author: str
+    version: int
+    created_at: datetime
+
+
+class ClinicalResultCorrection(BaseModel):
+    """Replacement measurement bound to the version seen by the actor."""
+
+    exam_name: str = Field(min_length=1, max_length=200)
+    value: Decimal = Field(max_digits=18, decimal_places=6)
+    unit: str = Field(min_length=1, max_length=32)
+    measured_at: date
+    reference_min: Decimal = Field(max_digits=18, decimal_places=6)
+    reference_max: Decimal = Field(max_digits=18, decimal_places=6)
+    confirmed: Literal[True]
+    expected_version: int = Field(ge=1)
+    correction_reason: str = Field(min_length=3, max_length=500)
+
+    @field_validator("exam_name", "unit", "correction_reason")
+    @classmethod
+    def strip_required_text(cls, value: str) -> str:
+        """Normalize required correction text."""
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("value is required")
+        return stripped
+
+    @model_validator(mode="after")
+    def validate_reference_order(self) -> "ClinicalResultCorrection":
+        """Require an ordered laboratory interval."""
+        if self.reference_min > self.reference_max:
+            raise ValueError("reference interval is invalid")
+        return self
 
 
 class AccountSessionResponse(BaseModel):
@@ -3151,6 +3231,295 @@ def list_document_authorized_professionals(
         )
         for authorization, professional in rows
     ]
+
+
+def clinical_result_range_position(result: ClinicalResult) -> str:
+    """Compare a result only with its own laboratory interval.
+
+    Args:
+        result: Confirmed structured result.
+
+    Returns:
+        Neutral ``below``, ``within``, or ``above`` position.
+    """
+    if result.value < result.reference_min:
+        return "below"
+    if result.value > result.reference_max:
+        return "above"
+    return "within"
+
+
+def clinical_result_response(session: Session, result: ClinicalResult) -> ClinicalResultResponse:
+    """Expose one current result with immutable authorship and origin.
+
+    Args:
+        session: Database transaction scope.
+        result: Persisted confirmed result.
+
+    Returns:
+        Safe structured result response.
+    """
+    author = session.get(Account, result.author_account_id)
+    assert author is not None
+    return ClinicalResultResponse(
+        id=result.id,
+        exam_name=result.exam_name,
+        value=float(result.value),
+        unit=result.unit,
+        measured_at=result.measured_at,
+        origin=result.origin,
+        reference_min=float(result.reference_min),
+        reference_max=float(result.reference_max),
+        confirmed=result.confirmed,
+        range_position=clinical_result_range_position(result),
+        author=author.role,
+        version=result.version,
+        created_at=result.created_at,
+    )
+
+
+@app.post("/api/v1/clinical-results", response_model=ClinicalResultResponse, status_code=status.HTTP_201_CREATED)
+def create_clinical_result(
+    result_request: ClinicalResultCreate,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ClinicalResultResponse | JSONResponse:
+    """Persist one explicitly confirmed structured result.
+
+    Args:
+        result_request: Essential measurement, reference, and provenance fields.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Persisted current result or a safe authorization denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = authorized_document_patient(session, account, result_request.patient_id, "exames", "anexar", now)
+    if not valid_csrf(request, "__Host-vitallink_session") or patient is None:
+        reason = "request_verification_failed" if patient is not None else "not_authorized"
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="clinical_result.created",
+                target_id=None,
+                result="denied",
+                reason=reason,
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, reason, "Não foi possível salvar o resultado.")
+    result = ClinicalResult(
+        patient_id=patient.id,
+        author_account_id=account.id,
+        exam_name=result_request.exam_name,
+        value=result_request.value,
+        unit=result_request.unit,
+        measured_at=result_request.measured_at,
+        origin=result_request.origin,
+        reference_min=result_request.reference_min,
+        reference_max=result_request.reference_max,
+        confirmed=True,
+        version=1,
+        current=True,
+        created_at=now,
+    )
+    session.add(result)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="clinical_result.created",
+            target_id=audit_identifier(result.id),
+            result="success",
+            reason="explicitly_confirmed",
+            correlation_id=request.state.correlation_id,
+            event_metadata={
+                "role": account.role,
+                "version": result.version,
+                "range_position": clinical_result_range_position(result),
+            },
+        )
+    )
+    session.commit()
+    return clinical_result_response(session, result)
+
+
+@app.get("/api/v1/clinical-results", response_model=list[ClinicalResultResponse])
+def list_clinical_results(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    patient_id: Annotated[UUID | None, Query()] = None,
+) -> list[ClinicalResultResponse] | JSONResponse:
+    """List current confirmed results within freshly evaluated scope.
+
+    Args:
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+        patient_id: Explicit patient target required for professional access.
+
+    Returns:
+        Current confirmed results or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = authorized_document_patient(session, account, patient_id, "exames", "consultar", now)
+    if patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="clinical_result.listed",
+                target_id=audit_identifier(patient_id) if patient_id is not None else None,
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "clinical_results_not_found", "Resultados não encontrados.")
+    results = session.scalars(
+        select(ClinicalResult)
+        .where(
+            ClinicalResult.patient_id == patient.id,
+            ClinicalResult.current.is_(True),
+            ClinicalResult.confirmed.is_(True),
+        )
+        .order_by(ClinicalResult.measured_at.desc(), ClinicalResult.created_at.desc())
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="clinical_result.listed",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="scope_reevaluated",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(results)},
+        )
+    )
+    session.commit()
+    return [clinical_result_response(session, result) for result in results]
+
+
+@app.patch("/api/v1/clinical-results/{result_id}", response_model=ClinicalResultResponse)
+def correct_clinical_result(
+    result_id: UUID,
+    correction_request: ClinicalResultCorrection,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> ClinicalResultResponse | JSONResponse:
+    """Create a replacement version while preserving authorship and origin.
+
+    Args:
+        result_id: Opaque identifier of the version being corrected.
+        correction_request: Confirmed replacement and expected current version.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Replacement version or a safe ownership/version denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="clinical_result.corrected",
+                target_id=audit_identifier(result_id),
+                result="denied",
+                reason="request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 403, "request_verification_failed", "Não foi possível corrigir o resultado.")
+    original = session.scalar(select(ClinicalResult).where(ClinicalResult.id == result_id).with_for_update())
+    patient = None
+    if original is not None:
+        patient = authorized_document_patient(session, account, original.patient_id, "exames", "atualizar", now)
+    if original is None or patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="clinical_result.corrected",
+                target_id=audit_identifier(result_id),
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "clinical_result_not_found", "Resultado não encontrado.")
+    if not original.current or original.version != correction_request.expected_version:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="clinical_result.corrected",
+                target_id=audit_identifier(result_id),
+                result="denied",
+                reason="version_conflict",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "expected_version": correction_request.expected_version},
+            )
+        )
+        session.commit()
+        return error_response(request, 409, "clinical_result_conflict", "O resultado possui uma versão mais recente.")
+    replacement = ClinicalResult(
+        patient_id=original.patient_id,
+        author_account_id=original.author_account_id,
+        exam_name=correction_request.exam_name,
+        value=correction_request.value,
+        unit=correction_request.unit,
+        measured_at=correction_request.measured_at,
+        origin=original.origin,
+        reference_min=correction_request.reference_min,
+        reference_max=correction_request.reference_max,
+        confirmed=True,
+        version=original.version + 1,
+        current=True,
+        replaces_id=original.id,
+        correction_reason=correction_request.correction_reason,
+        created_at=now,
+    )
+    original.current = False
+    session.add(replacement)
+    session.flush()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="clinical_result.corrected",
+            target_id=audit_identifier(replacement.id),
+            result="success",
+            reason="replacement_created",
+            correlation_id=request.state.correlation_id,
+            event_metadata={
+                "role": account.role,
+                "version": replacement.version,
+                "range_position": clinical_result_range_position(replacement),
+            },
+        )
+    )
+    session.commit()
+    return clinical_result_response(session, replacement)
 
 
 @app.post(

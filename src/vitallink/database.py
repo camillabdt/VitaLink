@@ -2,9 +2,22 @@
 
 from collections.abc import Iterator
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+    create_engine,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PostgreSQLUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, relationship, sessionmaker
@@ -186,6 +199,38 @@ class Document(Base):
     size: Mapped[int] = mapped_column(Integer, nullable=False)
     sha256: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
+    )
+
+
+class ClinicalResult(Base):
+    """Confirmed versioned measurement with immutable authorship and origin."""
+
+    __tablename__ = "clinical_results"
+    __table_args__ = (
+        CheckConstraint("reference_min <= reference_max", name="ck_clinical_results_reference_order"),
+    )
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    author_account_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("accounts.id"), nullable=False
+    )
+    exam_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    value: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    unit: Mapped[str] = mapped_column(String(32), nullable=False)
+    measured_at: Mapped[date] = mapped_column(Date, nullable=False)
+    origin: Mapped[str] = mapped_column(String(200), nullable=False)
+    reference_min: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    reference_max: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    confirmed: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    current: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    replaces_id: Mapped[UUID | None] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("clinical_results.id"), unique=True
+    )
+    correction_reason: Mapped[str | None] = mapped_column(String(500))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), nullable=False
     )
