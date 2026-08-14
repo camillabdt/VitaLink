@@ -150,6 +150,14 @@ test("professional sees only authorized patients and revalidates detail", async 
         headers: { "Content-Type": "application/json" },
       }),
     )
+    .mockImplementation(() =>
+      Promise.resolve(
+        new Response("[]", {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }),
+      ),
+    )
 
   render(<DoctorDashboard onNavigate={vi.fn()} onLogout={vi.fn()} />)
 
@@ -165,11 +173,23 @@ test("professional sees only authorized patients and revalidates detail", async 
     "Exames",
     "Consultas",
     "Notas",
-    "Metas clínicas",
+    "Valores de Referência",
     "Equipe médica",
   ]) {
     expect(screen.getByRole("button", { name: tab })).toBeInTheDocument()
   }
+  await user.click(
+    screen.getByRole("button", { name: "Valores de Referência" }),
+  )
+  expect(
+    screen.getByRole("heading", {
+      name: "Valores de referência definidos pela equipe",
+    }),
+  ).toBeInTheDocument()
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    "/api/v1/clinical-goals?patient_id=99999999-9999-4999-8999-999999999999",
+    expect.objectContaining({ credentials: "same-origin" }),
+  )
   expect(globalThis.fetch).toHaveBeenCalledWith(
     "/api/v1/patients/99999999-9999-4999-8999-999999999999",
     expect.objectContaining({ credentials: "same-origin" }),

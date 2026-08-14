@@ -34,6 +34,7 @@ interface Props {
   categories?: string[]
   operations?: string[]
   onSessionExpired?: () => void
+  mode?: "default" | "reference-values"
 }
 
 const emptyGoal = {
@@ -51,6 +52,7 @@ export default function ClinicalGoals({
   categories = [],
   operations = [],
   onSessionExpired,
+  mode = "default",
 }: Props) {
   const [goals, setGoals] = useState<ClinicalGoal[]>([])
   const [followUps, setFollowUps] = useState<FollowUpStatus[]>([])
@@ -86,6 +88,7 @@ export default function ClinicalGoals({
   const canCorrect = Boolean(
     patientId && hasCategory && operations.includes("atualizar"),
   )
+  const showsReferenceValues = mode === "reference-values"
 
   useEffect(() => {
     const query = patientId
@@ -305,14 +308,24 @@ export default function ClinicalGoals({
       className="space-y-5 rounded-2xl border bg-white p-6"
       style={{ borderColor: "var(--border)" }}
     >
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900">
-          Metas e acompanhamento
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Metas permanecem separadas por profissional; o acompanhamento é
-          informado manualmente.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {showsReferenceValues
+              ? "Valores de referência definidos pela equipe"
+              : "Metas e acompanhamento"}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {showsReferenceValues
+              ? "Cada intervalo mantém a autoria e a versão informadas pelo profissional, sem média automática."
+              : "Metas permanecem separadas por profissional; o acompanhamento é informado manualmente."}
+          </p>
+        </div>
+        {showsReferenceValues && (
+          <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">
+            Compartilhado com a equipe médica
+          </span>
+        )}
       </div>
       {loading && (
         <p role="status" className="text-sm text-gray-500">
@@ -326,45 +339,80 @@ export default function ClinicalGoals({
       )}
 
       {!loading && (
-        <div className="grid gap-5 lg:grid-cols-2">
+        <div
+          className={
+            showsReferenceValues ? "grid gap-5" : "grid gap-5 lg:grid-cols-2"
+          }
+        >
           <div>
-            <h3 className="font-semibold text-gray-900">Metas clínicas</h3>
+            {!showsReferenceValues && (
+              <h3 className="font-semibold text-gray-900">Metas clínicas</h3>
+            )}
             {goals.length === 0 ? (
               <p className="mt-2 text-sm text-gray-500">
-                Nenhuma meta clínica.
+                {showsReferenceValues
+                  ? "Nenhum valor de referência definido ainda."
+                  : "Nenhuma meta clínica."}
               </p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {goals.map((goal) => (
                   <li key={goal.id} className="rounded-xl border p-4">
                     <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {goal.exam_name}
-                        </p>
-                        <p className="text-sm text-gray-600">
-                          {goal.minimum} a {goal.maximum} {goal.unit}
-                        </p>
+                      <div className="flex items-center gap-3">
+                        {showsReferenceValues && (
+                          <div
+                            aria-hidden="true"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold text-white"
+                            style={{ background: "var(--primary)" }}
+                          >
+                            Ø
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {goal.exam_name}
+                          </p>
+                          {showsReferenceValues && (
+                            <p className="text-xs text-gray-500">
+                              {goal.author.name} · {goal.author.specialty}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-500">
-                        v{goal.version}
-                      </span>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-gray-900">
+                          {goal.minimum} – {goal.maximum}{" "}
+                          <span className="text-xs font-normal text-gray-500">
+                            {goal.unit}
+                          </span>
+                        </p>
+                        <span className="text-xs text-gray-500">
+                          {showsReferenceValues
+                            ? `vigente desde ${formatDate(goal.effective_at)}`
+                            : `v${goal.version}`}
+                        </span>
+                      </div>
                     </div>
-                    <div
-                      role="meter"
-                      aria-label={`Meta de ${goal.exam_name}`}
-                      aria-valuetext={`${goal.minimum} a ${goal.maximum} ${goal.unit}`}
-                      className="mt-3 h-2 rounded-full bg-teal-100"
-                    >
-                      <div className="h-2 w-2/3 rounded-full bg-teal-600" />
-                    </div>
+                    {!showsReferenceValues && (
+                      <div
+                        role="meter"
+                        aria-label={`Meta de ${goal.exam_name}`}
+                        aria-valuetext={`${goal.minimum} a ${goal.maximum} ${goal.unit}`}
+                        className="mt-3 h-2 rounded-full bg-teal-100"
+                      >
+                        <div className="h-2 w-2/3 rounded-full bg-teal-600" />
+                      </div>
+                    )}
                     <p className="mt-3 text-sm text-gray-600">
                       {goal.justification}
                     </p>
-                    <p className="mt-2 text-xs text-gray-500">
-                      {goal.author.name} · {goal.author.specialty} ·{" "}
-                      {formatDate(goal.effective_at)}
-                    </p>
+                    {!showsReferenceValues && (
+                      <p className="mt-2 text-xs text-gray-500">
+                        {goal.author.name} · {goal.author.specialty} ·{" "}
+                        {formatDate(goal.effective_at)}
+                      </p>
+                    )}
                     {canCorrect && (
                       <button
                         type="button"
@@ -379,51 +427,63 @@ export default function ClinicalGoals({
               </ul>
             )}
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">
-              Acompanhamento manual
-            </h3>
-            {followUps.length === 0 ? (
-              <p className="mt-2 text-sm text-gray-500">
-                Nenhum acompanhamento informado.
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-3">
-                {followUps.map((followUp) => (
-                  <li key={followUp.id} className="rounded-xl border p-4">
-                    <p className="font-medium text-gray-900">
-                      {followUp.status}
-                    </p>
-                    <p className="mt-2 text-sm text-gray-600">
-                      {followUp.justification}
-                    </p>
-                    <p className="mt-2 text-xs text-gray-500">
-                      {followUp.author.name} · {followUp.author.specialty} ·{" "}
-                      {formatDate(followUp.recorded_at)} · v{followUp.version}
-                    </p>
-                    {canCorrect && (
-                      <button
-                        type="button"
-                        onClick={() => beginFollowUpCorrection(followUp)}
-                        className="mt-3 text-sm font-semibold text-teal-700"
-                      >
-                        Corrigir acompanhamento
-                      </button>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {!showsReferenceValues && (
+            <div>
+              <h3 className="font-semibold text-gray-900">
+                Acompanhamento manual
+              </h3>
+              {followUps.length === 0 ? (
+                <p className="mt-2 text-sm text-gray-500">
+                  Nenhum acompanhamento informado.
+                </p>
+              ) : (
+                <ul className="mt-3 space-y-3">
+                  {followUps.map((followUp) => (
+                    <li key={followUp.id} className="rounded-xl border p-4">
+                      <p className="font-medium text-gray-900">
+                        {followUp.status}
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600">
+                        {followUp.justification}
+                      </p>
+                      <p className="mt-2 text-xs text-gray-500">
+                        {followUp.author.name} · {followUp.author.specialty} ·{" "}
+                        {formatDate(followUp.recorded_at)} · v{followUp.version}
+                      </p>
+                      {canCorrect && (
+                        <button
+                          type="button"
+                          onClick={() => beginFollowUpCorrection(followUp)}
+                          className="mt-3 text-sm font-semibold text-teal-700"
+                        >
+                          Corrigir acompanhamento
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {canCreate && (
-        <div className="grid gap-5 border-t pt-5 lg:grid-cols-2">
+        <div
+          className={
+            showsReferenceValues
+              ? "grid gap-5 border-t pt-5"
+              : "grid gap-5 border-t pt-5 lg:grid-cols-2"
+          }
+        >
           <form onSubmit={addGoal} className="space-y-3">
-            <h3 className="font-semibold text-gray-900">Adicionar meta</h3>
+            <h3 className="font-semibold text-gray-900">
+              {showsReferenceValues
+                ? "Adicionar meu valor de referência"
+                : "Adicionar meta"}
+            </h3>
             <TextField
-              label="Exame da meta"
+              label={showsReferenceValues ? "Nome do exame" : "Exame da meta"}
               value={goalForm.examName}
               onChange={(examName) => setGoalForm({ ...goalForm, examName })}
             />
@@ -447,7 +507,11 @@ export default function ClinicalGoals({
               onChange={(unit) => setGoalForm({ ...goalForm, unit })}
             />
             <TextField
-              label="Justificativa da meta"
+              label={
+                showsReferenceValues
+                  ? "Justificativa clínica"
+                  : "Justificativa da meta"
+              }
               value={goalForm.justification}
               onChange={(justification) =>
                 setGoalForm({ ...goalForm, justification })
@@ -472,52 +536,62 @@ export default function ClinicalGoals({
               }
             />
             <TextField
-              label="TOTP da meta"
+              label={
+                showsReferenceValues
+                  ? "TOTP do valor de referência"
+                  : "TOTP da meta"
+              }
               inputMode="numeric"
               value={goalForm.totp}
               onChange={(totp) => setGoalForm({ ...goalForm, totp })}
               pattern="[0-9]{6}"
             />
-            <SubmitButton disabled={saving}>Adicionar meta</SubmitButton>
-          </form>
-          <form onSubmit={addFollowUp} className="space-y-3">
-            <h3 className="font-semibold text-gray-900">
-              Informar acompanhamento
-            </h3>
-            <TextField
-              label="Estado manual"
-              value={followUpForm.status}
-              onChange={(status) =>
-                setFollowUpForm({ ...followUpForm, status })
-              }
-            />
-            <TextField
-              label="Justificativa do acompanhamento"
-              value={followUpForm.justification}
-              onChange={(justification) =>
-                setFollowUpForm({ ...followUpForm, justification })
-              }
-              minLength={10}
-            />
-            <TextField
-              label="Data do acompanhamento"
-              type="date"
-              value={followUpForm.recordedAt}
-              onChange={(recordedAt) =>
-                setFollowUpForm({ ...followUpForm, recordedAt })
-              }
-            />
-            <TextField
-              label="TOTP do acompanhamento"
-              inputMode="numeric"
-              value={followUpForm.totp}
-              onChange={(totp) => setFollowUpForm({ ...followUpForm, totp })}
-              pattern="[0-9]{6}"
-            />
             <SubmitButton disabled={saving}>
-              Registrar acompanhamento
+              {showsReferenceValues
+                ? "Adicionar valor de referência"
+                : "Adicionar meta"}
             </SubmitButton>
           </form>
+          {!showsReferenceValues && (
+            <form onSubmit={addFollowUp} className="space-y-3">
+              <h3 className="font-semibold text-gray-900">
+                Informar acompanhamento
+              </h3>
+              <TextField
+                label="Estado manual"
+                value={followUpForm.status}
+                onChange={(status) =>
+                  setFollowUpForm({ ...followUpForm, status })
+                }
+              />
+              <TextField
+                label="Justificativa do acompanhamento"
+                value={followUpForm.justification}
+                onChange={(justification) =>
+                  setFollowUpForm({ ...followUpForm, justification })
+                }
+                minLength={10}
+              />
+              <TextField
+                label="Data do acompanhamento"
+                type="date"
+                value={followUpForm.recordedAt}
+                onChange={(recordedAt) =>
+                  setFollowUpForm({ ...followUpForm, recordedAt })
+                }
+              />
+              <TextField
+                label="TOTP do acompanhamento"
+                inputMode="numeric"
+                value={followUpForm.totp}
+                onChange={(totp) => setFollowUpForm({ ...followUpForm, totp })}
+                pattern="[0-9]{6}"
+              />
+              <SubmitButton disabled={saving}>
+                Registrar acompanhamento
+              </SubmitButton>
+            </form>
+          )}
         </div>
       )}
 

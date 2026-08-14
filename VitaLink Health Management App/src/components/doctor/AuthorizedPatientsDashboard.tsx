@@ -581,7 +581,7 @@ function PatientDetail({
     },
     {
       id: "goals",
-      label: "Metas clínicas",
+      label: "Valores de Referência",
       visible: patient.categories.includes("metas"),
     },
     {
@@ -761,6 +761,7 @@ function PatientDetail({
           categories={patient.categories}
           operations={patient.operations}
           onSessionExpired={onSessionExpired}
+          mode="reference-values"
         />
       )}
 
