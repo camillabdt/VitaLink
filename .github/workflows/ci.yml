@@ -19,6 +19,7 @@ jobs:
       VITALINK_SECRET_KEY: ci-only-synthetic-secret-key-with-32-characters
       VITALINK_SMTP_HOST: localhost
       VITALINK_SMTP_PORT: 1025
+      PYTHONPATH: src
 
     steps:
       - uses: actions/checkout@v4
