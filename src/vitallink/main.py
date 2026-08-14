@@ -512,6 +512,24 @@ class TranscriptionResponse(BaseModel):
     requires_confirmation: Literal[True]
 
 
+class NotificationResponse(BaseModel):
+    """Minimal private notification without domain identifiers."""
+
+    id: UUID
+    kind: str
+    created_at: datetime
+    read_at: datetime | None
+
+
+class AuditEventResponse(BaseModel):
+    """Permitted audit projection without internal metadata."""
+
+    id: UUID
+    event: str
+    status: str
+    created_at: datetime
+
+
 class ClinicalResultCreate(BaseModel):
     """Explicitly confirmed structured measurement input."""
 
@@ -1335,12 +1353,20 @@ def request_password_recovery(
         ):
             credential.used_at = now
         raw_token = secrets.token_urlsafe(32)
+        recovery_credential = RecoveryCredential(
+            account_id=account.id,
+            kind="password_reset",
+            value_hash=keyed_digest(raw_token),
+            expires_at=now + timedelta(minutes=15),
+        )
+        session.add(recovery_credential)
+        session.flush()
         session.add(
-            RecoveryCredential(
+            Notification(
                 account_id=account.id,
-                kind="password_reset",
-                value_hash=keyed_digest(raw_token),
-                expires_at=now + timedelta(minutes=15),
+                kind="account_recovery_requested",
+                subject_id=recovery_credential.id,
+                created_at=now,
             )
         )
         session.add(
@@ -3355,6 +3381,14 @@ async def create_document(
             reason=reason,
             correlation_id=request.state.correlation_id,
             event_metadata={"role": account.role, "content_type": document.content_type},
+        )
+    )
+    session.add(
+        Notification(
+            account_id=patient.account_id,
+            kind="document_available" if result == "success" else "document_rejected",
+            subject_id=document.id,
+            created_at=now,
         )
     )
     session.commit()
@@ -5607,6 +5641,16 @@ def decide_access_request(
             )
         )
     pending_request.status = decision_request.decision
+    professional = session.get(Professional, pending_request.professional_id)
+    assert professional is not None
+    session.add(
+        Notification(
+            account_id=professional.account_id,
+            kind=f"access_request_{decision_request.decision}",
+            subject_id=pending_request.id,
+            created_at=now,
+        )
+    )
     session.add(
         AuditEvent(
             actor_id=audit_identifier(account.id),
@@ -6067,6 +6111,10 @@ def get_authorized_patient(
             )
             else "not_found_or_not_authorized"
         )
+        target_patient = session.get(Patient, patient_id)
+        metadata = {"role": account.role, "category": "histórico", "operation": "consultar"}
+        if target_patient is not None:
+            metadata["audience_id"] = audit_identifier(target_patient.account_id)
         session.add(
             AuditEvent(
                 actor_id=audit_identifier(account.id),
@@ -6075,7 +6123,7 @@ def get_authorized_patient(
                 result="denied",
                 reason=denied_rule,
                 correlation_id=request.state.correlation_id,
-                event_metadata={"role": account.role, "category": "histórico", "operation": "consultar"},
+                event_metadata=metadata,
             )
         )
         session.commit()
@@ -6088,7 +6136,12 @@ def get_authorized_patient(
             result="success",
             reason="active_authorization",
             correlation_id=request.state.correlation_id,
-            event_metadata={"role": account.role, "category": "histórico", "operation": "consultar"},
+            event_metadata={
+                "role": account.role,
+                "category": "histórico",
+                "operation": "consultar",
+                "audience_id": audit_identifier(patient.account_id),
+            },
         )
     )
     session.commit()
@@ -6376,6 +6429,161 @@ def update_current_profile(
     if response is None:
         return error_response(request, 500, "profile_unavailable", "Não foi possível carregar o perfil.")
     return response
+
+
+@app.get("/api/v1/notifications", response_model=list[NotificationResponse])
+def list_notifications(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[NotificationResponse] | JSONResponse:
+    """List only the authenticated account's persisted notifications."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    notifications = session.scalars(
+        select(Notification)
+        .where(Notification.account_id == account.id)
+        .order_by(Notification.created_at.desc(), Notification.id.desc())
+        .limit(100)
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="notification.listed",
+            target_id=audit_identifier(account.id),
+            result="success",
+            reason="owner_view",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(notifications)},
+        )
+    )
+    session.commit()
+    return [
+        NotificationResponse(
+            id=notification.id,
+            kind=notification.kind,
+            created_at=notification.created_at,
+            read_at=notification.read_at,
+        )
+        for notification in notifications
+    ]
+
+
+@app.patch("/api/v1/notifications/{notification_id}", response_model=NotificationResponse)
+def read_notification(
+    notification_id: UUID,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> NotificationResponse | JSONResponse:
+    """Persist read state for one notification owned by the current account."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    notification = session.scalar(
+        select(Notification)
+        .where(Notification.id == notification_id, Notification.account_id == account.id)
+        .with_for_update()
+    )
+    allowed = notification is not None and valid_csrf(request, "__Host-vitallink_session")
+    if not allowed:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="notification.read",
+                target_id=audit_identifier(notification_id),
+                result="denied",
+                reason="not_found_or_request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "notification_not_found", "Notificação não encontrada.")
+    assert notification is not None
+    if notification.read_at is None:
+        notification.read_at = now
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="notification.read",
+            target_id=audit_identifier(notification.id),
+            result="success",
+            reason="owner_read",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role},
+        )
+    )
+    session.commit()
+    return NotificationResponse(
+        id=notification.id,
+        kind=notification.kind,
+        created_at=notification.created_at,
+        read_at=notification.read_at,
+    )
+
+
+@app.get("/api/v1/audit-events", response_model=list[AuditEventResponse])
+def list_audit_events(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 50,
+) -> list[AuditEventResponse] | JSONResponse:
+    """Return the current account's minimal audit projection."""
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    own_identifier = audit_identifier(account.id)
+    events = session.scalars(
+        select(AuditEvent)
+        .where(
+            or_(
+                AuditEvent.actor_id == own_identifier,
+                AuditEvent.event_metadata["audience_id"].as_string() == own_identifier,
+            )
+        )
+        .order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc())
+        .limit(limit)
+    ).all()
+    session.add(
+        AuditEvent(
+            actor_id=own_identifier,
+            action="audit_event.listed",
+            target_id=own_identifier,
+            result="success",
+            reason="owner_view",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "count": len(events)},
+        )
+    )
+    session.commit()
+    event_labels = {
+        "account": "Segurança da conta",
+        "access_code": "Acesso ao prontuário",
+        "access_request": "Acesso ao prontuário",
+        "authorization": "Acesso ao prontuário",
+        "patient_profile": "Acesso ao prontuário",
+        "document": "Documento",
+        "clinical_message": "Mensagem clínica",
+        "transcription": "Ditado clínico",
+        "notification": "Notificação",
+        "audit_event": "Histórico de auditoria",
+        "profile": "Perfil",
+    }
+    return [
+        AuditEventResponse(
+            id=event.id,
+            event=event_labels.get(event.action.split(".", 1)[0], "Atividade da conta"),
+            status="Concluído" if event.result == "success" else "Não concluído",
+            created_at=event.created_at,
+        )
+        for event in events
+    ]
 
 
 @app.get("/api/v1/me", response_model=CurrentAccountResponse)

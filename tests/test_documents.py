@@ -1,7 +1,7 @@
 """Secure document upload behavior through the public HTTP API."""
 
 from base64 import b64decode
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pyotp
 import pytest
@@ -11,7 +11,7 @@ from test_account_recovery import activate_patient
 from test_authorizations import create_pending_request, grant_pending_request
 from test_personal_observations import patient_session
 
-from vitallink.database import AuditEvent, Document, SessionFactory
+from vitallink.database import AuditEvent, Document, Notification, SessionFactory
 from vitallink.main import app, settings
 
 PNG_1X1 = b64decode(
@@ -41,7 +41,14 @@ def test_patient_uploads_a_png_that_is_approved_after_scanning() -> None:
             .where(AuditEvent.action == "document.uploaded", AuditEvent.result == "success")
             .order_by(AuditEvent.created_at.desc())
         )
+        notification = session.scalar(
+            select(Notification).where(
+                Notification.kind == "document_available",
+                Notification.subject_id == UUID(uploaded.json()["id"]),
+            )
+        )
     assert event is not None
+    assert notification is not None
     assert event.event_metadata == {"role": "patient", "category": "exames", "size": len(PNG_1X1)}
     assert "pixel.png" not in repr((event.reason, event.event_metadata))
 

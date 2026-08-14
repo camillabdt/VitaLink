@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import Layout from "@/components/shared/Layout"
+import AuditHistory from "@/components/shared/AuditHistory"
 import PersonalObservations from "@/components/patient/PersonalObservations"
 import type { Page, UserType } from "@/data/mockData"
 
@@ -1393,6 +1394,7 @@ export default function PatientProfile({
                 </section>
               </div>
             )}
+            <AuditHistory onSessionExpired={onLogout} />
           </>
         )}
       </div>
