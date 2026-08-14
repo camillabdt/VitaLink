@@ -34,6 +34,12 @@ test("patient logout revokes the server session before returning to login", asyn
         headers: { "X-CSRF-Token": "session-csrf-token" },
       }),
     )
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ role: "patient", status: "active" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
     .mockResolvedValueOnce(new Response(null, { status: 204 }))
   render(<App />)
 
@@ -47,7 +53,7 @@ test("patient logout revokes the server session before returning to login", asyn
   await user.click(await screen.findByRole("button", { name: "Sair" }))
 
   expect(globalThis.fetch).toHaveBeenNthCalledWith(
-    2,
+    3,
     "/api/v1/sessions/current",
     expect.objectContaining({
       method: "DELETE",
