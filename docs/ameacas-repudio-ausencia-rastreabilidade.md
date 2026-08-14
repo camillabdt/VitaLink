@@ -10,9 +10,9 @@ Os pontos de interação utilizados nesta análise estão consolidados na docume
 
 ## Ameaça identificada
 
-| ID | Categoria STRIDE | Componente ou ativo | Ameaça concreta | Impacto e ativos afetados |
-| --- | --- | --- | --- | --- |
-| T09 | Repudiation | Registros de auditoria, histórico de versões e A08, A09 e A10 | Uma pessoa cria, altera ou exclui um registro e depois nega a ação porque o sistema não registrou evidências suficientes ou porque os registros de auditoria puderam ser apagados, alterados ou associados ao autor errado. | Pacientes e equipe não conseguem atribuir a operação ao responsável nem reconstruir o incidente. Isso prejudica a responsabilização, a correção do prontuário, a investigação e a confiança nas informações médicas. |
+| ID  | Categoria STRIDE | Componente ou ativo                                           | Ameaça concreta                                                                                                                                                                                                             | Impacto e ativos afetados                                                                                                                                                                                            |
+| --- | ---------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T09 | Repudiation      | Registros de auditoria, histórico de versões e A08, A09 e A10 | Uma pessoa cria, altera ou exclui um registro e depois nega a ação porque o sistema não registrou evidências suficientes ou porque os registros de auditoria puderam ser apagados, alterados ou associados ao autor errado. | Pacientes e equipe não conseguem atribuir a operação ao responsável nem reconstruir o incidente. Isso prejudica a responsabilização, a correção do prontuário, a investigação e a confiança nas informações médicas. |
 
 ## T09 — Negação de uma alteração realizada
 
@@ -53,8 +53,8 @@ O histórico de versões e o registro de auditoria têm funções diferentes: o 
 
 ## Rastreabilidade
 
-| Ameaça | Categoria | Caso de abuso | Ativos principais | Risco posterior |
-| --- | --- | --- | --- | --- |
-| T09 | Repudiation | CA06 | A03 a A05, A08, A09 e A10 | R09 — ação não pode ser atribuída ao autor |
+| Ameaça | Categoria   | Caso de abuso | Ativos principais         | Risco posterior                            |
+| ------ | ----------- | ------------- | ------------------------- | ------------------------------------------ |
+| T09    | Repudiation | CA06          | A03 a A05, A08, A09 e A10 | R09 — ação não pode ser atribuída ao autor |
 
 O caso de abuso CA06 está consolidado na Etapa 1, e o risco R09 está registrado e avaliado na Etapa 2.

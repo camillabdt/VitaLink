@@ -41,7 +41,7 @@ Uma autorização ativa deve identificar, no mínimo:
 - o início e o fim do período autorizado;
 - o estado atual e o momento da última mudança.
 
-O escopo respeita DS04 das [decisões de segurança](decisoes-de-seguranca.md): a autorização lista categorias de dado e operações `consultar`, `anexar` ou `atualizar`. O mapeamento normativo de cada recurso está no [plano de implementação](plano-implementacao-primeira-versao.md#matriz-normativa-de-recurso-e-autorização). Uma categoria nunca satisfaz outra, e exclusão não é concedida a profissionais.
+O escopo respeita DS04 das [decisões de segurança](decisoes-de-seguranca.md): a autorização lista categorias de dado e operações `consultar`, `anexar` ou `atualizar`. O mapeamento normativo de cada recurso está no [plano de implementação](implementacao-segura/plano-implementacao-primeira-versao.md#matriz-normativa-de-recurso-e-autorização). Uma categoria nunca satisfaz outra, e exclusão não é concedida a profissionais.
 
 A duração é um intervalo temporal obrigatório. Conforme DS05, o padrão é 30 dias e o paciente pode escolher prazo entre 1 e 90 dias. Uma autorização sem fim definido não é válida para acesso profissional.
 

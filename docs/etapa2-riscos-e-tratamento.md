@@ -14,17 +14,28 @@ Esta análise usa `pontuação = probabilidade × impacto`, com as faixas defini
 |          4 | R03 | T03    | Perfil, paciente, recurso ou operação fora do privilégio é alcançado. |   3 |   4 |        12 | Crítico |
 |          5 | R02 | T02    | Conta ou token comprometido é usado em nome da vítima.                |   3 |   4 |        12 | Crítico |
 |          6 | R10 | T10    | Documento médico é exposto por link indevido.                         |   3 |   4 |        12 | Crítico |
-|          7 | R01 | T01    | Falso profissional obtém acesso autorizado pelo paciente.             |   2 |   4 |         8 | Alto    |
-|          8 | R07 | T07    | Informação clínica é criada ou alterada indevidamente.                |   2 |   4 |         8 | Alto    |
-|          9 | R08 | T08    | Registro clínico é excluído ou ocultado.                              |   2 |   4 |         8 | Alto    |
-|         10 | R11 | T11    | Dados de múltiplos pacientes são extraídos pela API.                  |   2 |   4 |         8 | Alto    |
-|         11 | R15 | T15    | Arquivo ou referência clínica é corrompido ou perdido.                |   2 |   4 |         8 | Alto    |
-|         12 | R13 | T13    | Sobrecarga indisponibiliza API ou banco.                              |   3 |   3 |         9 | Alto    |
-|         13 | R12 | T12    | Compartilhamento não possui rastreabilidade suficiente.               |   3 |   3 |         9 | Alto    |
+|          7 | R13 | T13    | Sobrecarga indisponibiliza API ou banco.                              |   3 |   3 |         9 | Alto    |
+|          8 | R12 | T12    | Compartilhamento não possui rastreabilidade suficiente.               |   3 |   3 |         9 | Alto    |
+|          9 | R01 | T01    | Falso profissional obtém acesso autorizado pelo paciente.             |   2 |   4 |         8 | Alto    |
+|         10 | R07 | T07    | Informação clínica é criada ou alterada indevidamente.                |   2 |   4 |         8 | Alto    |
+|         11 | R08 | T08    | Registro clínico é excluído ou ocultado.                              |   2 |   4 |         8 | Alto    |
+|         12 | R11 | T11    | Dados de múltiplos pacientes são extraídos pela API.                  |   2 |   4 |         8 | Alto    |
+|         13 | R15 | T15    | Arquivo ou referência clínica é corrompido ou perdido.                |   2 |   4 |         8 | Alto    |
 |         14 | R09 | T09    | Ação relevante não pode ser atribuída ao autor.                       |   2 |   3 |         6 | Médio   |
 |         15 | R14 | T14    | Upload massivo esgota o armazenamento.                                |   2 |   3 |         6 | Médio   |
 
 P=3 representa cenário plausível com recursos comuns ou uso normal da API. P=2 depende de condição específica ainda não comprovada. I=4 representa exposição, alteração ou perda de informação clínica; I=3 representa indisponibilidade ou perda relevante com recuperação possível. Essas justificativas são inferências de planejamento, não medições do sistema.
+
+## Justificativas dos riscos de autorização e disponibilidade
+
+| Risco | Condição e exposição                                                        | Justificativa de probabilidade e impacto                                                                                                    | Tratamento e estado atual                                                                                                      |
+| ----- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| R04   | Profissional autenticado informa paciente ou recurso sem autorização ativa. | P=3 porque identificadores e rotas podem ser manipulados com ferramentas comuns; I=4 pela exposição direta de dados médicos.                | Autorização no servidor e testes negativos implementados; monitoramento D01 pendente.                                          |
+| R05   | Sessão válida é reutilizada depois de revogação ou expiração.               | P=3 porque a sessão pode continuar ativa e a tentativa exige apenas repetir uma requisição; I=4 porque viola decisão explícita do paciente. | Reavaliação por operação e teste de revogação imediata implementados; alerta D02 pendente.                                     |
+| R06   | Autorização válida é usada para outro paciente, categoria ou operação.      | P=3 porque a ampliação pode ser tentada alterando parâmetros comuns; I=4 porque pode expor ou modificar prontuário fora do escopo.          | Escopo estrito implementado e testado; correlação de tentativas pendente.                                                      |
+| R13   | Volume de requisições satura API, banco ou dependências.                    | P=3 porque automação de carga usa recursos comuns; I=3 porque causa indisponibilidade relevante, normalmente recuperável.                   | Limites e carga controlada possuem testes; métricas de capacidade e alerta D03 pendentes.                                      |
+| R14   | Uploads numerosos ou grandes consomem a capacidade privada.                 | P=2 porque exige sessão e acesso à rota de upload; I=3 porque impede novos documentos até contenção ou recuperação.                         | Tamanho, tipo e quota implementados; monitoramento de capacidade pendente.                                                     |
+| R15   | Falha, adulteração ou exclusão torna registro ou arquivo inconsistente.     | P=2 porque depende de falha de autorização, persistência ou armazenamento; I=4 pela perda de informação clínica confiável.                  | Correções versionadas, integridade de documento e backup possuem testes; restauração operacional periódica permanece pendente. |
 
 ## Plano de tratamento e residual estimado
 
@@ -51,4 +62,4 @@ Essa ordem reduz primeiro os caminhos que permitem acesso indevido a dados médi
 
 ## Considerações finais
 
-R01–R15 cobrem todas as ameaças T01–T15 e mantêm a rastreabilidade com os casos de abuso da Etapa 1. A documentação conclui o plano de análise e tratamento, mas não comprova a redução real dos riscos sem código, testes, execução e relatórios.
+R01–R15 cobrem todas as ameaças T01–T15 e mantêm a rastreabilidade com os casos de abuso da Etapa 1. Código e testes comprovam parte dos controles preventivos, mas os níveis residuais continuam estimativas até existir gate verde, DAST do VitaLink, monitoramento e evidência operacional de recuperação.

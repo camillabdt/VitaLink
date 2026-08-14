@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Defesa em profundidade e consistência · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Princípios arquiteturais · Aula 12 de 19</p>
+        <h1>Defesa em profundidade e consistência</h1>
+        <p>
+          Arquitetura segura combina minimização, privilégio mínimo, controles
+          em camadas, auditoria e operações consistentes.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Como evitar que uma única falha comprometa uma decisão
+            crítica?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="12-1" /><span
+              >Aplicar minimização de dados.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="12-2" /><span
+              >Usar privilégio mínimo e auditoria.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="12-3" /><span
+              >Reconhecer concorrência como um problema de segurança.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Minimização</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Colete e exponha somente dados necessários para a finalidade.
+                Menos dados disponíveis significa menor impacto de exposição.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Privilégio mínimo e camadas</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Cada papel e componente recebe apenas as permissões necessárias.
+                Controles independentes reduzem o efeito de uma falha isolada.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Concorrência</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Duas solicitações simultâneas podem violar uma regra, como
+                ocupar a última vaga duas vezes. A decisão precisa ser atômica e
+                consistente.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>
+              1. Um professor precisa consultar todos os dados financeiros de
+              todos os alunos?
+            </legend>
+            <label
+              ><input type="radio" name="q12-1" value="0" /><span
+                >Sim, para simplificar o sistema.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q12-1" value="1" /><span
+                >Não, deve acessar apenas o necessário à finalidade.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q12-1" value="2" /><span
+                >Somente fora do horário comercial.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Isso aplica minimização e privilégio mínimo.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>
+              2. Qual risco existe na última vaga com duas solicitações
+              simultâneas?
+            </legend>
+            <label
+              ><input type="radio" name="q12-2" value="0" /><span
+                >Duplicidade por falta de operação consistente.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q12-2" value="1" /><span
+                >Somente erro visual.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q12-2" value="2" /><span
+                >Nenhum, pois há uma vaga.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              A verificação e a confirmação precisam preservar a regra.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="12">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Uma outra decisão importante e cuidado que se deve ter na hora de
+            fazer o projeto de uma arquitetura segura de um software é pensar na
+            minimização de dados isso significa que o sistema deve coletar e
+            expor somente aqueles dados que são necessários para cada finalidade
+            inclusive isso tem respaldo na lei geral de proteção de dados que
+            ela inclusive coloca que para que você use um dado de uma pessoa
+            essa pessoa ela tem que dar consum sentimento e você tem que
+            inclusive deixar explícito qual que é a finalidade do uso daquele
+            dado mas para além da lei gerado de produção de dados isso também
+            ajuda na hora de você fazer o seu próprio projeto de software seguro
+            então pessoal pensando no caso da turma do nosso tema de matrículas
+            quando o sistema permite que o usuário final um aluno ele vá
+            consultar uma turma o estudante talvez ele precise visualizar o nome
+            da disciplina o código da turma qual é.
+          </p>
+          <p>
+            o professor qual é o horário qual que é o número da sala daquelas
+            aulas daquele semestre qual que é o número de vagas quais são os
+            pré-requisitos então tudo isso é importante agora ele não tem porquê
+            e não deve ter acesso a dados como cpf dos colegas observações
+            pessoais do professor informações administrativas que não são de
+            respeito ao aluno identificadores internos que são desnecessários e
+            dados que são completos de outros estudantes para além do cpf por
+            exemplo nem o nome completo ele precisa saber naquele momento em
+            algum momento ele até pode ter acesso a esse nome mas não é algo que
+            via sistema ele deveria ter acesso não não precisa saber o nome da
+            pessoa que matriculada numa disciplina ele precisa saber quantas
+            vagas tem e se ainda tem vaga para ele então outras justificativas
+            sigilosas daqui a pouco de outros alunos tudo isso não deve ter
+            acesso aquele estudante que não está.
+          </p>
+          <p>
+            legalmente interessado naquela informação então a minimização de
+            dados não só na hora de coletar mas também na hora de expor é
+            bastante importante então da mesma forma um professor que poderia
+            daqui a pouco usar o sistema para consultar uma lista de estudantes
+            da sua própria turma não deveria acessar o histórico completo de
+            todos os campos informações financeiras de um estudante ou da
+            instituição caso seja uma instituição privada ou dados de outras
+            turmas que não são dele mesmo processo administrativo sem relação
+            com a sua função tudo isso o professor também não deveria ter acesso
+            então a arquitetura ela deve filtrar tudo isso no servidor muitas
+            vezes o desenvolvedor ele pensa em desenhar a telinha do usuário de
+            uma maneira que não apareça essas coisas só que quando a gente fala
+            leitura segura pessoal vocês têm que entender que aquela tela o
+            front end que vocês fazem ele não limita o.
+          </p>
+          <p>
+            acesso ao que está no back end qualquer pessoa poderia colocar
+            funções maliciosas usando javascript por exemplo e a partir daí
+            fazer consultas indevidas ou mesmo implementar seu próprio frontend
+            com funcionalidades extras que consulte e altere e manipule o seu
+            servidor então a mensagem principal aqui é que você tem que ter no
+            servidor esse controle de minimização de exposição de dados então
+            essa questão de menos ser mais e está bastante presente quando a
+            gente faz software seguro por exemplo no princípio do menor
+            privilégio onde cada um dos usuários ou componentes do sistema deve
+            ter acesso limitado somente aquilo que ele realmente precisa ter
+            acesso o estudante ele pode consultar as suas ofertas que estão
+            disponíveis para si mesmo pode solicitar sua própria matrícula pode
+            cancelar sua própria solicitação dentro das regras pode acompanhar
+            sua posição numa lista de espera por exemplo.
+          </p>
+          <p>
+            acompanhar consultar comprovantes também ele pode ter tudo que
+            associado ao papel dele naquele sistema agora ele não pode alterar o
+            número de vagas na disciplina não pode modificar para requisitos não
+            pode aprovar sua própria sessão então esse tipo de coisa não faz
+            sentido que um usuário estudante tenha esse privilégio então lembra
+            não tô falando da interface gráfica tô falando de privilégios nos
+            validados no servidor para que o estudante só faça o que ele
+            realmente precisa fazer e não é só estudante pessoal todos os
+            usuários e componentes precisam ter esse tipo de controle o
+            professor por exemplo ele pode constar as turmas que ele atua ele
+            deve visualizar estudantes que estão matriculados em suas turmas ele
+            deve acessar informações necessárias à atividade docente agora ele
+            não deve somente por ser um professor alterar a matrícula de
+            qualquer estudante modificar o número de vagas de.
+          </p>
+          <p>
+            qualquer disciplina modificar regras curriculares no sistema
+            diretamente exceto se ele for eventualmente um coordenador ou alguém
+            que realmente com aquele acesso e aí percebam que entre professor e
+            coordenador também dá para fazer uma divisão de privilégios a
+            secretaria acadêmica também ela pode executar algumas operações
+            administrativas como por exemplo consultar solicitações corrigir
+            erros processar documento efetivar operações apoiar estudantes agora
+            o que ela não pode fazer é tudo que está fora dos limites de uma
+            coordenação acadêmica daqui a pouco somente a coordenação ela vai
+            ter acesso a analisar as sessões e não a secretaria autorizar
+            determinadas solicitações quem autoriza pode ser a coordenação então
+            a secretaria não precisa ter acesso ao sistema para lançar aquele
+            tipo de informação que somente o coordenador poderia alterar algum
+            campo chave de configuração no sistema daqui a.
+          </p>
+          <p>
+            pouco isso é uma atribuição específica somente para alguém que dá o
+            suporte ao sistema então pessoal o princípio do privilégio mínimo é
+            o que você tem que considerar no escopo também do sistema de vocês
+            inclusive quando nós falamos de acesso técnico para um usuário de
+            admin usuário de suporte técnico você tem que entender que esses
+            usuários muitas vezes eles vão ter uma capacidade de mudar muitas
+            coisas mais livremente mas precisa ficar claro também que manutenção
+            técnica não deve significar automaticamente autoridade acadêmica
+            então mesmo que seja um usuário autorizado a fazer operações
+            técnicas precisa se manter a auditoria os logs essa pessoa ainda
+            precisa ter permissão para alterar determinadas informações então é
+            importante que o próprio sistema na sua arquitetura segura preveja
+            tudo isso e um princípio bastante importante também é a negação por
+            padrão sabe quando você vai pedir.
+          </p>
+          <p>
+            para sair pra sua mãe você sabe que ela vai dizer que não antes de
+            mais nada até você justificar e tentar uma sessão é mais ou menos
+            parecido então você vai dizer basicamente assim: &quot;olha nesse
+            tema acadêmico toda operação ela deve ser bloqueada até que exista
+            uma permissão explícita para que ela seja acessada então considere
+            por exemplo uma nova funcionalidade vou implementar aqui a
+            funcionalidade de aumentar vagas de uma turma quem pode utilizar no
+            momento no modelo mais permissivo a função poderia ficar disponível
+            para vários perfis até que alguém configure as instrições mas o mais
+            interessante não é deixar livre e disponível para todo mundo até que
+            alguém proíba aquele acesso quando a gente fala de não por padrão de
+            negação por padrão aquelas funcionalidades mais críticas
+            especialmente elas devem ser por padrão negadas por exemplo para
+            estudantes professores que não têm acesso.
+          </p>
+          <p>
+            específico para aquela alteração de número de vagas a secretaria não
+            poderia fazer salvo houvesse ou salvo haja uma atribuição formal
+            daquele funcionário estar apto a alterar o número de vagas daqui a
+            pouco somente realmente a o perfil da coordenação poderia mudar
+            aquele campinho de número de vagas então tudo isso vale também para
+            acesso de apis acesso de relatórios funções recém-criadas que não
+            devem também automaticamente herdar um acesso mais amplo tudo que
+            for feito de novo e pode ter riscos deve ser liberado aos poucos por
+            padrão nega acesso para todo mundo conforme necessário aí sim
+            configura os papéis para que aquele tipo de papel tenha acesso
+            conforme necessário e para garantir muitos desses princípios que eu
+            falei até agora nós temos outra coisa importante que se chama o
+            princípio da medição completa a medição completa ela assume
+            basicamente que não basta que um usuário esteja.
+          </p>
+          <p>
+            logado ele precisa sim estar autorizado a fazer alguma coisa isso
+            não é simplesmente sobre identidades nós precisamos verificar e
+            quando eu falo nós na prática é o sistema é o back end é o servidor
+            ele precisa verificar quem que realizando uma ação se a ação por
+            exemplo cancelar uma matrícula eu tenho que ver a quem pertence essa
+            matrícula o período atual permite cancelamento o período permite
+            cancelamento ok mas o usuário ele possui um perfil de autorização
+            para poder cancelar uma matrícula naquele período há alguma condição
+            especial que tem que ser verificada a operação exige justificativa a
+            matrícula ela está em estado cancelável todo esse tipo de coisa
+            precisa ser considerado não é só ver se o usuário é o silves se o
+            silvio é aluno não eu tenho que ver se todas essas alterações estão
+            dentro das regras que o meu sistema foi implementado para cumprir
+            então o se precisa verificar se o.
+          </p>
+          <p>
+            próprio estudante está constando seus próprios dados se o servidor
+            está autorizado ele tem uma finalidade legítima para aquela operação
+            que ele está sendo solicitado a executar se um professor realmente
+            tem necessidade e permissão para fazer treinada de operação e seu
+            acesso deve ser registrado então essa questão é importante o acesso
+            ele precisa ser registrado de tudo tudo que foi modificado tudo que
+            foi alterado precisa ser auditável não é só proteger botões de
+            interface como eu já falei antes eu preciso realmente permitir que o
+            componente responsável por fazer as operações por efetivar isso no
+            banco de dados que geralmente é o back end ou seja quem controla o
+            recurso ele tem que fazer essas verificações e aí é importante que
+            inspirado no que eu acabei de falar para vocês também nós tenhamos
+            aí a separação de responsabilidades então operações acadêmicas
+            sensíveis elas vão exigir uma.
+          </p>
+          <p>
+            separação bem definida de funções então quem que pode criar uma
+            turma quem que pode aumentar as vagas quem que pode matricular
+            qualquer estudante tudo isso aí é geralmente pessoas que não são o
+            próprio estudante então isso tem muito poder esse se eu deixasse só
+            um usuário admin fazer tudo isso e desse a senha do admin para todo
+            mundo percebe quanto poder essa pessoa esse todo mundo na verdade
+            quando eu falo todo mundo é todo mundo da secretaria por exemplo
+            imagina quanto poder essa pessoa ou essas pessoas teriam ao mesmo
+            tempo sem eu mesmo eu conseguir depois fazer uma rastreabilidade do
+            que acontecendo e de quem exatamente fez determinada operação então
+            é por isso que eu preciso separar a responsabilidade se a secretaria
+            ela registra uma solicitação excepcional eu preciso daqui a pouco
+            ter um acesso de coordenação analisando eu preciso ter um sistema
+            que executa a decisão e eu preciso.
+          </p>
+          <p>
+            também ter uma auditoria que registra quais são os participantes
+            envolvidos nessa operação nenhum deles pode apagar a evidência nem o
+            próprio sistema nem a secretaria nem a coordenação ninguém pode
+            deixar de registrar então é a mesma coisa se eu for pegar um exemplo
+            de mudança de pré-requisito pensando no meu sistema de matrículas
+            essa alteração ela não deveria ser tratado como uma edição comum de
+            cadastro como é que eu simplesmente vou mudar um pré-requisito isso
+            aí ela geralmente vai exigir um perfil bem específico que ligado a
+            normativas vai exigir uma justificativa eventualmente uma aprovação
+            uma vigência definida às vezes pode ser que essa alteração ela não
+            seja definitiva e por fim precisa ter o histórico dessa mudança
+            então é bom pensar pessoal todo esse conjunto de estratégias pro
+            sistema de vocês também e tem mais uma que eu vou falar agora que se
+            chama defesa em profundidade a.
+          </p>
+          <p>
+            defesa em profundidade ela significa que nós não dependemos apenas
+            de uma barreira para estarmos realmente seguro nós temos que ter na
+            verdade camadas de segurança para proteger uma operação
+            administrativa nós podemos combinar por exemplo do início uma
+            autenticação institucional tem login e senha ok eu poderia também
+            ter um uma autenticação de múltiplos fatores para alguns perfícios
+            privilegiados eventualmente eu não vou querer que o aluno
+            necessariamente fique faz no reconhecimento facial mas quando alguém
+            for lá fazer uma solicitação de matrícula excepcional ou cancelar
+            uma matrícula confirma com tua digital ou confirma comento facial
+            entendeu mais menos quando você perde empréstimo no banco se você
+            quer fazer um pix de r$ 10 para pagar o grandce que você comprou ã
+            não precisa de você fazer um conhecimento facial pelo menos não
+            deveria agora se você vai fazer um empréstimo de r$.
+          </p>
+          <p>
+            50.000 por que não fazer um recrustamento facial a mesma coisa você
+            tem que pensar no sistema de vocês a mesma coisa eu tô pensando no
+            meu sistema de matrícula então quando a gente fala de separação de
+            responsabilidades nós temos também esse tipo de controle então nós
+            temos autorização por função nós temos autorização sobre o recurso
+            ou seja quem que está associado a uma função está autorizado a fazer
+            essa função quem que está associado a um recurso e pode monitorar ou
+            alterar aquele recurso eu posso ter validações nas regras acadêmicas
+            no meu sistema e eventualmente eu posso até exigir uma nova
+            autenticação e muitas vezes essa nova autenticação pode exigir dois
+            fatores de autenticação para uma operação mais crítica eu posso
+            pedir então que isso tudo aconteça mas eu tenho que ter auditoria
+            como eu já falei para vocês eu tenho que ter implementação de
+            monitoramento se algo estranho for.
+          </p>
+          <p>
+            feito eu preciso monitorar e e notificar responsáveis eu preciso
+            gerar alertas eu preciso permitir então a revisão posterior então
+            imagina que a senha de um servidor da secretaria seja roubado com
+            apenas uma senha o atacante poderia assumir o perfil e se não tiver
+            a segurança em profundidade seria bastante complicado agora se ele
+            tiver uma defesa em profundidade o próprio a segunda barreira que
+            nós fizemos que além do uso de 100 ele precisa fazer um recumento
+            facial por exemplo então essa segunda autenticação esse segundo
+            fator da autenticação já seria o suficiente para impedir que essa
+            pessoa que roubou a senha conseguisse fazer alguma coisa além disso
+            o dispositivo em comum ele pode gerar um alerta opa tem um
+            dispositivo novo aqui esse dispositivo nunca fez login antes tô
+            tentando fazer login agora mesmo que não consiga fazer o segundo
+            login eu vou gerar um alerta as permissões elas.
+          </p>
+          <p>
+            podem limitar as operações daqui a pouco eu posso até inclusive
+            cancelar aquela senha daquele daquela secretaria aquele servidor de
+            secretaria que foi que que perdeu sua senha posso cancelar aquela
+            senha para que outras pessoas não tenham acesso a ela e a secretária
+            depois ela faça uma nova senha essas exceções também elas exigem
+            então algumas aprovações as atividades em massa elas podem gerar
+            detecção eu posso ter auditoria preservando as evidências então que
+            vai me ajudar depois identificar o que aconteceu ou de que forma
+            isso vazou ou pelo menos eu posso saber aonde que tava a pessoa
+            tentando logar se eu tiver dados que identifiquem o usuário enquanto
+            ele faz operações e as s ações devem ser revogadas porque elas foram
+            então comprometidas e aí o sistema vai conseguir então ter uma falha
+            de segurança mais segura porque por mais que alguém descobriu uma
+            senha foi limitado o que o.
+          </p>
+          <p>
+            usuário maluso ali ou a pessoa que roubou a senha conseguiu fazer
+            então isso diretamente ligado ao que a gente chama de falha de forma
+            segura a falha de forma segura é isso é quando o sistema de
+            matrículas ele precisa definir o comportamento diante das suas
+            falhas não só nesse caso de alguém roubar uma senha mas imagina que
+            o histórico acadêmico ele está indisponível por exemplo o que que eu
+            faço sem histórico eu não consigo confirmar para requisitos e aí eu
+            vou deixar então o estudante se matricular sem verificar não por
+            padrão lembra do não por padrão por padrão eu vou negar não vou
+            deixar ele fazer a matrícula até que consiga verificar então eu
+            posso daqui a pouco registrar a solicitação dele para não deixar ele
+            também travado ali mas registrar com o pendente aquela solicitação
+            informar que a validação ela não poôde ser concluída então eu não
+            vou provar mas vai ficar compendente.
+          </p>
+          <p>
+            quando o serviço voltar eu posso reprocessar até mesmo de forma
+            automatizada para não precisar de um usuário ali precisar refazer
+            aquilo manualmente então isso vai evitar a prejudicar a posição do
+            estudante conforme a regra institucional então percebo que é
+            interessante eu pensar em como é que eu falo de maneira segura às
+            vezes basta eu salvar a informação da maneira que ela e depois fazer
+            o processamento posterior caso naquele momento algum serviço esteja
+            disponível outro caso imagine que o sistema diminuiu uma vaga mas
+            falha antes de registrar uma matrícula ou seja descontou a vaga do
+            estudante mas não conseguiu fazer com que aquele estudante fosse
+            matriculado que que a gente tem que fazer não posso simplesmente
+            permitir que a vaga seja perdida sem nenhum estudante matriculado o
+            estudante matriculado ele não pode ficar também matriculado sem a
+            vaga ser reduzida então isso não pode.
+          </p>
+          <p>
+            acontecer duas pessoas utilizando uma mesma vaga a última vaga por
+            exemplo também não pode acontecer nós temos também que evitar que
+            uma confirmação seja exibida sem uma persistência real imagina que o
+            aluno se matricula parece parabéns está matriculado e na verdade
+            falhou ele não salvou então tudo isso tem que considerar na hora de
+            salvar ou de executar alguma operação tem que pensar e se falhar
+            como é que eu falo de maneira segura no mínimo eu teria que mandar
+            uma mensagem pro estudante dizendo: &quot;olha infelizmente essa
+            matrícula não foi processada ela está pendente ou ela foi cancelada
+            por favor repita né?&quot; é melhor nesses casos você fazer isso do
+            que você fazer com que ele pense que ele está matriculado e não está
+            então eu tenho que pensar com consciência e dar formas de
+            recuperação daquela falha para que eu tenha uma falha segura na
+            arquitetura do meu projeto de software seguro.
+          </p>
+          <p>
+            imagina agora uma situação de concorrência pela última vaga esse é
+            um excelente exemplo arquitetural imagina que uma turma com apenas
+            uma vaga disponível e dois estudantes eles clicam em matricular de
+            forma quase simultânea ambos consultam vagas disponíveis igual a um
+            e na hora que os dois visualizam ali opa tem uma vaga eles clicam um
+            deles clicou antes mas foi quase junto eles viram ao mesmo tempo que
+            tinha uma vaga se o sistema ele mostrou a opção de se matricular
+            porque tinha uma vaga pros dois ao mesmo tempo os dois clicarem mais
+            ou menos junto o sistema não pode simplesmente matricular os dois
+            porque ele tinha dito por mais que se o sistema tinha dito olha tem
+            uma vaga ele não pode matricular os dois então nós temos que
+            resolver não pela interface mas sim pelo backend cada uma das
+            solicitações que chegarem no backend nós temos que separar com uma
+            transação diferente uma delas vai.
+          </p>
+          <p>
+            chegar um pouquinho antes vai ter uma concorrência lá no banco de
+            dados mas uma delas vai ser persistida antes e aí nós temos que ter
+            ali bloqueio adequado temos que ter no banco de dados regras de
+            restrição de integridade atualização atômica ou seja se eu atualizei
+            eu preciso fazer com que aquela alteração ela realmente seja
+            percebida por todos os outros usuários ou ela faz por completo ou
+            ela não faz então a primeira pessoa que se inscreveu que tentou
+            matricular ela vai conseguir e aquela que fez 0,002 segundos depois
+            por mais que ela tenha visto a informação e o botãozinho tava
+            disponível para ela essa segunda matrícula vai ter que bater no
+            servidor e dizer: &quot;opa pera aí que se essa aqui fosse
+            matriculada teria 31 só tem 30 vagas&quot; então volaria uma
+            mensagem dizendo: &quot;infelizmente não deu certo atualize a página
+            tente de novo&quot; e aí sim quando atualizar a página tentar de
+            novo vai.
+          </p>
+          <p>
+            aparecer que não tem nenhuma vaga mais então é necessário que a
+            confirmação ela só seja emitida pro usuário depois que a vaga tiver
+            sido reservada de maneira consistente e não só porque o usuário
+            clicou no botão de salvar de confirmar a matrícula sem considerar
+            que eu posso ter dois usuários ao mesmo tempo é por isso que muitas
+            vezes na unipampa mesmo nós temos a um período para solicitação de
+            matrícula e outro período para você ver se deu certo daqui uns dias
+            você vê se foi aprovado se não foi então se você tivesse só um botão
+            que fala: &quot;beleza matriculou&quot; e não tivesse um controle de
+            segurança desse também imagina que você pode ter problemas como esse
+            de você achar que articulado mas na prática você não tá.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 12.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-11.html">← Aula 11</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-13.html">Aula 13 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

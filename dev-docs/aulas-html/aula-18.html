@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Autenticação e autorização: por que o login não basta · Engenharia de
+      Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Implementação segura · Aula 18 de 19</p>
+        <h1>Autenticação e autorização: por que o login não basta</h1>
+        <p>
+          Uma sessão válida identifica quem está acessando. A autorização decide
+          se essa pessoa pode executar uma ação naquele recurso e naquele
+          contexto.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Uma pessoa autenticada pode consultar ou alterar qualquer
+            recurso?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="18-1" /><span
+              >Distinguir autenticação de autorização.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="18-2" /><span
+              >Autorizar considerando sujeito, ação e recurso.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="18-3" /><span
+              >Aplicar negação por padrão e mínimo de dados.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Login não é permissão</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Autenticação confirma a identidade. Autorização verifica se essa
+                identidade pode realizar uma operação específica.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Um estudante autenticado pode
+                consultar sua própria matrícula, não a de qualquer estudante.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Sujeito, ação e recurso</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Uma decisão de acesso precisa responder quem está agindo, o que
+                quer fazer e sobre qual recurso. Em operações institucionais, o
+                contexto também importa.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Ser coordenador não basta: é
+                preciso ser responsável pelo curso, pela matrícula e pelo
+                período em questão.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Autorizar por recurso</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                O servidor compara a identidade autenticada com o recurso
+                solicitado. Se forem diferentes, exige uma permissão explícita
+                para o acesso alheio.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Não confie no identificador
+                presente na URL como prova de propriedade.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>04</span><strong>Negar por padrão</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Ausência de regra, perfil inesperado ou falha na consulta de
+                permissões devem resultar em negação controlada, nunca em
+                liberação.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Entregue apenas os dados
+                necessários para a finalidade.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>
+              1. Uma sessão autenticada permite consultar qualquer histórico
+              acadêmico?
+            </legend>
+            <label
+              ><input type="radio" name="q18-1" value="0" /><span
+                >Sim, porque a pessoa já fez login.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q18-1" value="1" /><span
+                >Não. É necessário verificar a relação com o recurso ou uma
+                permissão explícita.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q18-1" value="2" /><span
+                >Sim, se o identificador estiver no formato correto.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Formato correto não prova autorização.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="2">
+            <legend>
+              2. Se a consulta de permissões falhar, qual decisão é mais segura?
+            </legend>
+            <label
+              ><input type="radio" name="q18-2" value="0" /><span
+                >Liberar para não interromper o usuário.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q18-2" value="1" /><span
+                >Liberar somente para coordenadores.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q18-2" value="2" /><span
+                >Negar o acesso de forma controlada.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Uma falha na verificação não deve ampliar privilégios.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="18">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Você sabe qual é a diferença de autenticação para a autorização um
+            dos defeitos mais frequentes em aplicações é verificar que o usuário
+            está autenticado e concluir que bom já que ele está logado podemos
+            então permitir que ele acesse e execute operações no sistema de
+            matrículas por exemplo um exemplo de operação é a solicitação da
+            matrícula porém um estudante autenticado ele deve estar apto a
+            acessar essa funcionalidade desde que ele esteja consultando as
+            próprias solicitações de matrículas isso não significa que ele possa
+            consultar solicitações de qualquer estudante um servidor indicado
+            como por exemplo a secretaria eh ela deve estar limitada a um
+            conjunto também de operações dentro de que essas operações estejam
+            dentro das suas funções por exemplo a secretária acadêmica do campus
+            Alegrete não deveria visualizar ou aprovar solicitações de
+            matrículas ou excepcionalidades da unidade de um outro campus por
+            exemplo o Itaqui então percebe que o fato do servidor ter acesso à
+            funcionalidade de aprovar por exemplo a solicitação de matrículas
+            não significa que ele possa executar qualquer operação
+          </p>
+          <p>
+            administrativa de solicitação de matrículas ou de aceite né de
+            solicitações de matrículas então a autorização ela deve verificar
+            três elementos: o sujeito a ação e o recurso ou seja nós podemos
+            elaborar três perguntas diferentes quem está tentando agir qual ação
+            está sendo solicitada e sobre qual matrícula estudante ou turma a
+            ação está sendo executada imagine uma rota GET como estudantes/182
+            onde esse é o número da matrícula do estudante barra matrículas o
+            fato da rota con ter o número 1842 não prova que o usuário
+            autenticado seja de fato o usuário 1842 já o servidor né que é nesse
+            caso o servidor de hardware e não o servidor de secretária a o
+            hardware né o computador que está hospedando o seu sistema de
+            matrículas ele precisa comparar a identidade autenticada com o
+            recurso solicitado ou verificar uma permissão institucional
+            específica por exemplo se quem está logado for de fato o estudante
+            1842 ele pode simplesmente retornar o menu do estudante e as
+            informações daquele próprio estudante se for diferente de 1842 o
+            identificador do usuário autenticado ele vai ter que verificar se
+            esse usuário for ser diferente tem algum acesso administrativo
+            porque pode não ser o mesmo estudante mas pode ser uma secretária ou
+            coordenador caso ele não tenha nenhum acesso e especial né nenhum
+            acesso administrativo e seja de fato
+          </p>
+          <p>
+            por exemplo um outro estudante ele simplesmente não deve ter acesso
+            a essa informação mesmo que ele envie a solicitação correta e no
+            formato correto antipadrão de autorização seria dizer bom se o
+            usuário está autenticado então retorne o histórico solicitado para
+            que nós consigamos melhorar isso nós podemos aplicar a autorização
+            por recurso que seria termos uma variável usuário e essa variável
+            vai recuperar de forma segura a identidade desse usuário autenticado
+            então nós sabemos de fato qual é o usuário autenticado e depois nós
+            vamos ter um histórico e esse histórico então ele vai ser recuperado
+            a partir da identificação ou do identificador desse usuário que já
+            está autenticado se o usuário né ponto id ou seja se o identificador
+            do usuário for diferente do identificador do aluno do histórico
+            então nós devemos fazer uma segunda verificação que é verificar se o
+            usuário específico né ele possui a permissão para consultar um
+            histórico alheio caso ele não tenha deve ser então negado o acesso
+            esse seria então um pequeno exemplo de código e de implementação
+            segura que baseia a autorização por recurso certo então na versão
+            mais segura não basta apenas ter uma sessão válida o código ele
+            verifica também a relação entre o usuário e o recurso ele também
+            torna uma visão minimizada contendo somente os dados necessários
+            para aquela finalidade por exemplo quando nós tivemos lá o retornar
+            visão minimizada histórico ou seja eu não preciso retornar todo o
+            histórico e sim as informações históricas que são pertinentes para
+            aquele usuário que está consultando o histórico para aquela
+            finalidade por exemplo se você quer simplesmente ver se o aluno ele
+            cumpriu os pré-requisitos eu posso filtrar somente os pré-requisitos
+            e não retornar necessariamente o histórico completo ou pelo menos eu
+            posso listar a lista de disciplinas aprovadas sem
+          </p>
+          <p>
+            exibir as notas ou informações sobre reprovações percebam que eu já
+            estou minimizando a superfície de ataques caso os dados venham a
+            vazar a limitação que eu estou adicionando vai impedir que eles
+            vazem por completo certo também devemos negar por padrão ou seja se
+            não existe uma regra específica né explícita dizendo que aquela ação
+            deve ser permitida então ela não deve ser permitida ela não deve ser
+            liberada falhas na consulta de permissões perfil ausente ou estáado
+            inesperado eles não devem fazer o sistema seguir em frente para não
+            atrapalhar o usuário na segurança uma falha desse tipo precisa
+            resultar em uma negação controlada então é melhor você mostrar uma
+            mensagem dizendo que você não está autorizado ou que não foi
+            possível verificar a sua autorização do que você correr o risco de
+            liberar né uma informação que não deveria ser liberada para aquele
+            usuário então isso acaba até às vezes atrapalhando a experiência do
+            usuário caso haja de fato uma falha de verificação né você vai estar
+            negando recurso para um usuário autenticado mas é melhor que isso
+            aconteça do que você acabe vazando porque aqui nós estamos agora
+            focados em segurança óbvio que na hora de pensar em experiência do
+            usuário temos que tentar achar tradeo offs ou seja temos que tentar
+            achar meio termos que maximizem tanto as habilidades sem reduzir a
+            segurança certo e se eu te perguntasse para o coordenador autorizar
+            uma matrícula excepcional basta verificarmos se o perfil do usuário
+            dele é coordenador o que que você mediria que que vocês mediriam se
+            eu fizesse essa pergunta na verdade você pode ver que na verdade não
+            né não basta apenas verificar se ele é coordenador ou não eu preciso
+            ver se ele é coordenador e está agindo de fato o sobre os recursos
+            sobre as suas responsabilidades ou seja se ele é o coordenador
+            daquele curso que ele está eh tratando eh
+          </p>
+          <p>
+            o aluno se o aluno que ele está modificando a matrícula é de um
+            outro curso ele não deveria ter acesso ou se o período para
+            modificações não está aberto ou se está aberto mas exige uma
+            justificativa obrigatória isso tudo deve ser verificado na hora de
+            implementar o software certo os papéis eles ajudam eu verificar se é
+            coordenador verificar se é aluno ajuda mas muitas decisões elas não
+            podem depender apenas do recurso né porque elas também precisam
+            verificar o papel o recurso e o contexto é isso que nós vimos no
+            vídeo anterior né nas três formas de fazer validações de entradas
+            por exemplo quando você pode ter validação sintática validação
+            semântica ou por contexto o mesmo se aplica para quando nós fazemos
+            controle de acesso certo esse vídeo então abordou autenticação e
+            autorização mas de forma um pouco mais conceitual se você quer ver
+            uma forma prática com exemplos de código assista o próximo vídeo lá
+            terá tanto esse assunto de atualização e autenticação quanto outros
+            assuntos relacionado a todas as letras do stride.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 18.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-17.html">← Aula 17</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-19.html">Aula 19 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

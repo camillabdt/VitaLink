@@ -1,0 +1,699 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      STRIDE: perguntas para descobrir ameaças · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Modelagem de ameaças · Aula 03 de 19</p>
+        <h1>STRIDE: perguntas para descobrir ameaças</h1>
+        <p>
+          STRIDE não é uma lista de ataques prontos. É uma estrutura de
+          perguntas para examinar ameaças de forma sistemática.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Que tipo de abuso pode comprometer cada parte do sistema?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="3-1" /><span
+              >Aplicar as seis categorias do STRIDE.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="3-2" /><span
+              >Diferenciar caso de uso e caso de abuso.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="3-3" /><span
+              >Conectar ameaça, ativo e impacto.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary><span>01</span><strong>S e T</strong><i>⌄</i></summary>
+            <div>
+              <p>
+                Spoofing é falsificação de identidade. Tampering é alteração
+                indevida de dados, mensagens ou estado.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Pergunte quem pode se passar
+                por outra pessoa e o que pode ser alterado.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary><span>02</span><strong>R e I</strong><i>⌄</i></summary>
+            <div>
+              <p>
+                Repudiation ocorre quando uma ação pode ser negada sem evidência
+                confiável. Information Disclosure é a exposição indevida de
+                informação.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Auditoria e controle de acesso
+                respondem a perguntas diferentes.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary><span>03</span><strong>D e E</strong><i>⌄</i></summary>
+            <div>
+              <p>
+                Denial of Service reduz disponibilidade. Elevation of Privilege
+                amplia permissões além do permitido.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Pergunte como o sistema se
+                comporta sob abuso e quem consegue executar ações privilegiadas.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>
+              1. Um usuário altera o valor de um pedido sem permissão. Qual
+              categoria?
+            </legend>
+            <label
+              ><input type="radio" name="q3-1" value="0" /><span
+                >Tampering</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q3-1" value="1" /><span
+                >Repudiation</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q3-1" value="2" /><span
+                >Spoofing</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Tampering trata de alteração indevida.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>2. Um caso de abuso descreve:</legend>
+            <label
+              ><input type="radio" name="q3-2" value="0" /><span
+                >O fluxo esperado do usuário.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q3-2" value="1" /><span
+                >Uma ação indesejada que o sistema deve impedir ou
+                controlar.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q3-2" value="2" /><span
+                >A tecnologia escolhida para o sistema.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Ele ajuda a tornar explícitos caminhos maliciosos ou indevidos.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="3">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Na aula anterior, nós aprendemos que um software seguro ele nasce
+            desde a licitação de requisitos Nós conversamos com o cliente nós
+            identificamos ativos entendemos o que que possui valor pro negócio
+            do nosso cliente e descobrimos que os dados e as operações precisam
+            ser protegidos Transformamos praticamente aquelas preocupações do
+            clientes em requisitos de segurança Esse é o primeiro passo para
+            começar a nossa engenheira de software seguro Mas como é que nós
+            sabemos quando que os requisitos de segurança estão suficientes ou
+            melhor como é que nós descobrimos quais são os requisitos que
+            deveriam estar naquele sistema sendo que às vezes nem o próprio
+            cliente ele consegue perceber que ele deveria se preocupar com
+            determinados requisitos É exatamente aí que começa a aula de hoje
+            que é a modelagem de ameaças O engenheiro quando ele pensa em
+            modelagem de ameaças ele precisa mudar de.
+          </p>
+          <p>
+            perspectiva Até que estávamos pensando como engenheiros de software
+            tradicionais.
+          </p>
+          <p>
+            Agora vamos fazer um um exercício totalmente diferente vamos pensar
+            como um atacante Imagina que agora pensar como atacante pode acabar
+            até assustando algumas pessoas vocês imaginam que isso dá ataque
+            significa aprender hacking e sair atacando e aí fazendo coisas
+            ilegais por aí mas não é por aí pessoal na verdade pensar como um
+            atacante não significa que você vai ser um atacante significa que
+            você vai conseguir identificar e antecipar problemas que um
+            potencial atacante poderia pensar antes de você.
+          </p>
+          <p>
+            Se você pensar antes do atacante você consegue implementar um
+            controle baseado com o que nós falamos na nossa última aula lembra
+            que uma ameaça ela está associada a um ativo e está associada ao
+            risco desse ativo ser ameaçado e que a vulnerabilidade ela só existe
+            quando um controle não é implementado então nem software nem todo
+            software que tem ameaças ele vai ter vulnerabilidades Fal é melhor
+            do que isso Na verdade todo software tem ameaças mas muitos não tm
+            vulnerabilidades pelo menos conhecidas certo bom quando eu penso
+            como um atacante eu tô pensando justamente em será que tem
+            vulnerabilidades como é que eu poderia explorar essas
+            vulnerabilidades tem uma frase muito conhecida na engenheiria de
+            software seguro que é o seguinte: você não preparando o terreno para
+            que você tente prever o futuro Você na verdade tentando impedir com
+            que o futuro te surpreenda.
+          </p>
+          <p>
+            Então não é questão de prever o futuro e sim prevenir de que
+            surpresas aconteçam no futuro Um exemplo simples imagina que um
+            cliente quer fazer um sistema de delivery Na reunião inicial ele vai
+            dizer: &quot;Ó eu quero um aplicativo onde meus clientes façam
+            pedidos&quot; Isso é a primeira coisa que alguém que quer um
+            aplicativo de delivery poderia falar Até aqui tudo parece normal
+            Você pode perguntar mas quem pode cancelar pedido quem pode alterar
+            os preços dos pedidos e cupom cupom de desconto Quem pode emitir
+            cupom de desconto quem pode acessar os dados dos clientes hum Quem
+            pode também visualizar os dados de faturamento de uma empresa até
+            aqui nós continuamos pensando como engenheiro certo nós estamos
+            pensando quem faz o quê estamos pensando como dividir papéis e
+            controlar atribuições até aí um engenheiro de software acostumado a
+            fazer No diagrama de casos de uso por exemplo você tem os.
+          </p>
+          <p>
+            balõezinhos que são funcionalidades requisitos funcionais associados
+            a atores até aí OK Mas e se você imaginar um diagrama de casos de
+            uso da software onde os carros de usos começam a se conectar com
+            atores que não deveriam se conectar são balõezinhos com setinhas
+            ligando esses balõezinhos a atores estranhos atores que não deveriam
+            estar ali até mesmo um ator atacante aparece ali que não deveria
+            estar ali O que acontece se essa simples mudança começa a ser
+            pensada desde o momento do projeto da análise e depois do projeto
+            percebe que isso muda completamente o projeto o que acontece se
+            alguém tentar fazer algo que nunca deveria fazer é isso justamente
+            que nós temos que pensar na hora de modelar ameaças.
+          </p>
+          <p>
+            Então pensando um pouco diferente ao invés de perguntar o sistema
+            funciona nós podemos perguntar como alguém poderia abusar desse
+            sistema percebe o que você pensando agora como atacante não porque
+            você quer fazer um ataque mas sim porque você quer se prevenir desse
+            ataque Essa palavra é importante nós não estamos pensando apenas em
+            erros em situações inesperadas que podem acontecer ã de forma
+            acidental Estamos pensando que tem pessoas com cérebro tentando
+            identificar brechas para explorar deliberadamente Estamos pensando
+            em abuso de sistema E aí o que que a gente faz quando a gente pode
+            se antecipar a esses abusos pensando não só em uses não só em casos
+            de usos mas em casos de abuso que nós chamamos de abus cas casos de
+            abuso Lembra da G de software tradicional da do processo de
+            levantamento de requisitos onde você tem os casos de uso e se você
+            tiver os casos de abuso então é aí que.
+          </p>
+          <p>
+            começa já a modelagem de ameaças um caso de usos versus caso de
+            abuso Vamos vamos tentar entender então a diferença dessas duas
+            coisas Um caso de uso pode dizer por exemplo o cliente realiza um
+            pedido Até aí você já devem ter feito alguma vez na vida de vocês
+            casos de usos parecido com esse.
+          </p>
+          <p>
+            Agora um caso de abuso seria o seguinte: um cliente ele tentar
+            alterar um pedido que foi feito por um outro cliente Percebe que
+            isso não deveria estar lá na listinha de funcionalidades até porque
+            isso não é uma funcionalidade esperada mas sim um caso de abuso É
+            justamente essa diferença do caso de uso para o caso de abuso O caso
+            de uso é o esperado O caso de abuso é não só o fluxo de exceção mas
+            sim uma ação deliberada maliciosa caso de abuso.
+          </p>
+          <p>
+            Então percebe que estamos falando de comportamentos maliciosos não
+            de funcionalidades isso é um caso de abuso O grande problema de se
+            imaginar ataques é que se nós pedimos por exemplo para 10 dinheiros
+            imaginar ataques provavelmente esses 10 dinheiros vão pensar em 10
+            ataques completamente diferentes ou alguns deles até similares mas o
+            fato é que haverão pensamentos e casos de abusos diferenciados até
+            porque o caso de abuso não é o óbvio não é o que necessariamente
+            previsto e sim uma criatividade por trás de uma mente maliciosa
+            tentando pensar como é que eu posso quebrar esse sistema como é que
+            eu posso tirar uma vantagem a partir desse sistema isso gera um
+            problema O problema que gera é que não existe um método específico
+            que vai ser 100% preciso para você identificar todos os casos de
+            abusos Cada pessoa pensa de uma maneira bom mas na verdade não é bem
+            assim Não é que não exista.
+          </p>
+          <p>
+            método E foi justamente nesse momento pensando em nossa não existe
+            método que a Microsoft criou um método chamado Stride O Stride é um
+            acrônimo S R I D que que significa Stride bom Stride ele é um modelo
+            sistemático de identificação de ameaças.
+          </p>
+          <p>
+            Então tem uma maneira sistematizada para você fazer não é só da
+            cabeça das pessoas Tem uma maneira de fazer isso usando um formato
+            padrão sistematizado O seu objetivo é fazer com que nenhuma
+            categoria importante de ameaças seja esquecida.
+          </p>
+          <p>
+            Então percebe que nós não estamos falando só de ameaças específicas
+            a um sistema ou outro e sim em categorias de ameaças.
+          </p>
+          <p>
+            Então você não vai focar só numa ameaça numa categoria de ameaça
+            enquanto você tem na verdade uma série de outras ameaças
+            pertencentes de outras categorias que você deveria também pensar
+            Cada letra representa um tipo de ameaça você pode pensar em spoofing
+            é o S spoffing Depois nós temos o tampering temos o repudiation
+            depois o information disclosure temos o denyvation of privilege E
+            percebe que isso não é uma lista de ataques é uma lista de perguntas
+            que nós podemos fazer Vamos falar um pouquinho de cada uma dessas
+            palavras que as iniciais delas representam justamente o acronymo
+            stride O s de spoofing e significa você fingir ser outra pessoa
+            Basicamente é isso o spoofing O ataque de poof por exemplo que aí é
+            um ataque específico quando você manda uma mensagem na rede troca o
+            IP de origem.
+          </p>
+          <p>
+            Então quem recebe esse essa mensagem vai receber com IP diferente
+            Você fazendo space e IP spoffing Você trocando a informação sobre o
+            a origem daquela mensagem.
+          </p>
+          <p>
+            Então a pergunta principal falando de spoffing como um todo agora
+            esquecendo do ataque de spay puoffing mas voltando pra ameaça geral
+            categoria de spoffing a pergunta principal que você pode fazer é
+            como alguém pode assumir a identidade de outro usuário e aí isso
+            entra lá com o exemplo que eu li na aula passada quando nós falamos
+            do aplicativo de consultas onde somente os médicos deveriam ter
+            acesso às informações conferenciais de pacientes Imagina que pessoas
+            que não são médicos querem ter acesso a diagnósticos a informações
+            sensíveis de pacientes Imagina.
+          </p>
+          <p>Então aí é um caso típico de spoof.</p>
+          <p>
+            Por exemplo eu posso tentar roubar uma senha eu posso roubar a
+            sessão de uma pessoa conectada autenticada posso usar um token falso
+            eu posso usar cooks roubados de navegadores posso fazer fishing que
+            é aquele famoso taque da pescaria eu jogo um e-mail para você você
+            pode ou não cair no meu link mandar seus dados para mim através de
+            uma página falsa por exemplo aí pode ter engenharia social enfim
+            através desses meios você pode fazer um spoof E no aplicativo de
+            restaurante as perguntas que eu poderia fazer é: &quot;E se alguém
+            descobrir a senha do gerente o que que acontece e se alguém usar o
+            token JWT de outro usuário que que eu faço que acontece esses são
+            tipos de perguntas que guiam a descoberta de ameaças da categoria de
+            spoffen que é o S do Stride Depois do S temos o T que é o tempering
+            Tempering significa uma alteração indevida é o abuso da integridade
+            a propriedade de segurança da.
+          </p>
+          <p>
+            informação de integridade está sendo abusada no tempory A pergunta
+            é: quem pode modificar algo e ou melhor quem pode modificar algo que
+            não deveria por exemplo quem que pode modificar um preço quando não
+            deveria modificar aquele preço um cliente poderia modificar o preço
+            obviamente não alterar um saldo modificar um pedido modificar um
+            pedido eventualmente ele pode desde que ele não tenha sido
+            finalizado não tenha sido enviado para preparo ele pode trocar
+            arquivos dentro de um servidor por exemplo quem que pode alterar o
+            banco de dados no exemplo do nosso delivery e se um atacante alterar
+            o valor de um pedido de R$ 200 para dois simplesmente apagou dois
+            zeros ali de alguma maneira indevida ele descobriu uma
+            vulnerabilidade e essa vulnerabilidade levou a ele poder alterar o
+            valor de um pedido Ele descobriu que se colocasse um código de
+            desconto genérico ali sempre dava um ponto ou.
+          </p>
+          <p>
+            qualquer outra vulnerabilidade específica que foi erro de
+            implementação etc O fato é que ele descobriu e ele agora fazendo
+            pedidos de R$ 200 virarem R$ 2 E agora que que eu faço esse é um
+            exemplo de ataque aí já é o ataque mesmo sendo efetivado mas que ele
+            cai na categoria das ameaças de tempering que significa alterações
+            não permitidas alterações indevidas Alguém que não poderia alterar
+            alguma coisa está alterando Depois do tempering nós temos o
+            repudiation que é o R do stride Já falamos do S do T e agora do R
+            Repudiation significa negar uma ação realizada É como se eu apagasse
+            o histórico para não parecer que fui eu que fiz alguma coisa É como
+            se um funcionário dissesse: &quot;Não eu nunca cancelei aquele
+            pedido não fui eu que cancelei&quot; Ou o usuário falasse algo
+            parecido com isso como é que eu provo como é que eu provo que aquela
+            frase foi verdade geralmente a gente tem logs auditoria nós.
+          </p>
+          <p>
+            temos assinaturas digitais carimbos de tempo os time temps mas sem
+            uma auditoria não existe uma evidência.
+          </p>
+          <p>
+            Ou seja alguém pode simplesmente repudiar pode falar que não fez
+            aquilo isso é o repúdio É por isso que uma das propriedades de
+            segurança informação é justamente o não repúdio O repudiation é a
+            ameaça modelada pelo stread a categoria de ameaças na verdade
+            lembrando que a gente falando de categorias não há uma ameaça
+            específica que significa que alguém pode negar.
+          </p>
+          <p>
+            Por exemplo eu não cancelei esse pedido ou eu já paguei esse pedido
+            na verdade não paguei esse pedido que eu não deveria pagar o que é
+            estranho na verdade você negaria algo que geralmente é ruim como por
+            exemplo cancelar ou algo do tipo ou eu não digitei esse cupom que eu
+            não deveria digitar não fiquei tentando adivinhar cupons.
+          </p>
+          <p>
+            Se tem um log tu consegue mostrar que um usuário digitou 200 cupons
+            até descobrir um ou seja explorando uma fraqueza que é uma
+            vulnerabilidade presente no sistema.
+          </p>
+          <p>
+            Se ela se ela existir ele pode fazer o ataque e depois dizer que não
+            fez Isso é repudiation seguindo no stride nós temos o I I é
+            information disclosure Talvez essa será a categoria mais conhecida
+            basicamente é o famoso vazamento de informações disclosure
+            information disclosure é vazamento de informações É quando você pode
+            fazer a pergunta por exemplo quem pode visualizar dados que não
+            deveria quando você pergunta isso você falando já de vazamento de
+            informações E aí exemplos de informações sensíveis são CPFs
+            endereços cartões senhas relatórios então quando você fala de LGPD a
+            lei geral de de proteção de dados ela diretamente ligada a o I do
+            stride que é o information disclosure Por fim no stride termina com
+            D nós temos o denial of service que até o nome deu um ataque um
+            ataque de negação de serviço na verdade uma categoria de ataques
+            porque tem n ataques que podem causar a negação de.
+          </p>
+          <p>
+            serviço mas também é uma grande ameaça é uma categoria de ameaças
+            onde você pode simplesmente perguntar quem pode impedir
+            funcionamento normal desse sistema quem pode impedir que o sistema
+            ele entregue o serviço que ele deveria entregar ataques que tornam o
+            sistema indisponível eles são ataques de denial of service.
+          </p>
+          <p>
+            Então isso tem a ver com o D do stride Aí tem por exemplo o mais
+            famoso que é DDOS o denial of service distributed tem o
+            distributored na frente que é basicamente quando você tem várias
+            máquinas que executam um software malicioso por exemplo uma botnet
+            né uma rede de robôs comprometidos onde ao comando de um atacante
+            todos esses esses essas máquinas vão disparar mensagens falsas ou
+            maliciosas ou uma rajada de mensagens a uma vítima para
+            sobrecarregar e causar ali um uma sobrecarga e deixar indisponível o
+            sistema através da sobrecarga Mas você pode conseguir causar o deny
+            na negação de serviços de outras formas.
+          </p>
+          <p>
+            Por exemplo a explorando alguma vulnerabilidade que entre em loop
+            infinito e não atenda outros clientes O consumo sucessivo de memória
+            consulta extremamente pesada você conseguir rodar lá no banco de
+            dados uma consulta muito complexa por exemplo No sistema de delivery
+            por exemplo imagina que é sexta-feira 20 da noite a hora que mais
+            costuma ter pedido por exemplo onde a pessoa vai para casa final do
+            expediente final da semana hoje é dia de seestou vou fazer meu
+            pedido minha pizza minha cerveja E se isso nesse momento um atacante
+            explorar uma vulnerabilidade de denial of service o que que a gente
+            faz qual o custo que isso teria pro restaurante percebe que quando
+            você fala de negação de serviço você fala de indisponibilidade você
+            pode perguntar pro cliente e aí qual que é o seu receio quanto a
+            indisponibilidade e se o sistema cair o que acontece ele pode até
+            falar: &quot;Meu Deus o sistema.
+          </p>
+          <p>
+            chega cai numa sexta-feira hoje da noite ferrou&quot; É justamente
+            isso que nós queremos que o cliente fale qual que é o ponto de
+            preocupação relacionado a cada uma dessas letrinhas Eu falei stride
+            e falei talvez eu tenha falado que o D era último mas eu lembrei
+            agora que o stride não termina com D stride tem o E no final O e é
+            elevation of privilege que é basicamente você elevar o seu
+            privilégio você conseguir escalar a o nível de funcionalidades que
+            você estaria autorizado a explorar Talvez seja até inclusive a a
+            ameaça mais perigosa o usuário comum ele consegue realizar ações
+            administrativas por exemplo quando ele consegue escalar privilégios
+            Eu sou um usuário final tô ali fazendo pedidos no meu restaurante
+            preferido E quando eu tô fazendo esses pedidos eu descubro que se eu
+            apertar um botão ali eu consigo virar de mim daquele restaurante e
+            baixar os preços e alterar tudo que eu quiser.
+          </p>
+          <p>
+            Per percebe então que isso é bem perigoso talvez é o mais perigoso
+            das letrinhas do Stride então imagina que o entregador consegue
+            alterar o preço também ou que o cliente consegue acessar o painel
+            administrativo para fazer novos cupons de descontos o funcionário
+            consegue conceder privilégio adminim para si mesmo então percebe
+            como o Stride é um framework interessante porque ele não dá esses
+            exemplos que eu falei para vocês eu fui dando exemplos ele não dá
+            essa resposta final mas ele traz as categorias Ele fala então
+            relembrando desde o S que é o spoofing que você pode perguntar quem
+            pode assumir a identidade de outro usuário nesse sistema Ele traz a
+            questão do temperin que é quem pode modificar algo que não deveria
+            ir nesse sistema aí repudiation Quem que poderia modificar alguma
+            coisa ou fazer alguma coisa depois negar dizer que não fez qual
+            seria o risco de isso acontecer no seu.
+          </p>
+          <p>
+            sistema há um risco especialmente em sistemas de transações de
+            criptomoedas por exemplo Imagina você simplesmente some o Bitcoin lá
+            de um de um usuário do aplicativo que você fez ele fala: &quot;Não
+            eu não peguei esses bitcoins aí você não tem um histórico de
+            transações essa vulnerabilidade suscetível a acontecer A mesma coisa
+            pro information disclosure Quem pode visualizar dados que não
+            deveria na service quem pode impedir ou melhor como alguém pode
+            impedir funcionamento do sistema e o elevation of privage que é mais
+            perigosa nós falamos que é o usuário conseguir realizações
+            administrativas por exemplo então quando você faz essas perguntas
+            genéricas você consegue descobrir ameaças associadas a esse
+            guarda-chuva de categorias de ameaças existentes Como é que a gente
+            aplica o stride vamos fazer um um exercício simples aqui você tem um
+            diagrama onde nós temos ali o cliente que se conecta a uma.
+          </p>
+          <p>
+            PI por exemplo que se conecta a um banco de dados que se conecta a
+            um gat de pagamento que pode ter um painel administrativo associado
+            a ele E cada um desses alimentos ele deve ser analisado
+            separadamente existe spoffing aqui nesse componente existe alguma
+            possibilidade de tempering nesse outro aqui e nesse outro aqui será
+            que tem alguma forma de ter um reprodation ou disclosure ou ddoss ou
+            simplesmente d de of service escalação de privilégios poder existir
+            nesse sistema em um desses componentes.
+          </p>
+          <p>
+            Então é bas assim basicamente assim que nós vamos aplicar o stride
+            vamos fazer perguntas desse sentido para cada um dos componentes
+            cada um dos pedaços do sistema certo nós não estamos procurando
+            ataques específicos mas sim categorias como um todo para depois
+            pensar nos ataques a partir dessas categorias.
+          </p>
+          <p>
+            Então assim quais são os principais benefícios de utilizar um
+            framework como stride o stride ele reduz erros e ele reduz na
+            verdade enormemente a chance de eu esquecer algo importante.
+          </p>
+          <p>
+            Quando a gente pensa nas vulnerabilidades ou nas ameaças antes das
+            vulnerabilidades ainda geralmente aquelas mais recorrentes saltam os
+            olhos se é um sistema de delivery eu tô preocupado que alguém
+            consiga dar um desconto no pedido Só que quando eu aplico stride eu
+            consigo pensar em todas as possíveis categorias de ameaças e não só
+            aquela relacionada à alteração de valores de pedidos por exemplo mas
+            o stride além dele ter esse checklist mental dele ter essa
+            capacidade de que diferentes engenheiros consigam ter uma análise
+            semelhante e aumentar a qualidade ele tem também limitações ele não
+            é perfeito ele não resolve tudo Ele não vai identificar as ameaças
+            só as categorias Ele não calcula o risco de cada uma dessas ameaças
+            ele não prioriza impacto ele não vai dizer: &quot;Essa ameaça é mais
+            importante que a outra&quot; Ele não substitui também o conhecimento
+            técnico Ainda vou precisar de alguém um.
+          </p>
+          <p>
+            conhecimento técnico Ele apenas ajuda Ele é um checklist um catálogo
+            E ele também vai se limitar a organizar o nosso raciocínio então
+            assim você ainda precisa de alguém que consiga pensar identificar e
+            achar essas ameaças mas comide as coisas ficam mais organizadas
+            ferramentas que existem por exemplo que você pode utilizar tem por
+            exemplo o próprio a própria ferramenta da Microsoft que é Microsoft
+            Fratching Modelling Tool nós temos também o OASP Fretch Dragon que é
+            uma outra ferramenta aí da OASP recomendo bastante vocês darem uma
+            olhada Tem ous risk temos o draw io com diagramas de fluxo isso já
+            ajuda também você a mapear as ameaças através de diagramas usando o
+            drawo que é um sistema genérico mas que serve também para isso E
+            muitas muitas equipes acabam utilizando essas ferramentas durante as
+            revisões da arquitetura.
+          </p>
+          <p>
+            Então você olha pros componentes de da sua arquitetura que você
+            modelando E ao longo da modelagem da arquitetura do sistema você
+            pode pensar onde as ameaças estão escondidas ou onde elas podem
+            estar escondidas então imagina que agora vocês vão fazer um
+            exercício e cada um dos grupos que estão aqui nessa nessa disciplina
+            EAD vão poder escolher então o seu domínio.
+          </p>
+          <p>
+            Por exemplo é um restaurante é um um Uber enfim você pode escolher o
+            sistema e vocês vão começar desenhando um diagraminha simples onde
+            esse diagrama ele vai levantar as principais funcionalidades que o
+            sistema vai ter você pode escolher o diagrama pode ser um diagrama
+            de casa de uso por exemplo ou um diagrama arquitetural diagrama de
+            classe você podem escolher a o diagrama o artefato livre porque é só
+            um exercício mesmo E uma vez que vocês façam isso partindo desse
+            artefato de software tradicional vocês vão começar a aplicar o
+            stride em cada um desses componentes para vocês verificar se em
+            algum desses momentos vocês estão identificando ameaças Mas é legal
+            até que vocês façam cada um dos componentes do grupo de vocês
+            aplique de forma independente para que depois vocês comparem e
+            verifiquem se ao aplicar o stride o que vocês encontraram foi
+            parecido ou foi diferente Certo no final quero.
+          </p>
+          <p>
+            que vocês reportem quais são as ameaças que vocês encontraram quais
+            são os requisitos de segurança que foram necessários surgir para
+            resolver essas ameaças e quais são as decisões arquiteturais que
+            foram originadas a partir desse exercício então lembrando que essa é
+            a primeira entrega que vocês vão fazer Vocês vão criar um
+            repositório no GitHub e vocês vão documentar o resultado dessa
+            entrega.
+          </p>
+          <p>Se vocês quiserem feedback conversem com o professor.</p>
+          <p>
+            Se vocês não quiserem feedback agora tranquilo querem continuar
+            continuem Mas essa primeira entrega vai fazer parte da avaliação
+            final lá no final da disciplina certo qualquer dúvida vocês devem
+            não só podem mas devem me chamar ok lembrem que são 100 e poucos
+            alunos eu não vou conseguir acompanhar todos o tempo todo se vocês
+            não me procurarem É uma disciplina D eu conto com a proatividade de
+            vocês pessoal vamos falar agora um pouquinho da próxima aula próximo
+            vídeo a gente vai falar um pouquinho sobre descoberta Aqui nós
+            estamos falando nessa aula de descoberta de ameaças mas ainda não
+            sabemos como impedir essas ameaças então na próxima aula nós vamos
+            responder justamente essa pergunta Nós vamos entrar em arquitetura
+            segura Nós vamos ver alguns princípios clássicos de arquitetura como
+            o princípio do privilégio mínimo o a falha segura porque vou contar
+            um segredo para vocês que talvez.
+          </p>
+          <p>
+            muitos não saibam falhar não é problema Sistemas falham isso
+            acontece A questão é quando o sistema falha ele precisa manter um
+            estado de segurança Ele precisa falhar mas não consolidar ações
+            inseguras Imagina que caiu a internet na hora que eu ia fazer um
+            pixel do bank por exemplo Aquele pixel não pode desaparecer da minha
+            conta e não chegar na conta destino ou ele sai da minha e chega na
+            outra ou ele não sai da minha se ele eventualmente saiu ele deve
+            voltar algo nesse sentido deve acontecer.
+          </p>
+          <p>
+            Ou seja isso é uma falha segura a falha acontece você tem que
+            conviver com ela e fazer com que isso não leve o sistema a ser um
+            sistema inseguro certo h tem outro princípio que é economia de
+            mecanismos temos a mediação completa defensa defensa em que é defesa
+            em profundidade Tudo isso a gente vai falar na próxima aula isso é o
+            nosso tema de arquitetura segura que vai ser justamente a resposta
+            para as ameaças que vocês detectaram nessa aula aqui beleza então é
+            nesse momento que vocês vão perceber algo bastante importante que o
+            stride que nós estudamos nessa aula ele não produz soluções ele
+            produz perguntas.
+          </p>
+          <p>
+            Então o que eu tô esperando que vocês entreguem nesse primeiro
+            entregável é justamente as perguntas.
+          </p>
+          <p>
+            Por exemplo o que acontece se alguém fizer tal coisa isso é uma
+            ameaça ainda não é a a solução é ameaça é o problema Na próxima aula
+            vocês vão identificar as respostas Vocês vão pensar: &quot;Opa pera
+            aí se eu tenho que garantir a a o não repúdio eu vou ter que ter um
+            log de auditoria tem que ter uma forma de auditar Toda vez que
+            alguém mexer em alguma coisa tem que ter um log de quem fez que
+            horas foi e etc esse é um exemplo então a arquitetura ela vai
+            produzir a resposta para as ameaças e você vai ter uma arquitetura
+            segura com a resposta das ameaças que você identificou quando usou o
+            stride certo então a frase que vocês têm que levar dessa aula a
+            frase principal um bom engenheiro ele não espera o ataque acontecer
+            para pensar em segurança Ele vai projetar o software imaginando
+            desde o início como alguém tentaria explorar esse software Beleza
+            essa é a mensagem principal da aula de modelagem.
+          </p>
+          <p>de ameaças.</p>
+        </div>
+        <p class="source-label">Fonte: Aula 03.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-02.html">← Aula 02</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-04.html">Aula 04 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

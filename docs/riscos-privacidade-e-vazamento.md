@@ -100,6 +100,12 @@ Os registros devem identificar ator, recurso, operação, resultado e horário, 
 | R12   | Sanitizar os registros de auditoria para evitar segredos ou conteúdo médico desnecessário     | Protect             | Desenvolvimento Backend         | Logs sem senhas, _tokens_ completos ou conteúdo integral de documentos médicos |
 | R12   | Garantir trilha íntegra em consultas e compartilhamentos                                      | Detect              | Administração de Banco de Dados | Registros contendo ator, recurso, operação, resultado e horário                |
 
+### Estado dos controles
+
+- R10: não existe compartilhamento público; documentos usam armazenamento privado e leitura mediada pela API, com testes de sessão, escopo e IDOR.
+- R11: limites de requisição e carga controlada possuem implementação e testes; detecção de extração anômala e alerta D06 permanecem pendentes.
+- R12: eventos de auditoria pseudonimizados e projeções mínimas estão implementados; integridade operacional, retenção e alerta D08 ainda precisam de evidência.
+
 ## Relação complementar com o Framework NIST CSF 2.0
 
 Além das funções relacionadas aos controles, as medidas adotadas para tratar esses riscos de privacidade envolvem:
@@ -113,7 +119,7 @@ Além das funções relacionadas aos controles, as medidas adotadas para tratar 
 
 ## Estimativa de risco residual
 
-A projeção abaixo indica o patamar de segurança esperado ao implementar os controles sugeridos corretamente.
+A projeção abaixo indica o patamar esperado quando controles preventivos e condições operacionais de aceite estiverem integralmente verificados.
 
 | Risco | Nível inicial | Probabilidade residual | Impacto residual | Pontuação residual | Nível residual |
 | ----- | ------------- | ---------------------- | ---------------- | ------------------ | -------------- |
@@ -121,17 +127,17 @@ A projeção abaixo indica o patamar de segurança esperado ao implementar os co
 | R11   | Alto (8)      | 1                      | 4                | 4                  | Médio          |
 | R12   | Alto (9)      | 1                      | 3                | 3                  | Baixo          |
 
-_Nota sobre a redução:_ O impacto financeiro, moral ou legal (pontuação de impacto) não diminui, pois o valor do dado médico vazado continua altíssimo em qualquer cenário. O que despenca para níveis aceitáveis é a probabilidade (reduzida para 1) de o atacante conseguir concluir a extração ou obter o arquivo sem a devida autorização técnica.
+O impacto financeiro, moral ou legal não diminui, pois o valor do dado médico exposto permanece alto. A probabilidade residual 1 é uma estimativa condicionada às evidências abaixo, não uma medição do ambiente atual.
 
 ## Condições para aceite do risco residual
 
 O nível residual deve ser considerado aceitável quando existirem as seguintes evidências:
 
-- links compartilhados expiram corretamente e requerem validação adicional;
+- não existe rota pública nem URL permanente capaz de entregar documento sem sessão e autorização vigentes;
 - a API bloqueia ativa e imediatamente picos anômalos de requisição;
 - não há forma de manipular IDs para varrer prontuários sem autorização (prevenção IDOR);
 - os logs gerados mascaram campos críticos sem intervenção manual;
-- os testes de vulnerabilidades confirmem a proteção efetiva.
+- o DAST e os testes de autorização do HEAD candidato confirmam os controles aplicáveis.
 
 Caso essas defesas reprovem nos testes de aceitação, o sistema continuará tecnicamente submetido à pontuação inicial crítica.
 

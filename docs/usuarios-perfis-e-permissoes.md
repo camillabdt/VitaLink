@@ -1,6 +1,6 @@
 # Usuários, perfis e permissões
 
-Este documento detalha os perfis já apresentados no [README](../README.md) e as permissões necessárias para as funcionalidades documentadas do VitaLink. A matriz usa como referência o [inventário de ativos](inventario-de-ativos.md) e é complementada pelo [plano de implementação da primeira versão](plano-implementacao-primeira-versao.md).
+Este documento detalha os perfis já apresentados no [README](../README.md) e as permissões necessárias para as funcionalidades documentadas do VitaLink. A matriz usa como referência o [inventário de ativos](inventario-de-ativos.md) e é complementada pelo [plano de implementação da primeira versão](implementacao-segura/plano-implementacao-primeira-versao.md).
 
 ## Termos usados
 

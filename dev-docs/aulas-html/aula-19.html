@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      STRIDE na prática: controles no código · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Implementação segura · Aula 19 de 19</p>
+        <h1>STRIDE na prática: controles no código</h1>
+        <p>
+          O modelo de ameaças só reduz risco quando se torna comportamento
+          verificável no servidor: identidade confiável, dados controlados,
+          auditoria, autorização e limites de uso.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Qual decisão de código impede cada ameaça STRIDE no sistema de
+            matrículas?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="19-1" /><span
+              >Relacionar as seis ameaças STRIDE a controles de
+              implementação.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="19-2" /><span
+              >Definir quais dados são aceitos do cliente e quais pertencem ao
+              servidor.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="19-3" /><span
+              >Reconhecer evidências que demonstram que um controle
+              funciona.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span
+              ><strong>Spoofing: a sessão define a identidade</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Não aceite o identificador do estudante como prova de quem faz a
+                solicitação. Valide a sessão, obtenha a identidade autenticada e
+                verifique a permissão.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Tampering: o cliente envia intenção</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Aceite apenas campos necessários, como a turma. Prioridade,
+                status, identidade e regras devem ser buscados ou calculados no
+                servidor.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Evita que o cliente defina
+                campos internos por atribuição em massa.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Repudiation: produza evidência</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Registre identidade, operação, recurso afetado, horário e
+                resultado. Nunca coloque tokens, senhas ou outros segredos no
+                log.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>04</span
+              ><strong>Information Disclosure: autorize e minimize</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Verifique a autorização sobre o recurso, mesmo para uma pessoa
+                autenticada, e devolva somente os campos necessários para a
+                finalidade.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>05</span><strong>Denial of Service: limite o custo</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Um limite de requisições reduz a chance de um único usuário
+                consumir recursos suficientes para bloquear os demais.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>06</span
+              ><strong>Elevation of Privilege: exija permissão explícita</strong
+              ><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Operações administrativas precisam verificar a permissão
+                confiável no servidor e as condições de responsabilidade sobre o
+                recurso.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>
+              1. Qual decisão mitiga a falsificação de identidade em uma
+              solicitação de matrícula?
+            </legend>
+            <label
+              ><input type="radio" name="q19-1" value="0" /><span
+                >Aceitar o estudanteId enviado pelo formulário.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q19-1" value="1" /><span
+                >Obter a identidade da sessão autenticada no servidor.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q19-1" value="2" /><span
+                >Ocultar o campo estudanteId na interface.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Campos do cliente podem ser alterados; a sessão validada é a fonte
+              confiável.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>
+              2. Por que o servidor não deve copiar todo o JSON recebido para a
+              matrícula?
+            </legend>
+            <label
+              ><input type="radio" name="q19-2" value="0" /><span
+                >Porque o cliente poderia alterar campos internos, como
+                prioridade ou status.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q19-2" value="1" /><span
+                >Porque requisições JSON não podem conter números.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q19-2" value="2" /><span
+                >Porque qualquer dado do cliente é necessariamente
+                inválido.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              O cliente pode informar a intenção; o servidor define os estados
+              sob sua autoridade.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="19">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            e se eu te perguntasse para o coordenador autorizar uma matrícula
+            excepcional basta verificarmos se o perfil do usuário dele é
+            coordenador o que que você mediria que que vocês mediriam se eu
+            fizesse essa pergunta na verdade você pode ver que na verdade não né
+            não basta apenas verificar se ele é coordenador ou não eu preciso
+            ver se ele é coordenador e está agindo de fato o sobre os recursos
+            sobre a suas responsabilidades ou seja se ele é o coordenador
+            daquele curso que ele está eh tratando eh o aluno se o aluno que ele
+            está modificando a matrícula é de um outro curso ele não deveria ter
+            acesso ou se o período para modificações não está aberto ou se está
+            aberto mas exige uma justificativa obrigatória isso tudo deve ser
+            verificado na hora de implementar o software certo os papéis eles
+            ajudam eu verificar se é coordenador verificar se é aluno ajuda mas
+            muitas decisões elas não podem depender apenas do recurso né porque
+            elas também precisam verificar o papel o recurso e o contexto é isso
+            que nós vimos no vídeo anterior né nas três formas de fazer
+            validações de entradas por exemplo quando você pode ter validação
+            sintática validação semântica ou por contexto o mesmo se aplica para
+            quando nós fazemos controle de acesso certo agora independente se
+            você sabe ou não programar imagina que existe uma função de código
+            que serve professor licitação de matrícula nessa função nós temos
+            dois argumentos sendo passados que é o estudante ID ou seja o
+            identificador do estudante que pode ser o próprio número de
+            matrícula e o identificador da turma você consegue perceber o que
+            que tem de errado nesse código na verdade nós temos uma das
+            possíveis ameaças que nós identificamos lá atrás quando aplicamos o
+            stread que é a possibilidade de spoofing lembra o que que faz o
+            spoofing o spoofing é quando o atacante ele falsifica a identidade
+            então nesse caso ele só precisaria substituir ou o estudante ID pelo
+            identificador de uma outra pessoa assim ele conseguiria estar
+            automaticamente personificando ou falsificando a identidade desse
+            estudante ah agora você consegue ver que o que nós estudamos lá
+            atrás no stride não era só a teoria isso se
+          </p>
+          <p>
+            reflete na prática exatamente na hora que nós vamos colocar a mão
+            naomassa e transformar todo o nosso planejamento em código a
+            pergunta que fica agora é: como é que nós resolvemos isso olha como
+            aqui nesse código nós temos alguns controles que já mitigam bastante
+            essa ameaça primeiro nós temos uma verificação para verificar se a
+            sessão é válida caso não seja o usuário ele não tá não está
+            autenticado então ele não deve fazer aquela operação então o sistema
+            já retorna o erro 401 que é o erro típico da situação de usuário não
+            autenticado além disso nós verificamos se o usuário que está
+            autentindicado caso haja uma sessão ativa ele seja de fato um
+            estudante caso ele não seja podemos dizer que a operação está não
+            permitida ou seja nós estamos bloqueando o acesso para aquele tipo
+            de perfil que seria o erro 403 tá que é típico de acesso não
+            permitido operação não permitida certo então depois disso aí sim que
+            nós vamos recuperar as informações sobre o ID do estudante e vamos
+            também colocar na turma ID né o valor realmente da identificação da
+            turma mas percebam que aqui a gente já fez uma modificação o valor
+            da requisição não vem mais do usuário aqui nós estamos recuperando a
+            identificação do usuário logado a partir da própria sessão que já
+            está ativa então isso elimina né a possibilidade do usuário informar
+            uma matrícula de um outro usuário porque o próprio sistema está
+            validando que aquela matrícula é do usuário que está autenticado com
+            uma sessão ativa naquele momento e que ele tem as devidas permissões
+            para fazer aquela operação qual foi a decisão principal que nós
+            tomamos aqui contra a ameaça de spoofing o estudante ele não diz o
+            sistema quem ele é a identidade ela tem que vir da sessão já
+            autenticada agora seguindo o nosso exemplo baseado no stre a segunda
+            letra que nós temos lá né é o T tempering no tempering nós temos a
+            preocupação da adulteração indevida de dados vamos ver um exemplo no
+            nosso sistema de matrículas esse aqui é um exemplo que é um prato
+            cheio para o ataque que explora a ameaça de Thumprering por quê
+            porque basicamente nós estamos pegando todos os dados que vêm da
+            requisição e estamos inserindo eles diretamente no nosso banco de
+            dados sem nenhuma validação extra então perceba como é fácil para um
+            atacante simplesmente adulterar uma requisição mais ou menos como
+            esse conteúdo aqui aqui nós temos a prioridade super elevada o
+            status aprovado e o pré-requisito está como verdadeiro então isso é
+            totalmente fabricado pelo aluno inclusive o número de vagas ele
+            poderia manipular se o nosso sistema obedecesse aquela lógica que
+            nós vimos no código anterior e esse seria um exemplo então de uma
+            implementação segura daquela mesma funcionalidade para começar nós
+            podemos ter uma verificação para ver se o campo que vem da
+            requisição ele é consistente com o campo que a funcionalidade está
+            associada que nesse caso é o Turma ID se o campo for diferente
+            turmaidi nós já podemos retornar um erro que seria nesse caso um
+            erro 400 que é o erro de campo não permitido uma vez que essa
+            condição for satisfeita né e nós de fato verificarmos que a turma
+            realmente é a turma que se tá querendo atualizar nós podemos aí sim
+            fazer uma conversão vamos pegar aquele valor do turma de converter
+            para inteiro isso já elimina problemas por exemplo caso seja
+            digitado um valor que não seja o número inteiro então já não
+            quebraria o sistema poderíamos ter uma tratativa aí na turma nós
+            conseguimos pegar então a recuperar a turma completa não apenas com
+            o usuário digitando todos os dados da turma mas fazendo uma busca no
+            nosso próprio banco de dados pelo ID daquela turma que foi
+            recuperado do nosso campo se a turma não existir nós podemos
+            retornar um erro 404 que é o erro de turma não encontrada caso
+            contrário aí sim o estudante vai ser buscado do banco de dados
+            percebam que assim como nós fizemos lá no spoofing aqui no tempering
+            nós também estamos tomando aquele cuidado de buscar o estudante e o
+            seu ID da sessão autenticada não deixar ele digitar a sua própria
+            identificação já a prioridade ela também não vai vir do usuário ela
+            vai vir lá das regras de prioridade então nós vamos passar por
+            exemplo para uma função calcula prioridade
+          </p>
+          <p>
+            qual é o estudante qual é turma e essa função que vem lá da parte do
+            sistema responsável pelas regras vai ser a função responsável por
+            estabelecer de fato a prioridade isso não vem da requisição do
+            usuário percebam que somente os dados que vêm realmente da
+            solicitação do usuário que são necessários são os dados então a
+            principal decisão em relação ao tempering é justamente que o cliente
+            né nesse caso o estudante vai passar apenas sua intenção e não todos
+            os dados que serão armazenados no momento da efetivação de uma
+            matrícula isso é análogo a quando você faz um depósito você não
+            simplesmente fala o valor você precisa passar o valor dentro do seu
+            envelope e lá no banco antes daquele valor entrar na sua conta ele
+            precisa ser verificado é algo parecido com isso que nós estamos
+            fazendo aqui o cliente fala sua intenção e baseado no conteúdo de
+            fato relacionado à aquela intenção a transação ela é efetivada e a
+            letra R do stride repudiation como se aplicaria no nosso sistema de
+            matrículas um tipo de ameaça de repudiation poderia ser o estudante
+            negando ter solicitado a matrícula ou um servidor negando ter
+            autorizado uma exceção e esse é um trecho de código inseguro porque
+            ele altera o sistema sem produzir as evidências o sistema não
+            registra quem realizou a operação quando ela ocorreu e qual foi o
+            resultado essa aqui já seria uma versão segura onde o sistema ele
+            registra uma trilha de auditorias a decisão principal que nós
+            tomamos aqui foi registrar a identidade a operação o recurso afetado
+            o horário e resultado tkens senhas e outros segredos nunca devem
+            aparecer nos logs temos que nos preocupar também com a letra I do
+            stride que é o information disclosure e um exemplo de information
+            disclosure no nosso tema de matrícula seria um estudante consultar
+            informações sobre a solicitação de matrículas de um outro estudante
+            basicamente ele pode fazer isso por exemplo através da atualização
+            indevida do identificador na URL esse aqui é um exemplo de trecho de
+            código em seguro onde há apenas a verificação acerca da existência
+            da solicitação ou seja um estudante que consulta a solicitação de
+            matrícula de outro
+          </p>
+          <p>
+            estudante alterando o identificador diretamente na RL por exemplo
+            ele conseguiria ter sucesso ao explorar essa ameaça porque o código
+            ele não tem nenhuma tratativa para deixar isso mais seguro nós
+            poderíamos aplicar o princípio de autorização sobre o recurso que é
+            basicamente o que esse segundo código aqui faz a principal decisão
+            né ela é baseada no fato de que estar autenticado não significa
+            poder acessar qualquer solicitação além da autorização por recurso a
+            resposta também contém somente os dados necessários percebam que lá
+            no final no conjunto de campos que compõem a resposta estão somente
+            os dados que realmente são necessários o nosso sistema de matrículas
+            pode também estar suscetível a ameaças que afetem a sua
+            disponibilidade vamos ver um exemplo de denial service que é o de
+            Destride e esse é o exemplo de código me seguro você conseguiria
+            perceber qual é o problema aqui porque ele tá inseguro na verdade o
+            grande problema é que ele processa toda a requisição que chega para
+            ele de forma imediata justamente ficando suscetível a gargalos que
+            podem levar à negação de serviço imagina que um aluno mal
+            intencionado resolve enviar milhões de solicitações de matrículas ao
+            mesmo tempo e acaba deixando os recursos do servidor totalmente
+            indisponíveis para atender as solicitações legítimas de outros
+            alunos mas tem como resolver isso ou pelo menos mitigar a nível de
+            implementação a resposta é sim nesse código nós temos um controle
+            para limitar a quantidade de requisições temos inclusive alguns
+            parâmetros como por exemplo a quantidade máxima de solicitações que
+            ele pode fazer e qual o intervalo nesse caso eu configurei como no
+            máximo 10 solicitações por minuto claro eu tô considerando que cada
+            solicitação de matrícula se refere a uma disciplina se nós estamos
+            de fato limitando quantas solicitações de matrícula no sentido de
+            matricular-se num curso aí esse limite poderia ser bem menor como um
+            ou até três caso nós assumamos que ele possa eventualmente estar
+            corrigindo ou atualizando a sua matrícula então a decisão principal
+            que nós tomamos aqui ela foi simples para mitigar a ameaça de den
+            service nós limitamos a quantidade de execuções e validações
+            custosas que um usuário poderia fazer assim o único usuário não
+          </p>
+          <p>
+            consegue consumir recursos suficientes para tornar o serviço
+            indisponível aos demais usuários agora imagina um cenário onde um
+            estudante consegue obter vantagens indevidas obtendo privilégios que
+            ele não deveria ter por ser um estudante essa é a letra E do stride
+            elevation of privileg ou a elevação de privilégios tomando esse
+            código como exemplo você consegue verificar uma possibilidade de
+            elevation of privileg o grande problema aqui é que o estudante
+            autenticado ele pode acessar uma operação reservada à coordenação e
+            aprovar a sua própria solicitação excepcional de matrícula qualquer
+            usuário indicado inclusive um estudante poderia executar uma
+            operação administrativa com base nesse código que vocês estão vendo
+            aqui uma solução está nesse segundo código aqui a função aprovar a
+            sessão possui uma verificação um pouquinho diferente na primeira
+            linha dentro da função nós temos um seão sessão possui permissão
+            aprovar essa são ou seja se não houver permissão explícita para
+            aquele usuário autenticado e aquele usuário autenticado ele é
+            recuperado da própria exceção nós conseguimos então retornar o
+            código 403 que seria um erro de operação não permitida então nesse
+            caso nós não estamos apenas confiando no que o usuário está tentando
+            fazer mas sim no que o servidor sabe sobre o usuário e quais
+            privilégios de fato ele realmente tem então para finalizar esse
+            vídeo né nossa última decisão aqui foi a autenticação confirma quem
+            é o usuário enquanto que a autorização determina o que ele pode
+            fazer com base nessa decisão nós conseguimos lidar então com a
+            elevação de privilégios lembrando que a permissão deve sempre ser
+            verificada pelo servidor antes da execução de toda a operação
+            privilegiada e com isso nós chegamos ao fim da etapa de
+            implementação segura nos próximos vídeos continuaremos pelo
+            pipelining de desenvolvimento de software seguro.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 19.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-18.html">← Aula 18</a
+        ><a href="index.html">Índice das aulas</a><span>Fim da sequência</span>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

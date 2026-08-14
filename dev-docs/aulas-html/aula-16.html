@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Por que arquitetura segura não basta · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Implementação segura · Aula 16 de 19</p>
+        <h1>Por que arquitetura segura não basta</h1>
+        <p>
+          Diagramas organizam controles, mas somente a implementação consistente
+          preserva autorização, validação, atomicidade e evidências.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Como impedir que o código anule uma boa decisão
+            arquitetural?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="16-1" /><span
+              >Transformar decisão arquitetural em regra de código.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="16-2" /><span
+              >Reconhecer formas de enfraquecer controles.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="16-3" /><span
+              >Verificar propriedades de segurança na implementação.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Arquitetura é base</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Uma arquitetura segura torna a implementação viável, mas não
+                cria código correto automaticamente.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Preservar, não anular</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Se o código confia em um perfil enviado pelo cliente, ele anula
+                uma autorização desenhada na arquitetura.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Atomicidade</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Uma regra como &#x27;há vaga disponível&#x27; precisa ser
+                preservada na confirmação da operação, não apenas em uma
+                consulta anterior.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>
+              1. Um campo &#x27;perfil=secretaria&#x27; vindo do navegador é
+              suficiente para autorizar uma ação?
+            </legend>
+            <label
+              ><input type="radio" name="q16-1" value="0" /><span
+                >Sim, se o botão estava oculto.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q16-1" value="1" /><span
+                >Não, o servidor deve verificar a autorização confiável.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q16-1" value="2" /><span
+                >Sim, se vier em JSON.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Dados do cliente não provam identidade nem permissão.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>2. Uma boa arquitetura garante software seguro?</legend>
+            <label
+              ><input type="radio" name="q16-2" value="0" /><span
+                >Sim, sempre.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q16-2" value="1" /><span
+                >Não; a implementação pode enfraquecer seus controles.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q16-2" value="2" /><span
+                >Somente em microsserviços.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Cada decisão precisa ser implementada e verificada.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="16">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Finalmente chegamos na parte da implementação segura vamos então
+            agora a partir da arquitetura ao código na aula anterior nós tivemos
+            algumas reflexões sobre como construir uma arquitetura segura agora
+            nós vamos partir para o próximo passo o mais importante aqui é que
+            nós consigamos perceber que a arquitetura ela não se implementa
+            sozinho é por isso que na implementação segura nós precisamos
+            transformar as decisões arquiteturais em código na aula anterior nós
+            projetamos uma arquitetura segura para o sistema de matrículas
+            identificamos componentes limites de confiança e pontos de entrada
+            onde podem também ser chamados de superfícies de ataques também
+            tomamos decisões como autenticar cada usuário verificar permissões
+            no servidor aplicar o menor privilégio proteger operações críticas
+            registrar as ações relevantes e aí preservar a disponibilidade do
+            sistema.
+          </p>
+          <p>
+            Isso tudo foi feito na hora de pensar na arquitetura do sistema mas
+            existe uma diferença gigante entre desenhar uma arquitetura segura e
+            entregar um software seguro e eu não tô dizendo que desenhar a
+            arquitetura segura não é importante ou que não é necessário ela é
+            simplesmente a base para a implementação segura uma vez que você tem
+            implementação a implementação daquela arquitetura de maneira
+            consistente e a arquitetura era segura aí sim aí você pode partir
+            para um entregável também seguro no diagrama é muito fácil escrever
+            serviço de autorização validação auditoria ou proteção contra abuso
+            o problema é que nenhuma dessas caixinhas se transforma
+            automaticamente no código correto entre a arquitetura e o sistema em
+            execução existe a implementação e é exatamente nesse ponto que boas
+            decisões precisam ser preservadas elas não podem ser enfraquecidas e
+            nem mesmo elas precisam ser refeitas mas elas precisam ser
+            preservadas.
+          </p>
+          <p>
+            Certo, então se nós anularmos uma decisão arquitetural mesmo sem
+            querer fazer isso na hora de implementar nós vamos ter um software
+            inseguro mesmo que a decisão arquitetural ela por si só tenha sido
+            pensada para que nós tornemos um software mais seguro na hora da
+            implementação isso pode ir para água abaixo então eu poderia
+            reformular a frase que eu falei agora h pouco dizendo que nós
+            devemos eh preservar né e não enfraquecer nem anular para na verdade
+            uma frase de atenção no momento da implementação pode acontecer
+            mesmo involuntariamente que as decisões elas não sejam preservadas
+            elas sejam de fato enfraquecidas ou até mesmo completamente anuladas
+            por erros na hora de seguir a desenhada na etapa anterior imagina
+            que no nosso diagrama determine que um componente que é por exemplo
+            um servidor autorizado né quando eu falo servidor eh o servidor da
+            secretaria e que esse servidor autorizado né esse ator do sistema
+            ele pode realizar uma uma matrícula de forma excepcional a decisão
+            arquitetural por si só ela está correta porém se o end point receber
+            do navegador um campo perfil e o código confiar que esse valor é
+            realmente servidor né ao invés de ser aluno e não verificar qualquer
+            estudante poderia se passar por uma secretaria por exemplo por uma
+            pessoa da secretaria por exemplo né para transformar aquela decisão
+            em uma decisão mal intencionada mas que tem um efeito real então é
+            por isso que se a arquitetura ela prioriza a autorização né e ela
+            tem essa autorização prevista mas a implementação ela não realizou
+            aquela autorização de maneira segura não basta eu desenhar uma
+            caixinha dizendo que vai ter uma autorização antes de um usuário
+            conseguir fazer a sua tarefa se na hora de implementar eu não fiz
+            isso de maneira segura de maneira consistente imagina também que a
+            arquitetura define a quantidade de vagas que vai ser verificada
+            antes da matrícula então a arquitetura ela fez o seu papel ela
+            projetou um pipeline né um fluxo onde primeiro era necessário
+            verificar a quantidade de vagas e depois matricular somente se
+            houver vagas e aí dois estudantes tentam ocupar a última vaga no
+            mesmo instante como nós vimos na nossa aula passada sobre
+            arquitetura de software o código ele consulta o banco de dados para
+            cada um estudante enquanto cada um tá no seu dispositivo e encontra
+            uma vaga disponível nas duas aquisições até aí tudo certo porque de
+            fato quando eles consultaram havia uma vaga disponível o que não
+            pode acontecer é que o código fale na hora de implementar a o botão
+            de salvar ou de efetivar a matrícula que ele fale de confirmar se
+            realmente ainda está disponível aquela vaga que recém agora tava né
+            que eles acabaram de verificar que estava disponível mas na hora de
+            confirmar ainda tava disponível a regra existia mas foi implementada
+            sem uma operação atômica operações atômicas são justamente aquelas
+            que elas começam e ou elas são completamente anuladas que seria o
+            equivalente a um usuário verificar a sua matrícula não foi efetivada
+            porque não há mais vagas mesmo que na telinha aparecesse um segundo
+            atrás que tinha uma vaga agora não tem mais então isso é um caso de
+            operação atômica que foi desfeita ou o contrário de fato o cara ali
+            que conseguiu clicar primeiro e efetivar sua matrícula ele teve sua
+            matrícula aceita tá então esse é o conceito de cidade ou vai até o
+            final e efetiva de forma consistente ou volta né e cancela a
+            operação aborta porque de fato ela não pode ser concluída nesse caso
+            não poderia ser concluída por uma falta de vaga então portanto né eh
+            quando nós falamos implementar de forma segura talvez a primeira
+            coisa que vocês pensem é:
+          </p>
+          <p>
+            &quot;Ah eu tenho que implementar sem erros sem colocar bug no
+            código&quot; só que não é só isso não é simplesmente falar de síntax
+            ou de falar da lógica simplesmente eh seguindo um roteiro nós temos
+            que pensar se nós estamos de fato preservando dentro do código
+            aquelas propriedades de segurança que nós já planejamos nas etapas
+            anteriores então a etapa de implementação ela não é o momento de
+            você ter novas ideias e ficar o tempo todo tentando melhorar o
+            sistema de maneira sem seguir um uma maneira sistematizada né de
+            maneira não sistematizada na verdade nessa nessa nesse momento nesse
+            ponto do seu desenvolvimento do software você já tomou a maioria das
+            decisões e nessa hora você vai eventualmente optar por usar eh
+            formas diferentes de obedecer de conseguir implementar e fazer
+            refletir aquilo que foi previsto lá na sua arquitetura certo e aí eu
+            pergunto para vocês uma boa arquitetura ela garante uma
+            implementação segura vocês já perceberam né que a resposta é não uma
+            boa arquitetura ela reduz riscos ela organiza os controles e torna a
+            implementação segura mais viável então olha como essa frase é
+            importante uma boa arquitetura ela torna a implementação segura mais
+            viável ela facilita a vida de quem vai implementar mas ainda
+            precisamos implementar cada decisão corretamente verificar
+            comportamentos indesejados e produzir evidências que os controles de
+            fato realmente funcionam lembra quando nós aplicamos aquele estudo
+            do Stride e depois NIST pra gente verificar então quais eram os
+            controles que deveriam ser projetados na nossa arquitetura pois bem
+            na hora de implementar nós temos que não apenas implementar esses
+            controles né mas também verificar se eles de fato foram
+            implementados de forma consistente
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 16.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-15.html">← Aula 15</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-17.html">Aula 17 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

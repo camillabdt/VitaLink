@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>Ativos e superfície de ataque · Engenharia de Software Seguro</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Exposição · Aula 11 de 19</p>
+        <h1>Ativos e superfície de ataque</h1>
+        <p>
+          Antes de escolher controles, identifique o que tem valor e todos os
+          pontos pelos quais um atacante pode influenciar o sistema.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong>O que merece proteção e por onde pode ser atacado?</strong>
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="11-1" /><span
+              >Inventariar ativos relevantes.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="11-2" /><span
+              >Mapear superfícies de ataque.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="11-3" /><span
+              >Reduzir exposição desnecessária.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Ativos primeiro</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Credenciais, dados pessoais, regras de negócio, registros e
+                disponibilidade só podem ser protegidos adequadamente se forem
+                identificados.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Superfície de ataque</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Endpoints, formulários, importações, integrações, contas
+                administrativas e APIs legadas são pontos de entrada ou
+                exposição.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Menos exposição</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Cada recurso adicional exige proteção, manutenção e
+                monitoramento. Remover o que não é necessário reduz risco.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>1. Uma API legada sem uso é principalmente:</legend>
+            <label
+              ><input type="radio" name="q11-1" value="0" /><span
+                >Uma superfície de ataque desnecessária.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q11-1" value="1" /><span
+                >Uma garantia de disponibilidade.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q11-1" value="2" /><span
+                >Um ativo que precisa ser público.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Eliminar recursos sem finalidade reduz possibilidades de
+              exploração.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>2. Por que listar ativos antes de controles?</legend>
+            <label
+              ><input type="radio" name="q11-2" value="0" /><span
+                >Para saber o que tem valor e qual dano evitar.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q11-2" value="1" /><span
+                >Para escolher cores de diagrama.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q11-2" value="2" /><span
+                >Para dispensar modelagem de ameaças.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              O valor do ativo orienta proteção e prioridade.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="11">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Não adianta tentar projetar uma marquetura segura se eu não sei o
+            que que eu quero proteger e antes de tomar uma decisão final sobre
+            como proteger o sistema através de uma arquitetura segura nós
+            precisamos entender quais são os ativos que realmente tem valor
+            naquela arquitetura por isso que nós tivemos aquela conversa com o
+            usuário lá nas primeiras aulas então no caso do meu sistema de
+            matrículas nós temos aí credenciais adiccionais temos identidade de
+            usuários históricos de cancelamento de matrícula tem históricos de
+            componentes aceitos tudo isso são informações são ativos importantes
+            quais são as matrículas que estão ativas quais são as notas e
+            frequências caso isso seja integrado ao sistema de matrículas muitas
+            vezes vai precisar ser integrado porque para você conseguir uma vaga
+            você tem que estar num ranking que depende da suas aprovações
+            passadas que só reprova ele tende a.
+          </p>
+          <p>
+            conseguir menos prioridade na hora de conseguir uma disciplina com
+            poucas vagas ou com muita demanda então decisões administrativas
+            lista de espera tem uma série de informações que são ativos
+            importantes inclusive os logs de auditoria por exemplo então eu
+            preciso identificar esses ativos para que aí sim eu consiga
+            protegê-los e assim nem todo ativo ele é um dado pessoal um ativo
+            pode ser uma operação por exemplo a própria confiança na instituição
+            é um ativo importante é algo que tem que ser preservado a correção
+            das decisões acadêmicas precisa ser preservada a capacidade de
+            comprovar uma operação então essa auditabilidade é um ativo do
+            sistema a capacidade de comprovar essa operação então ela é precisa
+            ser mantida através de funcionalidades específicas para isso a
+            capacidade de manter o sistema disponível durante o processo de
+            matrícula também é um ativo que o sistema vai ter e a.
+          </p>
+          <p>
+            equidade nas distribuições de vagas nessas regras de negócio tudo
+            isso precisa ser íntegro precisa ser programado no meu sistema de
+            uma maneira interessante para que isso seja preservado e uma vez que
+            eu já sei então o que que é importante quais são esses ativos aí eu
+            posso pensar numa segunda coisa importante que são as superfícies de
+            ataques a superfície de ataque no sistema ela basicamente ela é onde
+            o sistema pode estar vulnerável ou suscetível a um atacante explorar
+            alguma vulnerabilidade para conseguir de fato fazer um ataque então
+            é isso que é a superfície do ataque quais são os pontos de acesso
+            que o atacante pode ter nesse sistema para fazer alguma coisa ruim
+            no nosso tema de matrículas nós temos aí desde a página de login que
+            talvez seja uma das primeiras superfícies de ataques a recuperação
+            de senhas se ela tiver uma vulnerabilidade de você conseguir trocar
+            daqui a pouco o.
+          </p>
+          <p>
+            e-mail do estudante e a senha você consegue dizer: &quot;Ah esqueci
+            meu e-mail&quot; então coloca o novo e-mail aí você coloca o e-mail
+            falso e você recupera a senha de forma indevida rouba a senha desse
+            estudante endps points da PI ou seja quando o nosso sistema ele tem
+            um um API que é basicamente um ponto central que ele faz a a
+            disponibilização de serviços e recursos para o nosso sistema final
+            se esse sistema ele tiver problemas de segurança ele pode ser
+            atacado então isso aí é uma outra superfície um outro ponto de
+            entrada pro atacante conseguir roubar dados manipular dados ou fazer
+            alguma coisa indevida o portal da secretaria o portal do estudante a
+            página da própria coordenação a parte de importar arquivos daqui a
+            pouco tem ali um local onde o aluno consegue fazer o upload de um
+            arquivo PDF e se não tiver uma boa validação ele consegue daqui a
+            pouco colocar um arquivo infectado e apaga tudo.
+          </p>
+          <p>
+            que tem no sistema coloca um ponto XZ ali ao invés de um ponto PDF e
+            aí o sistema pode todo ser danificado através dessa porta de entrada
+            então quando nós falamos de superfície estamos tentando descobrir
+            quais são as portas de entrada ou janelas de entrada fazendo
+            analogia porque daqui a pouco você preocupado ali com o óbvio que é
+            a porta de entrada mas você não resolve um probleminha menor por
+            exemplo integração com o histórico acadêmico o histórico é da
+            instituição não tem problema e se alguém descobrir lá no sistema
+            institucional de histórico acadêmico uma vulnerabilidade que consiga
+            afetar a matrícula através daquilo ali n a geração de relatórios a
+            fila de processamento banco de dados imagina se o o alguém malicioso
+            consegue manipular direto o banco de dados isso pode também colocar
+            seu sistema em cheque pode deixar ele inseguro o elo mais fraco
+            lembra que nós falamos na aula.
+          </p>
+          <p>
+            passada sobre elo mais fraco o elo mais fraco pode ser qualquer uma
+            dessas coisas que eu tô falando aqui então essas são as portas de
+            entrada por estudantes são as superfícies de ataques bibliotecas
+            utilizadas pelo pelo sistema então quem no primeiro semestre talvez
+            não entenda o que que é uma biblioteca mas de forma resumida quando
+            você vai fazer um código você não programa tudo tem coisas que você
+            pega pacotinhos de códigos que já existem por aí e aí você vai
+            utilizar eles para você não precisar reimplementar alguma coisa que
+            já implementou então isso é uma biblioteca e se nessa biblioteca
+            tiver alguma coisa insegura tiver alguma vulnerabilidade você vai
+            est herdando essa vulnerabilidade para o seu código também e muitas
+            vezes não é fácil identificar a vulnerabilidade mas o que a gente
+            pode fazer é reduzir a superfície de ataque imagina que eu tenho sei
+            lá um prédio enorme com 300.
+          </p>
+          <p>
+            portas em vários lugares diferentes é muito mais fácil de um ladrão
+            entrar do que se eu tiver apenas uma porta na frente com várias
+            seguranças eu posso não ter segurança para essas 300 portas mas eu
+            posso ter uma redução onde eu posso me perguntar quais são de fato
+            as portas que precisam estar abertas nesse castelo nesse prédio
+            nesse agora no sistema é a mesma coisa eu posso pensar por exemplo
+            pera aí o painel administrativo ele precisa estar exposto a toda a
+            internet ou seja o servidor aqui no campus da igreja da Pampa e as
+            pessoas que acessam também estão aqui dentro será que eu preciso
+            deixar um acesso público para qualquer pessoa na internet acessar o
+            painel administrativo ou será que eu posso usar só a internet local
+            a intranet para permitir acesso a esse ativo importante só isso
+            pessoal já permitiria que estivesse protegido todas aquelas
+            operações associadas a o dashboard.
+          </p>
+          <p>
+            administrativo então pelo menos por essa porta de entrada que é
+            através do login de um servidor da Secretaria Acadêmica por exemplo
+            você já não teria possibilidade de ataques que isso acontecer porque
+            você removendo aquele acesso desde que a pessoa esteja fora da
+            universidade fora da rede da universidade você também pode perguntar
+            se todas as funções precisam usar a mesma API daqui a pouco você
+            pode ter API separadas onde as funções do estudante consomem um API
+            e as outras funções administrativas consomem um API diferente que aí
+            elas têm níveis de acesso diferente daqui a pouco a API que o
+            estudante usando para consultar alguma coisa ela pode ser somente
+            leitura ninguém consegue mudar nada através daquela API enquanto que
+            a API utilizada pelos técnicos administrativos ela pode permitir a
+            escrita também um sistema ele precisa permitir importação de
+            planilhas se sim OK se não daqui a.
+          </p>
+          <p>
+            pouco limita a importação somente a PDF ou a a menos arquivos por
+            quê panilha pode ter macros pode ter daqui a pouco coisas que não
+            deveriam ter ali dentro que acabam também deixando o sistema
+            inseguro uma PI legada ainda precisa permanecer ativa daqui a pouco
+            uma API que não é mais usada é mais fácil e mais seguro você tirar
+            do ar aquela API do que você deixar lá percebe que cada coisa a mais
+            que o sistema tem pode parecer legal quando você vende lá pro pro
+            cliente olha tem aqui você pode importar qualquer tipo de arquivo
+            sistema lida com tudo isso mas que além de ser mais código e mais
+            complexo pode deixar mais vulnerável então quando nós falamos de
+            superfície de ataque nós temos que entender que complexidade muitas
+            vezes vai est intimamente ligado a um desafio maior de ter uma maior
+            cobertura dessas superfícies no ponto de vista de segurança quanto
+            mais complexo o sistema maior tende.
+          </p>
+          <p>
+            a ser a superfície de ataque então eliminar a superfície ou pelo
+            menos reduzir vamos sempre usar essa palavra reduzir porque eliminar
+            a gente nunca consegue a única forma de eliminar é a gente não ter
+            de fato nem usuários legítimas usando o sistema aí não adianta então
+            a forma de reduzir a superfície de ataque é eliminar acessos que não
+            são necessários reduzir esses acessos quando possível eliminar
+            integrações que não são necessárias para que fazer integração com
+            API de um sistema terceiro que nem é usado mais vamos remover isso
+            daí funcionalidades necessárias vamos remover quanto menos coisas
+            inúteis ou desnecessárias o sistema tiver menos superfície de ataque
+            ele vai ter não.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 11.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-10.html">← Aula 10</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-12.html">Aula 12 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

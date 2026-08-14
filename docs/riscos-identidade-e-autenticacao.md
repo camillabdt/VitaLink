@@ -1,19 +1,39 @@
-Registro de Riscos e Plano de Tratamento: Identidade e Autenticação (NIST CSF 2.0)
-Este arquivo traduz as ameaças de identidade, autenticação e privilégios em riscos de negócio para o VitaLink, avaliando probabilidade e impacto (escala de 1 a 4), e definindo controles alinhados ao NIST Cybersecurity Framework 2.0.
-1. Registro e Avaliação de Riscos
-ID	Descrição do Risco	Ameaças / Abusos Base	Prob. (1-4)	Impacto (1-4)	Pontuação	Nível	Justificativas (Probabilidade e Impacto)
-R01	Falso profissional obtém acesso autorizado pelo paciente.	T01, CA01	2	4	8	Alto	Probabilidade: O cenário depende da criação de uma identidade profissional fraudulenta e de validação insuficiente antes de a conta poder solicitar acesso. Por exigir essas condições específicas, a probabilidade é média-baixa (2).
-Impacto: Um paciente pode conceder acesso a informações médicas a uma identidade profissional falsa, causando exposição de dados sensíveis e quebra de confiança (4).
-R02	Conta de paciente é comprometida por roubo de credenciais/sessão.	T02, CA02	3	4	12	Crítico	Probabilidade: Ataques de phishing e vazamento de senhas são comuns. Sem MFA, o roubo de conta é muito provável (3).
-Impacto: Acesso completo e irrestrito ao histórico médico do paciente e possibilidade de ações fraudulentas em seu nome (4).
-R03	Perfil, paciente, recurso ou operação fora do privilégio é alcançado.	T03, CA01, CA02, CA04	3	4	12	Crítico	Probabilidade: A manipulação de identificadores, recursos ou parâmetros de requisições é plausível com ferramentas comuns quando a API não aplica autorização completa no servidor, justificando probabilidade média-alta (3).
-Impacto: O acesso cruzado a dados de pacientes ou a operações fora do escopo autorizado pode expor ou alterar informações médicas sensíveis (4).
-*(Cálculo da Pontuação: Probabilidade × Impacto. Escala de Níveis: 1–3 = Baixo	4–7 = Médio	8–11 = Alto	12–16 = Crítico)*				
-2. Plano de Tratamento e Controles (NIST CSF 2.0)
+# Riscos de identidade, autenticação e privilégios
 
-| Risco | Estratégia | Controles Propostos | Função NIST CSF 2.0 | Responsável | Evidências de Implementação | Risco Residual (Estimativa) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| R01 | Mitigar | 1. Integração com API de conselhos de classe (ex: CFM) para verificação automática de registro profissional.<br>2. Validação de identidade (documento com foto / KYC) na integração da conta (Onboarding). | Proteger (PR)<br>Proteger (PR) | Equipe de Produto / Backend | Logs de consultas na API do conselho de classe; Status de conta "Verificada" exigido no banco de dados para liberar acessos médicos. | Médio (4)<br>(Prob. 1 × Imp. 4)* |
-| R02 | Mitigar | 1. Implementar Autenticação Multifator (MFA) obrigatória.<br>2. Alertas de login por e-mail para novos dispositivos ou locais suspeitos.<br>3. Gestão segura de sessão (timeout de inatividade e revogação de tokens JWT). | Proteger (PR)<br>Detectar (DE)<br>Proteger (PR) | Equipe de Segurança / Backend | Configuração de MFA ativa nos perfis; E-mails automáticos disparados; Tokens de sessão expirando em tempo hábil (ex: 30 min). | Médio (4)<br>(Prob. 1 × Imp. 4)* |
-| R03 | Mitigar | 1. Autorização rigorosa no backend baseada no token (RBAC/ABAC), não confiando em IDs enviados na URL pelo cliente.<br>2. Aplicação do Princípio do Menor Privilégio em todos os perfis. | Proteger (PR)<br>Proteger (PR) | Equipe de Backend / QA | Casos de teste automatizados falhando em tentativas de acesso cruzado (IDOR); Revisão de código exigindo validação de escopo em rotas sensíveis. | Médio (4)<br>(Prob. 1 × Imp. 4)* |
-* Nota: Como se tratam de dados de saúde altamente sensíveis (PHI), o impacto em caso de falha sistêmica de identidade ou vazamento de dados sempre se mantém em 4. Os controles aplicados derrubam a probabilidade para 1, resultando no menor risco residual possível: 4, classificado como Médio pela escala oficial.
+Este documento detalha R01–R03 sem substituir o [registro consolidado](etapa2-riscos-e-tratamento.md). A escala usa `probabilidade × impacto`, conforme os [critérios da Etapa 2](etapa2-criterios-e-risco-residual.md).
+
+## Registro
+
+| ID  | Evento de risco                                                       | Origem                |   P |   I | Pontuação | Nível   |
+| --- | --------------------------------------------------------------------- | --------------------- | --: | --: | --------: | ------- |
+| R01 | Falso profissional obtém acesso autorizado pelo paciente.             | T01, CA01             |   2 |   4 |         8 | Alto    |
+| R02 | Conta ou sessão comprometida é usada em nome da vítima.               | T02, CA02             |   3 |   4 |        12 | Crítico |
+| R03 | Perfil, paciente, recurso ou operação fora do privilégio é alcançado. | T03, CA01, CA02, CA04 |   3 |   4 |        12 | Crítico |
+
+## Justificativas
+
+### R01 — Falso profissional
+
+**Probabilidade 2:** o abuso exige cadastro fraudulento e falha na validação manual antes de qualquer solicitação de acesso. **Impacto 4:** um paciente pode confiar em identidade falsa e autorizar exposição de dados médicos.
+
+### R02 — Conta ou sessão comprometida
+
+**Probabilidade 3:** phishing, reutilização de senha e roubo de sessão podem ser tentados com recursos comuns. **Impacto 4:** o invasor pode agir em nome da vítima e acessar ou alterar informações conforme o papel comprometido.
+
+### R03 — Acesso fora do privilégio
+
+**Probabilidade 3:** identificadores, recursos e operações podem ser manipulados diretamente na API. **Impacto 4:** uma falha sistêmica de autorização pode expor ou alterar prontuário de outro paciente.
+
+## Tratamento e estado atual
+
+| Risco | Controle definido                                                                                                  | Evidência atual                                                               | Pendência                                                                                        |
+| ----- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| R01   | Cadastro profissional separado da validação manual auditada; conta pendente não solicita acesso.                   | `src/vitallink/professional_validation.py` e testes de cadastro profissional. | Integração automática com conselho de classe e KYC permanecem fora do escopo da primeira versão. |
+| R02   | Argon2, TOTP obrigatório, sessão opaca persistida, CSRF, recuperação reforçada, limites e encerramento de sessões. | Rotas de conta/sessão e testes de cadastro, login, recuperação e rate limit.  | Alertas de dispositivo/localização e detecção D04 não estão implementados.                       |
+| R03   | Autorização decidida pela API usando papel, paciente, recurso, categoria, operação, período e estado.              | `active_authorization()` e testes negativos de IDOR, escopo e revogação.      | Correlação e alerta D01 permanecem pendentes.                                                    |
+
+Não há JWT como autoridade de sessão nem RBAC/ABAC genérico substituindo o modelo de autorização do VitaLink. A sessão é opaca e a autorização clínica é reavaliada no PostgreSQL para cada operação protegida.
+
+## Risco residual
+
+A estimativa consolidada reduz R01–R03 para **Médio (1 × 4)** quando todas as condições de aceite estiverem comprovadas. O impacto permanece 4 pela sensibilidade dos dados médicos. No HEAD atual, a suíte frontend não está verde e os alertas D01/D04 não existem; portanto, o residual não deve ser tratado como medido ou aceito.

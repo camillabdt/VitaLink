@@ -1,6 +1,6 @@
 # Componentes e Arquitetura do VitaLink
 
-Este documento descreve a arquitetura **proposta** do VitaLink para apoiar a análise e a modelagem de ameaças. Não há implementação verificável desses componentes no repositório.
+Este documento descreve a arquitetura de referência do VitaLink para apoiar a análise e a modelagem de ameaças. A aplicação local implementa frontend React, API FastAPI, PostgreSQL, MinIO, ClamAV, Mailpit e transcrição local. O proxy HTTPS e a implantação de produção permanecem fora da comprovação atual.
 
 ## 1. Componentes do Sistema
 
@@ -27,12 +27,12 @@ Este documento descreve a arquitetura **proposta** do VitaLink para apoiar a an�
 
 ## 2. Descrição Textual da Arquitetura Simplificada
 
-Na arquitetura proposta, pacientes e profissionais interagem por uma **Aplicação Web**, que serve como camada de apresentação para exibir informações e submeter requisições. Ela não toma decisões de segurança.
+Na arquitetura implementada localmente, pacientes e profissionais interagem por uma **Aplicação Web**, que serve como camada de apresentação para exibir informações e submeter requisições. Ela não toma decisões de segurança.
 
-O principal processador e agente de segurança proposto é a **API REST**. Todas as ações devem cruzar essa fronteira. O módulo interno de autenticação resolve no servidor a sessão opaca e identifica o solicitante antes das regras de autorização.
+O principal processador e agente de segurança é a **API REST**. Todas as ações protegidas cruzam essa fronteira. O módulo interno de autenticação resolve no servidor a sessão opaca e identifica o solicitante antes das regras de autorização.
 
 Uma vez confirmada a identidade, a API consulta o **Banco de Dados Relacional** para validar as matrizes de permissões e os consentimentos ativos associados àquele paciente. Se as condições forem favoráveis e a autorização for confirmada pelas regras de negócio, a API processa a leitura ou gravação solicitada.
 
-Para casos de exames físicos, o modelo prevê que o arquivo resida em um **Armazenamento de Documentos (Storage)**, isolado atrás da API. Essa divisão mantém metadados e logs de auditoria estruturados no Banco de Dados e impede acesso direto ao arquivo. Na primeira versão, confirmações, recuperações e alertas por e-mail permanecem no ambiente local de desenvolvimento.
+Os arquivos residem em **Armazenamento de Documentos (Storage)** privado, isolado atrás da API e separado entre quarentena e conteúdo aprovado. Essa divisão mantém metadados e logs de auditoria estruturados no Banco de Dados e impede acesso direto ao arquivo. Na primeira versão, confirmações, recuperações e alertas por e-mail permanecem no ambiente local de desenvolvimento.
 
-Os componentes, tecnologias e limites da entrega estão detalhados no [plano de implementação da primeira versão](plano-implementacao-primeira-versao.md).
+Os componentes, tecnologias e limites da entrega estão detalhados no [plano de implementação da primeira versão](implementacao-segura/plano-implementacao-primeira-versao.md).

@@ -17,13 +17,13 @@ Informações relacionadas à saúde de uma pessoa podem estar distribuídas ent
 
 Além da dificuldade de organização, dados médicos possuem caráter sensível. Um sistema responsável por armazenar e compartilhar essas informações precisa considerar situações como:
 
-* acesso ao prontuário por pessoas não autorizadas;
-* uso indevido de contas de pacientes ou profissionais;
-* alteração ou exclusão de exames e laudos;
-* exposição de informações médicas;
-* manutenção de acesso após revogação de uma autorização;
-* indisponibilidade do sistema ou dos documentos armazenados;
-* dificuldade para identificar quem realizou determinada operação.
+- acesso ao prontuário por pessoas não autorizadas;
+- uso indevido de contas de pacientes ou profissionais;
+- alteração ou exclusão de exames e laudos;
+- exposição de informações médicas;
+- manutenção de acesso após revogação de uma autorização;
+- indisponibilidade do sistema ou dos documentos armazenados;
+- dificuldade para identificar quem realizou determinada operação.
 
 O VitaLink busca representar um cenário no qual essas informações possam ser centralizadas sem retirar do paciente o controle sobre quem pode consultar seus dados.
 

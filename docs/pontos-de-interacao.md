@@ -1,6 +1,6 @@
 # Pontos de Interação e Fronteiras do Sistema
 
-Este documento detalha as interações de entrada e saída **propostas** para o VitaLink e as fronteiras onde os controles deverão ser aplicados. Não descreve comportamento já implementado.
+Este documento detalha as interações de entrada e saída do VitaLink e as fronteiras onde os controles são aplicados. As rotas e integrações existem no ambiente local; a implantação de produção e sua configuração externa não estão comprovadas.
 
 ## 1. Pontos de Entrada de Dados
 

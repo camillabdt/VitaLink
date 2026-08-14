@@ -10,10 +10,10 @@ Este documento detalha os casos de abuso relacionados à identidade e à autenti
 
 ### Condições necessárias
 
-* o ator consegue iniciar um cadastro como profissional de saúde;
-* os dados utilizados no cadastro não correspondem à identidade ou à habilitação real do ator;
-* a validação da identidade e do registro profissional é inexistente, incompleta ou insuficiente;
-* o sistema permite que a conta seja utilizada como perfil profissional após o cadastro.
+- o ator consegue iniciar um cadastro como profissional de saúde;
+- os dados utilizados no cadastro não correspondem à identidade ou à habilitação real do ator;
+- a validação da identidade e do registro profissional é inexistente, incompleta ou insuficiente;
+- o sistema permite que a conta seja utilizada como perfil profissional após o cadastro.
 
 ### Fluxo de abuso
 
@@ -39,31 +39,31 @@ O paciente pode fornecer acesso a informações sensíveis acreditando estar int
 
 Entre os possíveis impactos estão:
 
-* exposição de dados médicos;
-* exposição de exames, laudos, receitas e imagens;
-* associação de atendimentos ou documentos a um falso profissional;
-* perda de confiança no sistema;
-* utilização indevida de permissões concedidas pelo paciente.
+- exposição de dados médicos;
+- exposição de exames, laudos, receitas e imagens;
+- associação de atendimentos ou documentos a um falso profissional;
+- perda de confiança no sistema;
+- utilização indevida de permissões concedidas pelo paciente.
 
 ### Ativos envolvidos
 
-* **A02** — Dados dos profissionais de saúde;
-* **A03** — Dados médicos dos pacientes;
-* **A04** — Exames, laudos e imagens médicas;
-* **A05** — Receitas e prescrições médicas;
-* **A06** — Credenciais de autenticação;
-* **A09** — API;
-* **A12** — Armazenamento de documentos.
+- **A02** — Dados dos profissionais de saúde;
+- **A03** — Dados médicos dos pacientes;
+- **A04** — Exames, laudos e imagens médicas;
+- **A05** — Receitas e prescrições médicas;
+- **A06** — Credenciais de autenticação;
+- **A09** — API;
+- **A12** — Armazenamento de documentos.
 
 ### Ameaças relacionadas
 
-* **T01 — Falso profissional:** ameaça principal explorada neste caso.
-* **T03 — Elevação indevida de perfil ou privilégio:** pode ocorrer quando o falso perfil recebe capacidades que deveriam pertencer somente a um profissional legítimo.
+- **T01 — Falso profissional:** ameaça principal explorada neste caso.
+- **T03 — Elevação indevida de perfil ou privilégio:** pode ocorrer quando o falso perfil recebe capacidades que deveriam pertencer somente a um profissional legítimo.
 
 ### Categorias STRIDE
 
-* **Spoofing:** o atacante se apresenta como uma identidade profissional legítima.
-* **Elevation of Privilege:** pode ocorrer caso o falso perfil obtenha operações reservadas a profissionais autorizados.
+- **Spoofing:** o atacante se apresenta como uma identidade profissional legítima.
+- **Elevation of Privilege:** pode ocorrer caso o falso perfil obtenha operações reservadas a profissionais autorizados.
 
 ---
 
@@ -75,10 +75,10 @@ Entre os possíveis impactos estão:
 
 ### Condições necessárias
 
-* existe uma conta válida de paciente;
-* o atacante obtém uma senha, token de sessão, token de recuperação ou outro elemento utilizado para autenticação;
-* o material obtido continua válido no momento do ataque;
-* o VitaLink aceita esse material como evidência suficiente para associar a sessão ao paciente.
+- existe uma conta válida de paciente;
+- o atacante obtém uma senha, token de sessão, token de recuperação ou outro elemento utilizado para autenticação;
+- o material obtido continua válido no momento do ataque;
+- o VitaLink aceita esse material como evidência suficiente para associar a sessão ao paciente.
 
 ### Fluxo de abuso
 
@@ -103,35 +103,35 @@ O atacante passa a agir em nome do paciente e pode acessar informações privada
 
 Entre os possíveis impactos estão:
 
-* exposição do histórico médico;
-* acesso a exames, receitas, laudos e imagens;
-* alteração de dados do perfil;
-* compartilhamento indevido de informações;
-* concessão ou revogação indevida de autorizações;
-* dificuldade de responsabilização caso as ações sejam registradas como pertencentes ao paciente;
-* perda temporária ou permanente do controle da conta.
+- exposição do histórico médico;
+- acesso a exames, receitas, laudos e imagens;
+- alteração de dados do perfil;
+- compartilhamento indevido de informações;
+- concessão ou revogação indevida de autorizações;
+- dificuldade de responsabilização caso as ações sejam registradas como pertencentes ao paciente;
+- perda temporária ou permanente do controle da conta.
 
 ### Ativos envolvidos
 
-* **A01** — Dados pessoais dos pacientes;
-* **A03** — Dados médicos dos pacientes;
-* **A04** — Exames, laudos e imagens médicas;
-* **A05** — Receitas e prescrições médicas;
-* **A06** — Credenciais de autenticação;
-* **A07** — Tokens;
-* **A08** — Registros de auditoria;
-* **A09** — API;
-* **A10** — Banco de dados.
+- **A01** — Dados pessoais dos pacientes;
+- **A03** — Dados médicos dos pacientes;
+- **A04** — Exames, laudos e imagens médicas;
+- **A05** — Receitas e prescrições médicas;
+- **A06** — Credenciais de autenticação;
+- **A07** — Tokens;
+- **A08** — Registros de auditoria;
+- **A09** — API;
+- **A10** — Banco de dados.
 
 ### Ameaças relacionadas
 
-* **T02 — Uso de credenciais roubadas:** ameaça principal explorada neste caso.
-* **T03 — Elevação indevida de perfil ou privilégio:** pode ocorrer se o atacante utilizar a conta comprometida para alcançar recursos ou operações além do escopo que deveria possuir.
+- **T02 — Uso de credenciais roubadas:** ameaça principal explorada neste caso.
+- **T03 — Elevação indevida de perfil ou privilégio:** pode ocorrer se o atacante utilizar a conta comprometida para alcançar recursos ou operações além do escopo que deveria possuir.
 
 ### Categorias STRIDE
 
-* **Spoofing:** o atacante utiliza a conta e se apresenta ao sistema como o paciente legítimo.
-* **Elevation of Privilege:** pode ocorrer caso o comprometimento seja utilizado para alcançar operações ou recursos não autorizados.
+- **Spoofing:** o atacante utiliza a conta e se apresenta ao sistema como o paciente legítimo.
+- **Elevation of Privilege:** pode ocorrer caso o comprometimento seja utilizado para alcançar operações ou recursos não autorizados.
 
 ---
 
@@ -145,4 +145,3 @@ Entre os possíveis impactos estão:
 ## Observação
 
 Os casos descrevem cenários de abuso utilizados para a modelagem de segurança. Eles não afirmam que o VitaLink já possui essas vulnerabilidades implementadas. Os controles de prevenção, detecção e resposta serão definidos e avaliados nas etapas posteriores de análise de riscos.
-

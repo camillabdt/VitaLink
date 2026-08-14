@@ -82,7 +82,7 @@ Administrador ou Suporte está fora do escopo atual por DS01. Portanto, T03 trat
 | Pergunta                      | Resposta documental                                                                                                                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Quem é a pessoa?              | A identidade registrada como paciente ou profissional. DS02 exige validação manual de profissional antes de solicitar acesso.                                                  |
-| Como o sistema verifica isso? | Por autenticação de conta individual. DS03 define recuperação e limites de sessão; a implementação é pendente.                                                                 |
+| Como o sistema verifica isso? | Por autenticação de conta individual com senha, TOTP e sessão opaca persistida. Recuperação, encerramento de sessões e limites possuem implementação e testes backend.         |
 | O que a pessoa pode fazer?    | A autorização define o recurso, a operação e o escopo. No caso de dados médicos, a autorização ativa do paciente é uma condição necessária.                                    |
 | O que é privilégio?           | O limite efetivo de operações da identidade autenticada. Ele não deve ser ampliado porque o cliente enviou outro identificador ou porque uma função foi ocultada na interface. |
 | O que um token prova?         | Apenas o contexto definido para a sessão, recuperação ou confirmação. O servidor ainda deve verificar se o token é válido e se a operação está autorizada.                     |

@@ -2,24 +2,24 @@
 
 ## Escopo da revisão
 
-Este documento registra evidências observáveis no histórico do projeto VitaLink até 13 de agosto de 2026.
+Este documento registra evidências observáveis no histórico e no working tree do projeto VitaLink até 14 de agosto de 2026.
 
 A revisão considera os arquivos versionados, o histórico Git e contribuições integradas ao repositório. A existência de autoria ou de um artefato não substitui a avaliação da qualidade da contribuição realizada por cada integrante.
 
 ## Evidências documentais
 
-| Item                                 | Evidência                                                                                                                       | Situação                                    |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| Documentação de segurança            | O diretório `docs/` contém escopo, ativos, perfis, ameaças, casos de abuso, riscos e artefatos das etapas do trabalho.          | Presente                                    |
-| Modelagem STRIDE                     | A Etapa 1 consolida T01–T15 e sua relação com ativos e casos de abuso.                                                          | Presente                                    |
-| Registro de riscos                   | A Etapa 2 consolida R01–R15, tratamento proposto, NIST CSF 2.0 e estimativas de risco residual.                                 | Presente                                    |
-| Arquitetura segura                   | Há documentação de requisitos e decisões arquiteturais e uma fonte Mermaid em `docs/diagramas/arquitetura-segura.mmd`.          | Presente como proposta                      |
-| Frontend de referência               | `VitaLink Health Management App/` contém o protótipo executável exportado do Figma Make, com dados e interações simulados.      | Presente como referência visual e funcional |
-| Implementação executável do VitaLink | Não foi identificado backend nem integração persistente dos fluxos do sistema.                                                  | Ausente                                     |
-| Testes automatizados do VitaLink     | Não foram identificados testes executáveis da aplicação entre os artefatos atuais da entrega.                                   | Ausente                                     |
-| Verificação prática de segurança     | A Etapa 5 contém relatórios reais do OWASP ZAP executado contra o OWASP Juice Shop; não são evidência de segurança do VitaLink. | Presente em ambiente didático               |
-| Pipeline de CI/CD                    | Ainda não há pipeline executável versionado para o VitaLink.                                                                    | Pendente                                    |
-| Vídeo final                          | A evidência do vídeo final ainda deverá ser registrada quando a entrega audiovisual estiver concluída.                          | Pendente                                    |
+| Item                                 | Evidência                                                                                                                                                                              | Situação                                         |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| Documentação de segurança            | O diretório `docs/` contém escopo, ativos, perfis, ameaças, casos de abuso, riscos e artefatos das etapas do trabalho.                                                                 | Presente                                         |
+| Modelagem STRIDE                     | A Etapa 1 consolida T01–T15 e sua relação com ativos e casos de abuso.                                                                                                                 | Presente                                         |
+| Registro de riscos                   | A Etapa 2 consolida R01–R15, tratamento proposto, NIST CSF 2.0 e estimativas de risco residual.                                                                                        | Presente                                         |
+| Arquitetura segura                   | Há requisitos e decisões, diagramas versionados e implementação local de API, banco, armazenamento privado, auditoria e frontend integrado.                                            | Presente; implantação de produção não comprovada |
+| Frontend                             | `VitaLink Health Management App/` contém a aplicação React integrada à API nos fluxos documentados. Partes do painel do paciente ainda usam `mockData.ts` em runtime.                  | Parcial; migração dos dados estáticos pendente   |
+| Implementação executável do VitaLink | `src/vitallink/`, migrações Alembic, `compose.yaml` e o frontend formam uma aplicação local integrada.                                                                                 | Presente                                         |
+| Testes automatizados do VitaLink     | `tests/` cobre o backend e dezesseis arquivos `*.test.tsx` cobrem o frontend. A execução local de 14/08/2026 não ficou integralmente verde.                                            | Presente; gate atual pendente                    |
+| Verificação prática de segurança     | Há testes de autorização, sessão, auditoria, documentos e limites; o ZAP versionado analisou o OWASP Juice Shop, não o VitaLink.                                                       | Parcial; DAST do VitaLink pendente               |
+| Pipeline de CI/CD                    | `.github/workflows/ci.yml` executa serviços reais, migrações, seed, Ruff, `pip-audit`, pytest, formatação, `pnpm audit`, testes e build em `develop`. Não há implantação automatizada. | CI presente; CD pendente                         |
+| Vídeo final                          | A evidência do vídeo final ainda deverá ser registrada quando a entrega audiovisual estiver concluída.                                                                                 | Pendente                                         |
 
 ## Participação identificada
 
@@ -39,4 +39,5 @@ O histórico pode apresentar variações de nome ou e-mail para uma mesma pessoa
 - Commits, pull requests e arquivos demonstram participação versionada, mas não medem isoladamente a qualidade ou a relevância acadêmica da contribuição.
 - Controles descritos como propostos não devem ser apresentados como implementados sem código, teste ou evidência técnica correspondente.
 - Artefatos que estejam somente em branches ou pull requests ainda não integrados não são considerados parte da versão consolidada da `develop`.
-- As evidências de verificação prática, pipeline e vídeo devem ser atualizadas quando essas atividades forem efetivamente realizadas.
+- O sucesso histórico do CI não substitui uma execução verde sobre o HEAD destinado à `main`.
+- DAST do VitaLink, correlação D01–D08, implantação automatizada e vídeo devem ser registrados somente quando efetivamente realizados.

@@ -1,4 +1,4 @@
-# Decisões de segurança propostas
+# Decisões de segurança
 
 ## Status
 
@@ -33,4 +33,4 @@ Estas são decisões de projeto aprovadas para orientar os documentos do VitaLin
 | DS25 | Operações de segurança ou dados clínicos que exigem auditoria só são confirmadas se o evento correspondente for persistido na mesma transação ou por mecanismo atômico equivalente. Eventos usam identificadores pseudônimos e metadados mínimos, neutralizam caracteres de controle e não registram CPF, e-mail, nome, segredo, token, áudio nem conteúdo clínico.                                                                                                             |
 | DS26 | Uploads possuem limite por arquivo e quota total por paciente, são servidos sem execução ativa a partir de origem isolada ou como anexo e nunca por URL pública. Backup e restauração de banco, objetos e auditoria devem ser executáveis e testados com dados sintéticos; limites e capacidade ficam configuráveis para medição.                                                                                                                                               |
 
-As escolhas técnicas e os critérios executáveis estão no [plano de implementação da primeira versão](plano-implementacao-primeira-versao.md). Estas decisões continuam sendo propostas até existirem código, testes executados e evidências versionadas.
+As escolhas técnicas e os critérios executáveis estão no [plano de implementação da primeira versão](implementacao-segura/plano-implementacao-primeira-versao.md). Código e testes implementam parte relevante dessas decisões; o [índice de implementação segura](implementacao-segura/README.md) registra as evidências e as pendências atuais.

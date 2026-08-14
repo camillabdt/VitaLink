@@ -2,9 +2,9 @@
 
 ## Status
 
-Os requisitos, vulnerabilidades e decisões abaixo são **propostos** a partir das ameaças e riscos documentados. O repositório não contém implementação arquitetural verificável. Logo, nenhuma decisão é evidência de controle implementado.
+Os requisitos, vulnerabilidades e decisões abaixo permanecem normativos e rastreáveis às ameaças e aos riscos. A implementação local comprova partes relevantes da arquitetura, incluindo API FastAPI, PostgreSQL, sessões opacas, autorização persistida, armazenamento privado, varredura de arquivos, auditoria e frontend integrado. Decisão arquitetural e evidência de implementação continuam registradas separadamente.
 
-O diagrama-fonte versionado está em [arquitetura-segura.mmd](diagramas/arquitetura-segura.mmd). Ele representa a arquitetura pretendida, não o estado executável.
+O diagrama-fonte versionado está em [arquitetura-segura.mmd](diagramas/arquitetura-segura.mmd). Ele representa a arquitetura de referência; diferenças entre o diagrama e o ambiente executável devem ser tratadas como pendência documental.
 
 ## Requisitos de segurança propostos
 
@@ -34,7 +34,7 @@ O diagrama-fonte versionado está em [arquitetura-segura.mmd](diagramas/arquitet
 | V08 | Consultas em grande volume podem percorrer registros sem limitação ou detecção de comportamento anômalo.                             | RS08                | T11           |
 | V09 | Requisições e uploads não possuem limites suficientes de taxa, tamanho ou quota, permitindo exaustão de recursos.                    | RS09                | T13, T14      |
 
-V01–V09 são condições a evitar no projeto. Não são achados no código, pois não há código do sistema disponível para análise.
+V01–V09 são condições de projeto derivadas da modelagem de ameaças, não achados confirmados no código. A presença de controles e testes reduz exposição conhecida, mas não elimina a necessidade de revisão e verificação de segurança.
 
 ## Decisões arquiteturais propostas
 
@@ -61,6 +61,6 @@ V01–V09 são condições a evitar no projeto. Não são achados no código, po
 | Compartilhamento e extração  | R10, R11        | RS07–RS08, DA07–DA08             |
 | Disponibilidade e capacidade | R13, R14        | RS09, DA09                       |
 
-As tecnologias e a separação dos componentes estão detalhadas no [plano de implementação da primeira versão](plano-implementacao-primeira-versao.md). DS03, DS06, DS08 e DS21 definem o comportamento obrigatório de sessão, autorização, auditoria e proteção de requisições; as decisões devem ser revisadas antes do código.
+As tecnologias e a separação dos componentes estão detalhadas no [plano de implementação da primeira versão](implementacao-segura/plano-implementacao-primeira-versao.md). DS03, DS06, DS08 e DS21 definem o comportamento obrigatório de sessão, autorização, auditoria e proteção de requisições; as decisões devem ser revisadas antes do código.
 
-Os critérios de aceitação desta etapa descrevem evidências que deverão existir quando houver implementação. Enquanto testes, código e resultados executáveis não estiverem versionados, as decisões permanecem arquiteturais e não demonstram redução efetiva dos riscos.
+Os critérios de aceitação desta etapa são exercitados pelas suítes e evidências reunidas em [implementação segura](implementacao-segura/README.md). O estado atual não comprova redução de risco em produção: o gate do HEAD, o DAST do VitaLink e o monitoramento ativo ainda precisam ser concluídos.

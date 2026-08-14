@@ -2,7 +2,7 @@
 
 Análise de ameaças focada nos impactos de indisponibilidade, sobrecarga e perda de dados no ambiente do **VitaLink**.
 
-O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento proposto de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), respectivamente como R13, R14 e R15. Não há controle implementado comprovado neste documento.
+O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), respectivamente como R13, R14 e R15. Limites de requisição, upload e quota possuem implementação e testes; monitoramento de capacidade e alertas ativos permanecem pendentes.
 
 ---
 
@@ -39,8 +39,8 @@ O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade
 
 ## Rastreabilidade
 
-| Ameaça | Caso de abuso                                                                                                                                                                                       | Risco                                                     |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| T13    | [CA09 — Sobrecarga da API](etapa1-modelagem-de-ameacas.md#ca09--sobrecarga-da-api)                                                                                                                  | [R13](etapa2-riscos-e-tratamento.md#registro-consolidado) |
-| T14    | [CA10 — Esgotamento do armazenamento](etapa1-modelagem-de-ameacas.md#ca10--esgotamento-do-armazenamento)                                                                                            | [R14](etapa2-riscos-e-tratamento.md#registro-consolidado) |
-| T15    | [CA05 — Alteração maliciosa de exame](etapa1-modelagem-de-ameacas.md#ca05--alteração-maliciosa-de-exame) e [CA06 — Exclusão de registro](etapa1-modelagem-de-ameacas.md#ca06--exclusão-de-registro) | [R15](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| Ameaça | Caso de abuso                                                                                                                                                                                                           | Risco                                                     |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| T13    | [CA09 — Sobrecarga da API](casos-de-abuso.md#ca09--sobrecarga-da-api)                                                                                                                                                   | [R13](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T14    | [CA10 — Esgotamento do armazenamento](casos-de-abuso.md#ca10--esgotamento-do-armazenamento)                                                                                                                             | [R14](etapa2-riscos-e-tratamento.md#registro-consolidado) |
+| T15    | [CA05 — Alteração maliciosa de exame](casos-de-abuso-integridade.md#ca05--alteração-maliciosa-de-exame) e [CA06 — Exclusão de registro](casos-de-abuso-integridade.md#ca06--exclusão-de-registro-para-ocultar-uma-ação) | [R15](etapa2-riscos-e-tratamento.md#registro-consolidado) |

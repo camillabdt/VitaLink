@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Arquitetura para picos de acesso · Engenharia de Software Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Disponibilidade · Aula 14 de 19</p>
+        <h1>Arquitetura para picos de acesso</h1>
+        <p>
+          Disponibilidade é uma propriedade de segurança. O sistema precisa
+          absorver, limitar e observar carga sem perder decisões críticas.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong>Como manter o serviço útil quando a demanda aumenta?</strong>
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="14-1" /><span
+              >Reconhecer risco de indisponibilidade.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="14-2" /><span
+              >Aplicar filas, cache e limitação de requisições.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="14-3" /><span
+              >Planejar degradação e observabilidade.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Picos são previsíveis</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Períodos de matrícula concentram acessos justamente quando a
+                operação é mais importante.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Capacidade deve ser planejada
+                para o momento crítico, não para a média.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Controle de carga</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Filas, processamento assíncrono, cache de consultas e limitação
+                de requisições reduzem sobrecarga e preservam recursos.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Degradação controlada</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Operações menos críticas podem ser reduzidas para manter
+                decisões essenciais disponíveis e consistentes.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>04</span><strong>Observabilidade</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Logs protegidos, métricas e monitoramento permitem detectar
+                pressão, investigar incidentes e melhorar a resposta.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>1. Qual operação tende a ser boa candidata a cache?</legend>
+            <label
+              ><input type="radio" name="q14-1" value="0" /><span
+                >Consulta de oferta que muda pouco.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q14-1" value="1" /><span
+                >Confirmação crítica da última vaga.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q14-1" value="2" /><span
+                >Alteração de senha.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Cache ajuda principalmente leituras repetidas e menos sensíveis à
+              atualização imediata.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>2. Por que limitar requisições?</legend>
+            <label
+              ><input type="radio" name="q14-2" value="0" /><span
+                >Para impedir qualquer uso do sistema.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q14-2" value="1" /><span
+                >Para conter abuso e evitar esgotamento de recursos.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q14-2" value="2" /><span
+                >Para remover necessidade de monitoramento.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              A limitação reduz pressão e ajuda a manter disponibilidade.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="14">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Imagina que na hora que você mais precisa que o sistema esteja
+            funcionando ele acaba caindo Nos exemplos que nós estávamos
+            conversando nos vídeos anteriores onde nós usamos um sistema de
+            matrículas esse sistema ele é bastante suscetível a esse tipo de
+            problema E o pior é que momento mais importante para o sistema de
+            matrículas é justamente o período de matrículas que é quando os
+            usuários mais procuram mais acessam ao sistema para renovar as suas
+            matrículas e se manterem vinculados à instituição no início de cada
+            semestre Uma disponibilidade nesse momento pode acabar impedindo
+            solicitações legítimas de solicitação de matrícula pode acabar
+            gerando desigualdade pode acabar gerando perda de prazos pode
+            aumentar ainda a sobrecarga para a secretaria acadêmica que depois
+            tem que tentar resolver esses problemas de usuários que não estão
+            matriculados porque não conseguiram se matricular pode.
+          </p>
+          <p>
+            acabar produzindo múltiplas tentativas de matrículas eventualmente
+            até mesmo redundante e pode também assim como o total dessas ações
+            pode acabar comprometendo a confiança no processo de matrícula.
+          </p>
+          <p>
+            Então e é bastante comum que quando abre o período de matrícula
+            todos os usuários ou pelo menos muitos deles tentem fazer
+            simultaneamente a sua matrícula.
+          </p>
+          <p>
+            Então é justamente no momento que mais precisa funcionar que a maior
+            sobrecarga acontece e que pode acabar ocasionando portanto a
+            indisponibilidade.
+          </p>
+          <p>
+            Então quando você faz uma arquitetura para que ela seja segura mesmo
+            você deve considerar dimensionamento você deve trabalhar com filas
+            você deve também ter cash de consultas para evitar sobrecarga você
+            pode limitar requisições você pode pensar em processamento
+            assíncrono sempre que for possível ou seja não precisa criar um
+            status bloqueante onde uma operação precisa ser finalizada para que
+            a outra comece Você pode criar uma fila de operações que conforme a
+            demanda e conforme o disponibilidade de recursos do computador ou do
+            servidor elas sejam processadas uma depois da outra Você pode também
+            contar com redundância por que não ligar os servidores para mais aí
+            justamente no momento de matrícula que é onde é esperado um tráfego
+            a maior você deve também continuar de forma contínua o fazendo um
+            monitoramento especialmente nesse momento do período de matrículas.
+          </p>
+          <p>
+            Então você pode estar com um dashboard por exemplo administrativo
+            cuidando as solicitações e verificando se o sistema está usando por
+            exemplo muitos recursos comparacionais se na hora de levantar uma
+            outra instância caso você use virtualização por exemplo E também
+            você deve ter um plano de recuperação O que acontece se o sistema
+            cair Tem como levantar rapidinho em uma máquina Eu posso já deixar
+            algumas máquinas prontas para assumirem o papel daquela ali caso ela
+            caia algum balanceamento de carga.
+          </p>
+          <p>
+            Então isso tudo vai me ajudar a ter uma degradação mais controlada
+            Por mais que haja aquela sobrecarga e muitas pessoas muitos alunos
+            disputando aquela vaga naquele momento de se matricular eu tenho uma
+            degradação mais controlada Eu consigo lidar com essa demanda e com
+            isso eu consigo então separar operações eu consigo fazer com que a
+            consulta de oferta seja bastante cacheável O que que cacheável Eu
+            posso armazenar essa consulta para que pessoas que façam essa nova
+            consulta consigam ter o dado ali de maneira mais pronta sem precisar
+            ter um processamento muito extenso para que essa informação seja
+            recuperada porque já sabemos que muitas pessoas recuperarão a mesma
+            informação então eu posso trabalhar com cash A confirmação de
+            matrícula portanto ela não tem esse mesmo tipo de facilidade porque
+            cada matrícula vai ser única ela vai existir vai exigir bastante
+            consistência vai exigir exigir.
+          </p>
+          <p>
+            também uma validação atualizada então eu não consigo fazer cash da
+            confirmação da matrícula mas quando eu tô consultando o horário eu
+            consigo.
+          </p>
+          <p>
+            Então esse tipo de exercício de verificar que tipo de tarefa que
+            requer um processamento maior que requer uma consulta atualizada que
+            eu preciso verificar pera aí ainda tem vaga.
+          </p>
+          <p>
+            Então isso eu tenho que fazer o tempo todo É diferente de olhar qual
+            horário vai ser a disciplina Qual horário vai ser o mesmo Não vai
+            mudar esse horário o tempo todo Durante o período de matrícula não
+            deve mudar o horário.
+          </p>
+          <p>
+            Então eu posso trabalhar com cash a informação tem que ser
+            atualizada.
+          </p>
+          <p>
+            Por exemplo quantas vagas ainda tem então nesse momento eu tenho que
+            fazer uma requisição diferente e que garanta a atualização.
+          </p>
+          <p>
+            Então eu não posso tratar todas as requisições da mesma maneira Isso
+            é bastante importante Eu posso também estar suscetível a uso de
+            bots.
+          </p>
+          <p>
+            Por exemplo alunos podem criar uma automação que não deve
+            especialmente alunos de computação que já sabe mexer com essas
+            coisas pode criar um scriptinho ali que tenta consultar vagas ou
+            enviar várias solicitações repetidas.
+          </p>
+          <p>
+            Então esse tipo de coisa pode acontecer dependendo das regras isso
+            pode acabar sobrecarregando o meu sistema pode gerar uma vantagem
+            injusta pode consumir recursos o sistema pode produzir spam de
+            notificações prejudicar outras pessoas.
+          </p>
+          <p>
+            Então o que que eu posso fazer quanto a isso Sabendo que isso pode
+            acontecer Alguns controles possíveis são rate limit que é limitar a
+            taxa de acesso por exemplo por usuário Eu posso adicionar capturas
+            eu posso ter cotas por identidade Você tem um tempo que pode usar o
+            sistema depois você vai ser desligado do sistema vai inspirar sua
+            sessão por exemplo Eu posso criar filas.
+          </p>
+          <p>
+            Então se você acessou e tem muito usuário você vai ficar numa fila e
+            depois que inspirar seu tempo você vai pro final da fila Eu posso
+            limitar o número de tentativas que você pode tentar fazer
+            requisições.
+          </p>
+          <p>
+            Então se um usuário maintenutário fizer várias requisições ele vai
+            ser bloqueado Eu posso detectar padrões também.
+          </p>
+          <p>
+            Por exemplo automações robôs Eles têm padrões pré-definidos Muitas
+            vezes eu posso detectar esses padrões para conseguir bloquear
+            usuários que tentam fazer coisas maliciosas de forma repetidas Eu
+            posso também adicionar alguns desafios adicionais como por exemplo
+            capture ou mesmo autenticação em dois fatores para casos suspeitos
+            que estão tentando fazer coisas repetidas ou que o a velocidade de
+            cliques por exemplo é mais rápida do que o humano conseguiria fazer
+            Isso é um sinal clássico de bote.
+          </p>
+          <p>
+            Então regras de prioridade que não dependam da velocidade do clique
+            pode ser interessante também.
+          </p>
+          <p>
+            Além disso é importante notar que uma arquitetura baseada
+            exclusivamente em quem clicar primeiro ela pode incentivar
+            justamente a automação e gerar injustiça Claro que muitas vezes isso
+            não vai depender da arquitetura vai depender também da regra de
+            negócio que é o caso da Unipampa.
+          </p>
+          <p>
+            Então não importa quem se matriculou primeiro o que importa é
+            quantas vagas tem e qual é o critério qual é o ranking da pessoa e
+            assim por diante.
+          </p>
+          <p>
+            Então a própria regra de negócio ela precisa ser redesenhada Muitas
+            vezes você pode conversar com o cliente mas quem vai tomar essa
+            decisão no final das contas precisa ser o cliente.
+          </p>
+          <p>
+            Então em alguns momentos a sua arquitetura ela consegue resolver em
+            alguns momentos a arquitetura por si só ela não consegue tomar conta
+            de todo o problema bom.
+          </p>
+          <p>
+            Então a segurança também pode ela pode significar projetar os
+            processos menos vulneráveis ao abuso e não somente o software em si.
+          </p>
+          <p>
+            Então a gente falando do processo como um todo muitas vezes e você
+            pode inclusive dar ideias pro seu cliente Olha que tal se nós
+            fizéssemos dessa maneira aqui ao invés dessa outra O sistema pode
+            ajudar pode viabilizar isso.
+          </p>
+          <p>
+            Por exemplo uma lista de espera Uma lista de espera é um ativo de
+            integridades no nosso sistema.
+          </p>
+          <p>
+            Então a arquitetura ela precisa responder como a posição ela é
+            calculada O critério é horário é prioridade acadêmica ou é outra
+            regra Existem um ranking como na Unepampa por exemplo Quem pode
+            modificar essa ordem ela é automática ou alguém pode simplesmente
+            passar um na frente do outro E se isso acontecer essas mudanças elas
+            deixam histórico existe um log para isso o estudante ele consegue
+            apenas consultar a sua oposição ou ele consegue consultar a oposição
+            dos seus colegas também Esse processamento ele é automático ele
+            ocorre e quando E se acontecer surgir uma nova vaga o que que vai
+            acontecer quando surgir nova vaga quando o professor fala: &quot;Não
+            beleza eu quero fortar mais vagas&quot; Aconteceu com software
+            seguro eram 40 50 vagas lotou a turma nós subimos para 100 vagas
+            lotou a turma e eu falei pro Paulo aumenta E ele aumentou para tudo
+            que dava acho que tem 116 anos nessa disciplina.
+          </p>
+          <p>
+            Então nesse caso assim o professor sou eu concordei em ter bastante
+            alunos o a coordenação não achou problema a coordenação acadêmica
+            também liberou então o sistema permitiu né.
+          </p>
+          <p>
+            Então conseguimos atender todo mundo que quis fez essa disciplina
+            que fazendo.
+          </p>
+          <p>
+            Agora o que acontece em um sistema onde falta e falta vagas e alguns
+            têm que ser priorizados e outros não Como é que eu evito por exemplo
+            convocações duplicadas também Como que o próximo estudante ele é
+            chamado quando caso haja ã um interesse desse estudante e um dos
+            outros que manifestou o interesse não está mais disponível Um
+            funcionário não deveria simplesmente movimentar silenciosamente uma
+            pessoa para o início da fila.
+          </p>
+          <p>
+            Então isso deveria gerar um log deveria existir também uma permissão
+            uma justificativa para fazer essa modificação uma auditoria E talvez
+            ter uma aprovação adicional Daqui a pouco a secretaria fez alguma
+            coisa que não é comum a coordenação tem que ir lá e dar um OK e
+            dizer: &quot;Não OK realmente tô de acordo com isso.
+          </p>
+          <p>
+            Além disso temos que pensar então sempre na observabilidade e na
+            auditoria das ações que são feitas no sistema O sistema ele precisa
+            permitir detecção e investigação de eventos Todo sistema precisa
+            disso No meu caso aqui no meu sistema de matrículas eu começo desde
+            a tentativa de login.
+          </p>
+          <p>
+            Por exemplo alguém tentou fazer muitos logins Opa isso estranho não
+            deveria acontecer Alguém tentou fazer alteração de vagas Opa por que
+            que tô alterando duas vagas não É porque o professor Silva ele
+            autorizou aceitou dar aula para 116 pessoas a coordenação autorizou
+            coordenação acadêmica distava tudo bem Beleza então funcionou.
+          </p>
+          <p>Então não há nenhum problema isso está registrado.</p>
+          <p>
+            Agora uma matrícula excepcional fora do prazo ou um cancelamento
+            administrativo por que que foi cancelado por que que a secretária
+            folé cancelou a matrícula do aluno se ele solicitou Tem que ter no
+            mínimo justificativa um log daquilo quando alguém muda alguma regra
+            também importante tem que ficar registrado.
+          </p>
+          <p>
+            Quando alguém até era altera permissão o professor Silvio ele não
+            era da coordenação agora ele virou coordenador ele precisa de algum
+            acesso ali para poder alterar número de vagas e disciplinas.
+          </p>
+          <p>
+            Então isso tem que logado Quem foi a pessoa que deu esse acesso pro
+            Silvio Por que que agora ele consegue fazer isso exportação em massa
+            também a pessoa quer fazer download de todas as informações do
+            sistema exportar tudo Será que não é um atacante querendo roubar as
+            informações.
+          </p>
+          <p>
+            Então isso tem que ser monitorado tem que ser logado e quando tem
+            alguma falha de validação por exemplo isso tem que logado alguma
+            pessoa tentou fazer alguma coisa que não poderia por mais que ela
+            seja barrada isso tem que estar tem que estar sendo registrado e
+            sendo mostrado.
+          </p>
+          <p>
+            Então nós temos que ter essa observabilidade por parte daquela
+            pessoa que cuida que toma conta no sistema Uma títula de auditoria
+            ela deveria registrar por exemplo a identidade do operador Isso é
+            importante pessoal Talvez vocês queiram fazer isso no sistema de
+            vocês na hora de vocês escreverem ali o seu relatório final Vocês
+            podem colocar justamente o que que uma auditoria vai registrar.
+          </p>
+          <p>
+            Por exemplo eu poderia registrar a identidade do operador a ação que
+            ele realizando qual que é o estudante afetado No meu caso pensando
+            em matrículas eu tenho um estudante afetado que é a vítima digamos
+            assim eu tenho também a data e horário do que aquilo aconteceu a
+            turma disciplina que está sendo usada naquele momento daquela
+            operação Qual que é a origem que fazendo esse tipo de operação Qual
+            que é o resultado.
+          </p>
+          <p>
+            Ou seja como é que estava o status por exemplo de uma matrícula e
+            como ele ficou qual a justificativa Porque que isso acontecendo Eu
+            posso então ter esses conjunto de informações a serem registradas
+            numa trilha de auditoria Vamos dar um exemplo aqui Eu poderia
+            escrever que o usuário secretaria 14 cancelou a matrícula do
+            estudante 20260093 na turma ES001 às 14:32 mediante judicativa
+            registrada no processo 4521.
+          </p>
+          <p>
+            Então esse registro ele vai possui muito mais valor do que matrícula
+            atualizada.
+          </p>
+          <p>
+            Se eu tiver no log assim matrícula atualizada isso não merece quase
+            nada Mas se eu tiver usuário secretaria 14 alterou a matrícula do
+            estudante 2023 E percebe que eu tô tendo informações para entender o
+            que aconteceu e o por que aconteceu Inclusive para eu ligar paraa
+            secretaria daqui a pouco e perguntar ó por que que aconteceu isso
+            Por que que esse usuário teve sua matrícula alterada Percebe E
+            percebe que a própria auditoria por si só ela já é um ativo Eu
+            preciso proteger a auditoria.
+          </p>
+          <p>
+            Se o mesmo administrador que altera uma matrícula ele também pode
+            apagar os registros a evidência ela perde valor.
+          </p>
+          <p>
+            Então portanto usuários comuns eles não podem alterar registros
+            Ações administrativas sobre logs precisam ser restritas A retenção
+            precisa ser definida ou seja quem que pode apagar um log alguém
+            poderia apagar um log Horários precisam ser consistentes também Não
+            adianta eu ter um servidor com horário desatualizado Eu preciso ter
+            também eventos relevantes sempre sendo enviados armazenamentos
+            protegidos Não adianta também salvar banco de dados alguém lá e
+            apagar depois e conseguir tapar os rastros As consultas aos próprios
+            logs elas devem ser aditadas.
+          </p>
+          <p>
+            Por exemplo o Silvio olhando os logs do Silvio mesmo Será que por
+            quê Por que que ele olhando seus próprios logs.
+          </p>
+          <p>
+            Então isso pode ser deve poder ser auditado também Nós precisamos
+            também evitar que dados sejam excessivamente registrados Não adianta
+            também eu ter informações para mais tanto em termos de volume quanto
+            em termos de conferencialidade Não posso registrar nos meus logs ali
+            senhas token completos segredos informações pessoais desnecessárias
+            conteúdo integral de documentos sem judicativo também vai acabar
+            deixando o log muito poluído muito grande Eu não vou conseguir
+            depois acessar e ler direito aquele log para conseguir entender o
+            que que aconteceu.
+          </p>
+          <p>
+            Então além disso a arquitetura ela deve pensar ou melhor você deve
+            pensar numa arquitetura que tenha uma reação rápida que você consiga
+            tomar uma ação de resposta rápida depois de que você tenha
+            observabilidade Não adianta você só poder observar e não fazer nada.
+          </p>
+          <p>
+            Então você tendo a observabilidade além dos logs que são mais
+            passivos digamos assim que você pode olhar depois pro que já
+            aconteceu você pode ter visualizações em tempo real especialmente se
+            você tiver notificações que avisem: &quot;Olha alguma coisa também
+            acontecendo.&quot;.
+          </p>
+          <p>
+            Por exemplo se uma conta administrativa for comprometida nós
+            precisamos conseguir bloquear aquela conta quanto antes revogar as
+            sessões que ela logou identificar as ações realizadas Opa alguém
+            roubou a conta da secretária mas o que que ela fez nas últimas 24
+            horas Vamos tentar verificar Opa fez coisa estranha aqui não deveria
+            ter feito Tem como reverter essas alterações Quanto mais rápido for
+            essa reversão melhor vai ser menor vão ser os danos tem que também
+            preservar evidências para eu conseguir entender depois o que
+            aconteceu notificar os responsáveis essa parte da notificação é bem
+            interessante também e também restaurar os dados corretos.
+          </p>
+          <p>
+            Então percebe que a própria auditoria ela vai ter ali ã
+            funcionalidades de segurança onde você pode voltar para um estado
+            íntegro do sistema um estado seguro.
+          </p>
+          <p>
+            Se você tiver isso implementado E o usuário não vai pedir isso na
+            primeira conversa lá atrás.
+          </p>
+          <p>
+            Então você tem que pensar muitas vezes na etapa de arquitetura mesmo
+            em formas de você garantir que tudo isso seja preservado caso alguma
+            coisa aconteça no seu sistema Parece que isso agora talvez esteja
+            ficando mais trivial para vocês conforme nós estamos conversando Mas
+            eu tenho certeza que no início da disciplina muitos de vocês não
+            pensavam dessa maneira Eu espero que agora vocês tenham essa luzinha
+            de ideia de pensar de uma maneira um pouco diferente olhar com uma
+            visão um pouco diferente pra forma de criar um sistema Não é só
+            criar o sistema em termos de funcionalidades mas sim pensar em o que
+            fazer se der ruim O sistema ele permite eu perceber que algo deu
+            ruim eu consigo voltar ao estado consistente Isso é bastante
+            interessante.
+          </p>
+          <p>
+            Se uma recar acadêmica por exemplo for configurada incorretamente e
+            centenas de matrículas forem processadas o sistema tem que permitir
+            identificar as decisões afetadas compreender a versão da regra
+            utilizada reprocessar os casos corrigir sem perder rastraabilidade
+            Isso pode ser obtido através por exemplo diversionamento de regras
+            de ofertas de configurações decisões políticas de acesso.
+          </p>
+          <p>Então isso tudo pode ser e deve ser versionado.</p>
+          <p>
+            Ou seja sempre que alguém trocou uma regra sempre que alguém
+            atualizou alguma alguma informação importante que vai gerar decisões
+            a partir daquela informação com por exemplo uma política de acesso
+            isso precisa ser registrado.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 14.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-13.html">← Aula 13</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-15.html">Aula 15 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

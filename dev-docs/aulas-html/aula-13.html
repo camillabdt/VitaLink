@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Material interativo de estudo para a disciplina Engenharia de Software Seguro."
+    />
+    <title>
+      Sete decisões para uma arquitetura resistente · Engenharia de Software
+      Seguro
+    </title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body class="lesson-page" data-page="lesson">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+    <div class="progress-track" aria-hidden="true">
+      <span data-reading-progress></span>
+    </div>
+    <header class="site-header">
+      <a class="brand" href="index.html"
+        ><span class="brand-mark">ES</span
+        ><span
+          ><strong>Engenharia de Software Seguro</strong
+          ><small>Guia interativo de estudo</small></span
+        ></a
+      >
+      <nav class="site-nav" aria-label="Navegação principal">
+        <a class="" href="index.html">Aulas</a
+        ><a href="../Enunciado.md">Enunciado</a>
+      </nav>
+      <button
+        class="theme-toggle"
+        type="button"
+        data-theme-toggle
+        aria-label="Alternar tema"
+      >
+        ◐
+      </button>
+    </header>
+    <main id="main-content">
+      <section class="lesson-hero">
+        <p class="eyebrow">Decisões robustas · Aula 13 de 19</p>
+        <h1>Sete decisões para uma arquitetura resistente</h1>
+        <p>
+          A aula reúne decisões arquiteturais que preservam regras, isolam
+          componentes, protegem segredos e dados, e separam ambientes.
+        </p>
+        <div class="question-banner">
+          <span>Pergunta-guia</span
+          ><strong
+            >Que decisões evitam inconsistência, vazamento e propagação de
+            falhas?</strong
+          >
+        </div>
+      </section>
+      <section class="study-section objectives-section">
+        <div>
+          <p class="eyebrow">Ao terminar</p>
+          <h2>Você deve conseguir</h2>
+        </div>
+        <div class="objectives">
+          <label class="objective"
+            ><input type="checkbox" data-objective="13-1" /><span
+              >Aplicar idempotência e regras centralizadas.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="13-2" /><span
+              >Proteger segredos e dados em todo o ciclo.</span
+            ></label
+          >
+          <label class="objective"
+            ><input type="checkbox" data-objective="13-3" /><span
+              >Separar ambientes e conter impacto.</span
+            ></label
+          >
+        </div>
+      </section>
+      <section class="study-section">
+        <p class="eyebrow">Construa o conceito</p>
+        <h2>Ideias essenciais</h2>
+        <div class="concept-list">
+          <details class="concept-card" open>
+            <summary>
+              <span>01</span><strong>Idempotência</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                A mesma solicitação lógica deve produzir um único efeito, mesmo
+                após repetição por clique ou falha de rede.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Use identificador único,
+                restrições e verificação de estado.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>02</span><strong>Regras centralizadas</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Uma regra crítica espalhada entre interface, API e rotinas
+                paralelas pode divergir. Centralize a decisão no componente
+                responsável.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>03</span><strong>Segregação e segredos</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Um componente comprometido não deve abrir acesso ao restante.
+                Senhas, chaves e tokens não pertencem ao código, logs ou
+                repositórios.
+              </p>
+            </div>
+          </details>
+          <details class="concept-card">
+            <summary>
+              <span>04</span><strong>Dados e ambientes</strong><i>⌄</i>
+            </summary>
+            <div>
+              <p>
+                Proteja dados em trânsito, em repouso, backups, caches e testes.
+                Homologação não deve expor a produção.
+              </p>
+              <p class="application">
+                <strong>Use na prática:</strong> Use dados sintéticos quando
+                possível.
+              </p>
+            </div>
+          </details>
+        </div>
+      </section>
+      <section class="study-section quiz-section">
+        <p class="eyebrow">Revisão ativa</p>
+        <h2>Teste seu entendimento</h2>
+        <p>
+          Responda sem consultar o material. O feedback aparece imediatamente.
+        </p>
+        <div class="quiz">
+          <fieldset class="quiz-question" data-answer="0">
+            <legend>
+              1. Reenviar a mesma solicitação não pode criar dois registros.
+              Qual propriedade?
+            </legend>
+            <label
+              ><input type="radio" name="q13-1" value="0" /><span
+                >Idempotência</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q13-1" value="1" /><span
+                >Repúdio</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q13-1" value="2" /><span
+                >Escalabilidade</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Idempotência preserva um único efeito para a mesma ação lógica.
+            </p>
+          </fieldset>
+          <fieldset class="quiz-question" data-answer="1">
+            <legend>2. Onde uma chave de integração não deve ficar?</legend>
+            <label
+              ><input type="radio" name="q13-2" value="0" /><span
+                >Em um gerenciador de segredos.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q13-2" value="1" /><span
+                >Em logs e repositórios.</span
+              ></label
+            >
+            <label
+              ><input type="radio" name="q13-2" value="2" /><span
+                >Em acesso controlado.</span
+              ></label
+            >
+            <button type="button" data-check-answer>Conferir resposta</button>
+            <p class="quiz-feedback" aria-live="polite" hidden>
+              Segredos expostos em código ou logs podem ser reutilizados por
+              atacantes.
+            </p>
+          </fieldset>
+        </div>
+      </section>
+      <section class="study-section reflection">
+        <p class="eyebrow">Fechamento</p>
+        <h2>Explique com suas palavras</h2>
+        <p>
+          Como você aplicaria a pergunta-guia desta aula ao analisar um sistema
+          real?
+        </p>
+        <button type="button" class="complete-button" data-complete="13">
+          Marcar aula como concluída</button
+        ><span class="completion-status" data-completion-status></span>
+      </section>
+      <details class="transcript">
+        <summary>Ver transcrição integral da aula <span>⌄</span></summary>
+        <div>
+          <p>
+            Continuando o nosso sistema de matrículas imagina uma situação onde
+            um estudante ele clica mais de uma vez no botão de solização de
+            matrícula ou que o navegador ele repita automaticamente uma
+            requisição após uma falha de rede A pergunta é: o sistema ele pode
+            acabar criando múltiplos registros duplicados ele não deveria pelo
+            menos a mesma solicitação lógica ela precisa produzir um efeito
+            único no sistema de matrículas Esse conceito ele é chamado de ID
+            impotência O serviço pode utilizar por exemplo para alcançar ID
+            impotência um identificador único da sua licitação uma restrição que
+            impeça matrículas duplicadas verificação de estado daquela matrícula
+            está naquele momento pendente ou já está efetivada por exemplo um
+            controle transacional O sistema ele deve impedir situações como por
+            exemplo duas matrículas do mesmo estudante na mesma turma dois
+            cancelamentos gerando estados inconsistentes.
+          </p>
+          <p>
+            no sistema duas autorizações excepcionais para a mesma solicitação
+            não posso ter dois registros de autorização para uma mesma
+            solicitação Eu não posso também ter múltiplos comprovantes
+            contraditórios.
+          </p>
+          <p>
+            Por exemplo eu tenho um comprovante que o aluno está matriculado
+            outro que ele está com matrícula pendente e outro que ele está
+            desligado Eu não posso ter no mesmo momento dois tipos de situações
+            simultâneas isso é a impotência.
+          </p>
+          <p>
+            Além disso existe também uma coisa bastante interessante que é o
+            conceito de simplicidade com proteção As regras acadêmicas elas
+            podem acabar sendo complexas Nós temos por exemplo pré-requisitos
+            correquisitos conflitos de horário limite de carga vagas períodos
+            prioridades lista de espera exceções regras específicas de
+            componentes restrições curriculares e outras regras também podem
+            acabar surgindo Só que essa complexidade ela não pode ser totalmente
+            eliminada.
+          </p>
+          <p>
+            Agora o que pode acontecer é que a arquitetura evite espalhar a
+            mesma regra por vários lugares Imagina que a validação do requisito
+            ela exista na hora de solicitar por exemplo no navegador existia um
+            API existindo um módulo administrativo uma rotina noturna por
+            exemplo que faz algum tipo de relatório ou uma planilha importada
+            Essas versões elas podem divergir se tiver a mesma implementação
+            dessas regras em vários pontos diferentes do sistema Uma decisão
+            mais interessante é concentrar a regra em um componente ou no módulo
+            que ele que seja claramente responsável pela validação acadêmica.
+          </p>
+          <p>
+            Então todos esses outros pontos eles podem consultar aquele ponto
+            único que tem as regras unificadas e essa parte do sistema que
+            precisa obviamente ser confiável e protegida ela vai trazer um
+            retorno único.
+          </p>
+          <p>
+            Então assim nós conseguimos reduzir a duplicação a ocorrência de de
+            inconsistências Daqui a pouco pode haver uma falha de sincronia
+            entre esses componentes e nós termos estados inconsistentes.
+          </p>
+          <p>
+            Então se nós tivermos isso centralizado podemos reduzir essa
+            possibilidade Também vai reduzir a dificuldade de testar o sistema e
+            também de uma dessas interfaces acabar ignorando a regra E imagina
+            que via a interface no aplicativo móvel você não consegue se matar
+            numa disciplina porque tem um pré-requisito mas se você fizer via
+            navegador Chrome dá certo porque lá a regra não foi aplicada.
+          </p>
+          <p>
+            Então isso não pode acontecer existe também um outro conceito que é
+            interessante que é design aberto e regras conhecidas A segurança no
+            sistema ela não deve depender de obscuridade E essa esse esquema de
+            segurança ele não deve se calcar não deve se basear em técnicas
+            ultra secretas de segurança Os estudantes por exemplo eles podem
+            conhecer os pré-requisitos eles podem conhecer os períodos em que a
+            matrícula vai abrir vai fechar as regras da matrícula ele vai saber
+            quando pode quando não pode se matricular A arquitetura geral ele
+            pode conhecer também os formatos públicos da PI podem estar de
+            conhecimento do estudante O sistema ainda ele deve permanecer
+            protegido ele vai ser protegido e não porque ele escondendo o seu
+            funcionamento e sim porque ele usa muitas vezes padrões que já são
+            bem conhecidos e consolidados.
+          </p>
+          <p>
+            Agora o que tem que permanecer secreto são senhas chaves tokens
+            credenciais técnicas segredos de integração chaves para você
+            conseguir integrar um sistema no outro.
+          </p>
+          <p>
+            Então esse tipo de coisa sim uma regra escondida no JavaScript por
+            exemplo no frontend não é uma proteção uma verificação ã de um de
+            uma função obscura ali no JavaScript não é nenhum tipo de proteção
+            não não dá para considerar que isso faz algum tipo de diferença na
+            segurança Assim como o end point desconhecido também não é
+            necessariamente seguro não é porque ele escondido que ele é seguro A
+            proteção deve depender de autenticação validação e integridade Não
+            da esperança que ninguém descubra determinada rota Não é eu colocar
+            lá um barra 1 2 3 secreto que ninguém nunca vai acensar aquilo lá
+            Não não é assim que funciona Tem ferramenta automatizada que acaba
+            descobrindo isso tudo.
+          </p>
+          <p>
+            Então o recomendado na verdade é que você use e deixe exposto quando
+            for necessário expor mas de maneira segura que você tem esses
+            mecanismos para validar outra coisa importante que é um princípio
+            legal é você pensar em segregação e contenção.
+          </p>
+          <p>
+            Por exemplo se o portal do estudante for comprometido o atacante não
+            deveria obter automaticamente acesso ao painel administrativo a uma
+            alteração direta no banco de dados as credenciais do serviço
+            histórico poder modificar permissões acesso a los de auditoria tudo
+            isso não deveria ser obtido automaticamente se ele comprometeu por
+            exemplo um portal do estudante Por quê porque é esperado que nós
+            tenhamos a segregação e a contenção se está segregado esses
+            ambientes estão isolados e os dados eles são contidos então é por
+            isso que nós podemos separar a interface pública da administrativa
+            as contas de banco de dados as redes Nós podemos ter subredes
+            diferentes podemos ter serviços credenciais ambientes separados
+            também e funções de leituras e função de escrita Eventualmente um
+            perfil de usuário pode apenas ler um dado de algum lugar enquanto
+            outros perfis com outros papéis e previsões podem.
+          </p>
+          <p>
+            acabar fazendo modificações o portal de consulta de ofertas por
+            exemplo ele pode utilizar o acesso somente leitura para uma visão
+            limitada Estou apenas consultando acesso ou consultando a grade de
+            horários eu não tenho por através daquela visualização que
+            eventualmente nem precisa de login que pode estar público no site da
+            instituição não tem por através daquele e-mail eu fazer alguma
+            alteração nos horários se ela serve principalmente para consulta o
+            serviço de matrícula por exemplo ele pode permitir apenas a
+            permissão ele pode possuir apenas a permissão para inserir ou
+            cancelar matrículas mas não para alterar horários também mesmo que
+            ele tenha a necessidade de um usuário estar logado e que ele tem a
+            capacidade de fazer uma inserção de uma informação que é por exemplo
+            inserir uma nova matrícula em uma turma ele não deveria alterar os
+            horários que estão ofertados então essa separação.
+          </p>
+          <p>
+            delimitada do que que cada um dos componentes e papéis ou usuários
+            responsáveis por esses papéis que usam esses componentes podem fazer
+            acaba limitando o raio de impacto de uma invasão há uma coisa
+            chamada movimentos laterais que quando o atacante ele consegue
+            acesso a um componente e ele faz esses lateral movements ou
+            movimentos naturais que é conseguir sair daquela parte invadida e
+            conseguir afetar outras partes do sistema por meio da mesma invasão
+            do mesmo princípio de invasão.
+          </p>
+          <p>
+            Se nós temos esse raio delimitado ou seja nós temos essa separação
+            em contenção essa segregação e contenção nós temos automaticamente
+            uma barreira que impede que esse atacante saia fazendo esses
+            movimentos laterais e consiga maximizar o seu dano certo além disso
+            nós temos que pensar também em dar uma ênfase principal no painel
+            administrativo pensando aqui no nosso sistema no nosso contexto de
+            matrículas acadêmicas o o painel administrativo ele é o sistema a
+            parte do sistema que possui o risco elevado porque ele permite
+            operações com impacto institucional É bem provável que no sistema de
+            vocês também haja um componente que mereça uma atelação maior no meu
+            caso que eu escolhi aqui o sistema de matrículas eu posso projetar
+            esse componente com controles mais fortes.
+          </p>
+          <p>
+            Por exemplo aplicar uma rota administrativa separada uma
+            autenticação institucional ao invés de eu cadastrar uma usuária
+            senha eu pego lá a senha padrão do guri do caso do Pampa ou da
+            Google se eu tivesse falando do cotfólio eu posso obrigar a pessoa
+            que é de mim do sistema a usar autenticação de múltiplos fatores Eu
+            faculto o aluno a usar ou não ali a sua digital seu reconhecimento
+            facial mas se for um adminim eu obrigo ele a fazer aquilo Não tem
+            jeito só vai acessar o painel de administração painel administrativo
+            ali por exemplo se você conseguir fazer a autenticação de dois
+            fatores as sessões podem ser mais curtas eu posso fazer espirar a
+            cada 5 minutos por exemplo e tem que fazer um novo login vai ser um
+            pouquinho mais chato vai mas eu vou estar protegendo as ações
+            críticas.
+          </p>
+          <p>
+            Se ele precisar fazer alguma alteração mais significativa como por
+            exemplo excluir uma oferta ou aumentar o número de vagas eu posso
+            pedir uma confirmação também uma segunda autenticação ou um segundo
+            fator de autenticação para liberar aquela ação mais crítica eu posso
+            também fazer a restrição por dispositivo ou rede quando apropriado
+            Eu posso dizer que somente na rede da Unipampa as pessoas vão poder
+            acessar o painel administrativo Somente se tiver no dispositivo
+            cadastrado o Silvio usa um tablet então eu vou cadastrar o tablet do
+            Silvio E é somente aquele tablet cadastrado autorizado que ele vai
+            instalar o sistema esse tipo de coisa é possível e você pode pensar
+            isso na hora de projetar a arquitetura do seu software certo eu
+            posso também incluir registros mais detalhados para esses casos
+            alertas para operações anormais proibição de contas compartilhadas
+            por exemplo quais são no meu.
+          </p>
+          <p>
+            sistema e isso eu espero que vocês façam pro sistema de vocês no
+            entregável quais são os exemplos onde você pode precisar de uma
+            proteção reforçada no meu caso no meu sistema seria por exemplo no
+            aumento de vagas quando eu vou reabrir um período que já venceu de
+            matrículas por exemplo ou quando eu vou tentar matricular um
+            estudante fora do prazo quando eu quero ignorar um pré-requisito
+            quando eu quero atuar a posição na fila da espera passar um
+            estudante mais acima ou mais abaixo ou cancelar a matrícula de um de
+            um terceiro at logar com estudante quero cancelar em outro estudante
+            Esse tipo de coisa são coisas que não devem ser permitidas e que eu
+            devo reforçar a minha proteção Eu só sei disso porque eu tive uma
+            modelagem de ameaças lá atrás Vem eu sei que pro meu cliente meu
+            usuário final não necessariamente o usuário final que vai estar
+            usando o sistema como sendo o estudante mas o.
+          </p>
+          <p>
+            dono do sistema o stakeholder a parte interessado principal nós
+            temos aí então essa entrevista que ele acaba revelando suas
+            preocupações E aí eu já em medi riscos nessas alturas do campeonato
+            para ser que o que que tem um dano maior no sistema qual que é o o
+            impacto maior é mais prejudicial e eu consigo também medir
+            probabilidades Já que eu fiz tudo isso eu já sei que esse tipo de
+            coisa que eu tô falando como por exemplo aumentar vagas reabrir
+            período de matrícula mató durante prazo esse tipo de coisa eu sei
+            que isso é grave para o meu sistema então o sistema ele também ele
+            deve estar preparado para fazer uma gestão segura dos segredos a
+            senha do banco de dados a credencial ou assinatura de tokens que são
+            usados para acessos especiais no sistema credencial serviço de
+            identidade a chave integração com histórico certificados tokens
+            devido a notificação tudo isso o sistema pode utilizar E.
+          </p>
+          <p>
+            esses segredos eles não podem estar diretamente no código por
+            exemplo Não pode estar em repositórios eu não posso jogar isso pro
+            git eu não posso deixar isso num documento Essas informações não
+            pode estar não pode estar visíveis de forma acessível em documentos
+            por exemplo não pode estar nem um arquivo público de configuração
+            não pode estar em mensagens você não pode ser enviado não pode ficar
+            nos logs.
+          </p>
+          <p>
+            Então quando eu registro um log eu não posso registrar nenhuma
+            informação que seja conferencial também e a arquitetura ela precisa
+            definir bom já que não pode estar nesses lugares aonde vai onde vai
+            ser armazenada essa informação crítica quais componentes que vão ter
+            acesso vão poder ler esses essas informações onde tem segredos como
+            eles são rotacionados quanto tempo dura aquela senha ela vai ser
+            para sempre ou ela vai durar semanalmente vai ser diária qual é a
+            duração quando que vai refrescar que vai ser atualizado e como é que
+            eu consigo revogar caso alguma daquelas credenciais acabe vazando eu
+            consigo revogar o meu sistema deveria permitir Como serão separados
+            os acessos também do meu sistema entre a fase de desenvolvimento
+            onde eu faço testes rápidos ali a fase de testes onde eu vou ter
+            eventualmente um usuário ou alguns usuários específicos para fazer
+            teste e também o ambiente de.
+          </p>
+          <p>
+            produção faz sentido eu fazer teste de produção não faz Faz sentido
+            eu ter o mesmo ambiente para desenvolvimento e para produção também
+            não faz O próprio codifio o pessoal aqui quando vai fazer alguma
+            feature nova ele sempre testa em homologação ou seja numa cópia do
+            sistema num outro cordólio que com as mesmas funcionalidades mas que
+            rodando somente nas máquinas dos desenvolvedores e não é a versão
+            pública ainda então se der alguma coisa errado não vai refletir esse
+            erro para vocês que estão usando o codifio O mesmo deve ser feito no
+            sistema de vocês no meu caso aqui no sistema acadêmico de matrículas
+            então o ambiente de desenvolvimento ele nunca deve utilizar
+            automaticamente as vezos credenciais por exemplo do ambiente de
+            produção para evitar vazamentos então nós temos também que pensar em
+            como proteger os dados que são importantes para o sistema de vocês
+            No meu caso o que que pode.
+          </p>
+          <p>
+            ser importante o vínculo institucional as disciplinas cursadas o
+            desempenho as reprovações trancamentos situação curricular dados
+            pessoais decisões administrativas eventualmente alguma justificativa
+            que foi usada para cancelar alguma matrícula Isso estudo não deve
+            sendo exposto então isso deve ser protegido para evitar que
+            informações sejam vazadas A arquitetura então pessoal ela precisa
+            mapear onde esses dados vão estar armazenados onde eles vão circular
+            qual componente que envia para qual componente quem pode acessar
+            quais usuários que podem consultar esses dados por quanto tempo eles
+            permanecem disponíveis se vai est para sempre ou se ele tem um tempo
+            para ser automaticamente destruído essa informação Quais dados
+            aparecem em logs tem coisas que não pode aparecer no log eu não
+            posso colocar e por exemplo o CPF informações sensíveis de usuários
+            em log deu um erro na hora que ele tava.
+          </p>
+          <p>
+            salvando a justificativa dele Por que que aquela justificativa ela
+            precisa ser armazenada no log será que faz sentido será que se
+            armazenar no log não vou estar com a possibilidade de expor esse
+            dado essa justificativa do momento do trancamento da matrícula por
+            exemplo que pode ser algo sensível para a pessoa então às vezes o
+            sistema ele pode acabar vazando informações sensíveis na hora de
+            fazer o mód então isso tem que ser pensado então eu tenho que pensar
+            nos dados não só na maneira como que eles são armazenados mas em
+            situações diferentes Eu tenho que proteger o dado em repouso e o
+            dado em trânsito O dado em trânsito é quando ele sendo trafegado
+            quando ele envolvido numa comunicação entre por exemplo o navegador
+            o Google Chrome da vida ou Firefox ou qualquer outro navegador e o
+            portal.
+          </p>
+          <p>
+            Então naquele momento que algo parece o navegador ele teve que fazer
+            uma transmissão do portal do estudante lá até o meu navegador.
+          </p>
+          <p>Então nesse momento o dado estava em trânsito.</p>
+          <p>
+            Agora do portal para ele chegar no portal ele também teve que sair
+            provavelmente de uma API e para chegar da API até o portal ele
+            estava em trânsito eu tenho que proteger também.
+          </p>
+          <p>
+            Ou seja como é que eu protejo dado em trânsito usando criptografia
+            usando autenticação e depois a partir da autenticação eu consigo
+            usar chaves e simétricas ou assimétricas para fazer com que a
+            informação ela esteja protegida encontrar el trafé então entre o
+            sistema de matrícula e histórico precisa de cuidar do dado enquanto
+            ele está em trânsito Ent sistema de autenticação institucional eu
+            preciso também ter a o cuidado com o dado que está em trânsito E o
+            mesmo também serve para componentes internos.
+          </p>
+          <p>
+            Quando dois duas partes do meu sistema que estão em lugares
+            separados vão enviar de um lado para outro uma formação eu preciso
+            ter esse dado Mas não é só usar criptografia na hora de transmitir
+            Eu tenho que pensar também não só no dado em trânsito mas também no
+            dado em repouso Que que é um dado em repouso é quando o dado está
+            por exemplo no meu banco de dados mas não é só no meu banco de
+            dados.
+          </p>
+          <p>
+            Ou seja no banco de dados eu tenho que cuidar se for um dado
+            sensível que eu também quero proteger eu posso criptografar ali que
+            posso proteger com criptografia mas não é só no banco de dados que
+            eu posso e preciso ter esse cuidado Eu também tenho que preocupar
+            com os backups Não adianta eu ter meu banco de dados cifrado e fazer
+            um backup do dado em texto plano.
+          </p>
+          <p>
+            Por exemplo meu backup pode acabar expondo todas as informações que
+            eu tenho que que é um backup é uma cópia de segurança mas se essa
+            cópia de segurança que lá especialmente para evitar a perda de dados
+            por exemplo ela for armazenada num lugar de seguro eu posso estar
+            usando o backup como elo mais fraco como vulnerabilidade para expor
+            todas as informações que eu tenho no meu sistema O mesmo serve para
+            relatórios Não adianta eu ter uma senha no meu banco de dados ter
+            backups protegidos mas eu ten uma série de relatórios que eu posso
+            emitir e deixar em qualquer lugar e aqueles relatórios terem as
+            informações sensíveis arquivos exportados gerou um CSV gerou um Jzon
+            gerou alguma alguma forma de tirar a informação do sistema e
+            exportar através de alguma funcionalidade Eu tenho que ver como que
+            eu protejo esse Jzom esse CSV ou esse arquivo que carregando os
+            dados sensíveis Tem que pensar.
+          </p>
+          <p>
+            também em cash quando fica na memória cash quando tem alguma réplica
+            alguma cópia quando eu tenho até mesmo ambiente de testes Imagina se
+            eu tô lá com o meu ambiente de teste e eu quero fazer teste de
+            segurança e por gosto acabo deixando ele mais inseguro justamente
+            para validar vulnerabilidades etc Só que no meu ambiente de teste eu
+            tenho uma cópia da minha base em produção Que que adianta eu ter um
+            cuidado enorme com a base em produção se na máquina do desenvolvedor
+            está sem Fel por exemplo sem antivírus e sem nenhum outro sistema de
+            segurança eu tenho os mesmos dados Tenho uma cópia dos do sistema
+            real Percebe como isso pode ser prejudicial muitas pessoas acabam
+            não se preocupando porque é uma cópia não vai ter problema não vai
+            interferir no sistema real mas aquela cópia ela tem dados muitas
+            vezes confidenciais sensíveis então isso pode acontecer.
+          </p>
+          <p>
+            Por exemplo um sistema de delivery pode ter uma cópia onde todos os
+            cupons de desconto ou todos os endereços dos usuários mesmo que seja
+            para teste você tem que tomar esse cuidado então o ideal seria não
+            ter essa mesma base e seria melhor então optar por uma base com
+            dados fake dados falsos dados simulados então assim a criptografia
+            ela deve sim fazer parte da solução mas também ela não substitui um
+            controle de acesso uma minimização monitoramento certo então pessoal
+            esses são alguns cuidados que vocês têm que ter também na hora de
+            você pensar no sistema de vocês Dei aqui vários exemplos com o meu
+            sistema de matrículas e espero ver quais são os cuidados que vocês
+            vão tomar em relação a esse assunto da aula de hoje deste vídeo no
+            sistema de vocês.
+          </p>
+        </div>
+        <p class="source-label">Fonte: Aula 13.md</p>
+      </details>
+      <nav class="lesson-navigation" aria-label="Navegação entre aulas">
+        <a href="aula-12.html">← Aula 12</a
+        ><a href="index.html">Índice das aulas</a
+        ><a href="aula-14.html">Aula 14 →</a>
+      </nav>
+    </main>
+    <footer class="site-footer">
+      Engenharia de Software Seguro · Material de revisão baseado nas
+      transcrições das aulas.
+    </footer>
+    <script src="app.js" defer></script>
+  </body>
+</html>

@@ -18,12 +18,12 @@ A probabilidade representa a chance de uma ameaça ser explorada com sucesso, co
 - necessidade (ou não) de acesso privilegiado por parte do atacante;
 - contexto do sistema, incluindo exposição e controles já existentes.
 
-| Valor | Classificação | Critério |
-|-------|---------------|----------|
-| 1 | Baixa | A exploração exige condições muito específicas, conhecimento avançado ou acesso privilegiado difícil de obter. Ocorrência pouco provável. |
-| 2 | Média-baixa | A exploração é possível, mas depende de certas condições ou de um nível moderado de conhecimento técnico. Ocorrência pontual. |
-| 3 | Média-alta | A exploração pode ser realizada com recursos e conhecimento comuns, exigindo pouco ou nenhum acesso privilegiado. Ocorrência plausível em cenários reais. |
-| 4 | Alta | A exploração é simples, não exige acesso privilegiado e pode ser repetida com baixo esforço. Ocorrência esperada caso o risco não seja tratado. |
+| Valor | Classificação | Critério                                                                                                                                                  |
+| ----- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Baixa         | A exploração exige condições muito específicas, conhecimento avançado ou acesso privilegiado difícil de obter. Ocorrência pouco provável.                 |
+| 2     | Média-baixa   | A exploração é possível, mas depende de certas condições ou de um nível moderado de conhecimento técnico. Ocorrência pontual.                             |
+| 3     | Média-alta    | A exploração pode ser realizada com recursos e conhecimento comuns, exigindo pouco ou nenhum acesso privilegiado. Ocorrência plausível em cenários reais. |
+| 4     | Alta          | A exploração é simples, não exige acesso privilegiado e pode ser repetida com baixo esforço. Ocorrência esperada caso o risco não seja tratado.           |
 
 ---
 
@@ -38,12 +38,12 @@ O impacto representa a gravidade das consequências caso a ameaça se concretize
 - danos à reputação do projeto ou da instituição envolvida;
 - impactos legais e regulatórios, considerando a natureza sensível dos dados de saúde (incluindo exigências da LGPD).
 
-| Valor | Classificação | Critério |
-|-------|---------------|----------|
-| 1 | Baixo | Consequências limitadas, sem exposição de dados sensíveis e sem efeito perceptível para os usuários. |
-| 2 | Moderado | Consequências perceptíveis, podendo envolver indisponibilidade parcial ou exposição restrita de informações não críticas. |
-| 3 | Alto | Consequências significativas, com possível exposição de dados sensíveis, prejuízo direto aos usuários ou indisponibilidade relevante. |
-| 4 | Muito alto | Consequências graves, com exposição de dados médicos sensíveis em larga escala, comprometimento da confiança no sistema e possíveis implicações legais/regulatórias. |
+| Valor | Classificação | Critério                                                                                                                                                             |
+| ----- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | Baixo         | Consequências limitadas, sem exposição de dados sensíveis e sem efeito perceptível para os usuários.                                                                 |
+| 2     | Moderado      | Consequências perceptíveis, podendo envolver indisponibilidade parcial ou exposição restrita de informações não críticas.                                            |
+| 3     | Alto          | Consequências significativas, com possível exposição de dados sensíveis, prejuízo direto aos usuários ou indisponibilidade relevante.                                |
+| 4     | Muito alto    | Consequências graves, com exposição de dados médicos sensíveis em larga escala, comprometimento da confiança no sistema e possíveis implicações legais/regulatórias. |
 
 ---
 
@@ -56,11 +56,11 @@ A pontuação de risco é obtida pela multiplicação entre probabilidade e impa
 O resultado é enquadrado em uma faixa de classificação:
 
 | Pontuação | Classificação |
-|-----------|---------------|
-| 1 a 3 | Baixo |
-| 4 a 7 | Médio |
-| 8 a 11 | Alto |
-| 12 a 16 | Crítico |
+| --------- | ------------- |
+| 1 a 3     | Baixo         |
+| 4 a 7     | Médio         |
+| 8 a 11    | Alto          |
+| 12 a 16   | Crítico       |
 
 A pontuação apoia a **priorização** dos riscos, direcionando os esforços de mitigação primeiro às ameaças mais críticas. O valor numérico, porém, não deve ser interpretado isoladamente: o contexto específico de cada risco — criticidade do ativo envolvido, sensibilidade dos dados médicos afetados e circunstâncias de uso do sistema — deve ser considerado junto à pontuação na tomada de decisão.
 
@@ -74,8 +74,8 @@ Risco residual é o nível de risco que permanece **após** a aplicação de um 
 
 A avaliação do risco residual seguirá a mesma lógica de cálculo da seção anterior (probabilidade × impacto), aplicada à condição esperada após a implementação do controle. O modelo de registro a ser utilizado é:
 
-| Risco | Nível inicial | Controle aplicado | Nível residual esperado | Condição para aceite |
-|-------|---------------|-------------------|-------------------------|----------------------|
+| Risco   | Nível inicial                              | Controle aplicado                         | Nível residual esperado                   | Condição para aceite                                     |
+| ------- | ------------------------------------------ | ----------------------------------------- | ----------------------------------------- | -------------------------------------------------------- |
 | R01–R15 | Conforme o registro consolidado da Etapa 2 | Conforme o plano de tratamento da Etapa 2 | Conforme a estimativa residual registrada | Implementação, teste bem-sucedido e evidência versionada |
 
 Pontos importantes sobre o modelo:
@@ -100,4 +100,4 @@ Os critérios de probabilidade, impacto e risco residual servirão de base metod
 - **Respond (Responder):** o nível de impacto ajuda a definir a proporcionalidade da resposta necessária caso o risco se concretize.
 - **Recover (Recuperar):** riscos classificados como críticos ou altos indicam a necessidade de planos de recuperação mais bem definidos.
 
-O detalhamento de controles específicos e o mapeamento formal entre cada risco do VitaLink e as funções do NIST CSF 2.0 serão desenvolvidos nas etapas posteriores, a partir dos riscos concretos levantados pelo grupo.
+O detalhamento dos controles e o mapeamento formal entre R01–R15 e as funções do NIST CSF 2.0 estão consolidados na [matriz NIST e priorização de controles](matriz-nist-e-priorizacao-controles.md). Os valores residuais permanecem estimativas enquanto as condições de aceite não forem integralmente verificadas.

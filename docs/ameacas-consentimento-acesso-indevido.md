@@ -16,7 +16,7 @@ As premissas usadas nesta análise são:
 - a revogação impede novos acessos mesmo quando a sessão ou o token ainda não expirou;
 - decisões, mudanças de estado e tentativas bloqueadas são registradas no ativo A08.
 
-A granularidade, duração e revogação seguem DS04–DS06. A implementação desses comportamentos permanece pendente, e a ausência de implementação não autoriza acesso por padrão.
+A granularidade, duração e revogação seguem DS04–DS06 e possuem implementação no backend. A API nega por padrão e reavalia estado, período, categoria e operação a cada acesso profissional protegido.
 
 ## Ameaças identificadas
 

@@ -10,10 +10,10 @@ Os componentes e pontos de interação utilizados nesta análise estão consolid
 
 ## Ameaças identificadas
 
-| ID | Categoria STRIDE | Componente ou ativo | Ameaça concreta | Impacto e ativos afetados |
-| --- | --- | --- | --- | --- |
-| T07 | Tampering | API, banco de dados, armazenamento de documentos e A03, A04, A05, A09, A10 e A12 | Um usuário autenticado ou atacante cria um exame, laudo, receita, prescrição ou consulta falsa, altera um registro existente ou substitui um documento por outro, sem possuir autorização para essa operação. | Um profissional pode interpretar informação falsa ou adulterada como legítima e tomar uma decisão clínica incorreta. O histórico do paciente perde confiabilidade e pode haver repetição de exames, atraso no diagnóstico, uso incorreto de medicamentos ou tratamento inadequado. |
-| T08 | Tampering | API, banco de dados, armazenamento de documentos e A03, A04, A05, A09, A10 e A12 | Um usuário autenticado, atacante ou processo indevido exclui uma consulta, um laudo, uma receita ou sua referência no banco para remover informação médica ou ocultar uma ação anterior. | A perda ou ocultação rompe a continuidade do cuidado, dificulta comprovar prescrições e atendimentos e pode deixar profissionais sem informações necessárias. A exclusão pode afetar tanto o arquivo quanto seus metadados e vínculos. |
+| ID  | Categoria STRIDE | Componente ou ativo                                                              | Ameaça concreta                                                                                                                                                                                               | Impacto e ativos afetados                                                                                                                                                                                                                                                          |
+| --- | ---------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T07 | Tampering        | API, banco de dados, armazenamento de documentos e A03, A04, A05, A09, A10 e A12 | Um usuário autenticado ou atacante cria um exame, laudo, receita, prescrição ou consulta falsa, altera um registro existente ou substitui um documento por outro, sem possuir autorização para essa operação. | Um profissional pode interpretar informação falsa ou adulterada como legítima e tomar uma decisão clínica incorreta. O histórico do paciente perde confiabilidade e pode haver repetição de exames, atraso no diagnóstico, uso incorreto de medicamentos ou tratamento inadequado. |
+| T08 | Tampering        | API, banco de dados, armazenamento de documentos e A03, A04, A05, A09, A10 e A12 | Um usuário autenticado, atacante ou processo indevido exclui uma consulta, um laudo, uma receita ou sua referência no banco para remover informação médica ou ocultar uma ação anterior.                      | A perda ou ocultação rompe a continuidade do cuidado, dificulta comprovar prescrições e atendimentos e pode deixar profissionais sem informações necessárias. A exclusão pode afetar tanto o arquivo quanto seus metadados e vínculos.                                             |
 
 ## T07 — Criação ou alteração indevida de documento ou registro médico
 
@@ -61,9 +61,9 @@ Os componentes e pontos de interação utilizados nesta análise estão consolid
 
 ## Rastreabilidade
 
-| Ameaça | Categoria | Caso de abuso | Ativos principais | Risco posterior |
-| --- | --- | --- | --- | --- |
-| T07 | Tampering | CA05 | A03, A04, A05, A08, A09, A10 e A12 | R07 — exame é alterado |
-| T08 | Tampering | CA06 | A03, A04, A05, A08, A09, A10 e A12 | R08 — registro é excluído |
+| Ameaça | Categoria | Caso de abuso | Ativos principais                  | Risco posterior           |
+| ------ | --------- | ------------- | ---------------------------------- | ------------------------- |
+| T07    | Tampering | CA05          | A03, A04, A05, A08, A09, A10 e A12 | R07 — exame é alterado    |
+| T08    | Tampering | CA06          | A03, A04, A05, A08, A09, A10 e A12 | R08 — registro é excluído |
 
 Os casos de abuso CA05 e CA06 estão consolidados na Etapa 1, e os riscos R07 e R08 estão registrados e avaliados na Etapa 2.
