@@ -35,6 +35,7 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import maleDoctorImg from "@/imports/ChatGPT_Image_3_de_ago._de_2026__11_38_29.png"
+import AuthorizedPatientsDashboard from "./AuthorizedPatientsDashboard"
 
 interface Props {
   onNavigate: (page: Page) => void
@@ -75,7 +76,11 @@ const noteTypeConfig = {
   },
 }
 
-export default function DoctorDashboard({ onNavigate, onLogout }: Props) {
+export default function DoctorDashboard(props: Props) {
+  return <AuthorizedPatientsDashboard {...props} />
+}
+
+function LegacyDoctorDashboard({ onNavigate, onLogout }: Props) {
   const [view, setView] = useState<"list" | "detail" | "messages">("list")
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null)
   const [search, setSearch] = useState("")

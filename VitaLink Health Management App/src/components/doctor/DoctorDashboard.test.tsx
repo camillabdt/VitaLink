@@ -11,16 +11,23 @@ afterEach(() => {
 test("professional requests access using only code and justification", async () => {
   const user = userEvent.setup()
   sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
-  vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-    new Response(
-      JSON.stringify({
-        id: "55555555-5555-4555-8555-555555555555",
-        status: "pending",
-        patient: "Paciente Sintética",
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       }),
-      { status: 201, headers: { "Content-Type": "application/json" } },
-    ),
-  )
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "55555555-5555-4555-8555-555555555555",
+          status: "pending",
+          patient: "Paciente Sintética",
+        }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    )
 
   render(<DoctorDashboard onNavigate={vi.fn()} onLogout={vi.fn()} />)
 
@@ -59,15 +66,22 @@ test("professional requests access using only code and justification", async () 
 test("invalid code does not reveal patient data", async () => {
   const user = userEvent.setup()
   sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
-  vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-    new Response(
-      JSON.stringify({
-        code: "access_code_invalid",
-        message: "O código informado não é válido.",
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
       }),
-      { status: 422, headers: { "Content-Type": "application/json" } },
-    ),
-  )
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          code: "access_code_invalid",
+          message: "O código informado não é válido.",
+        }),
+        { status: 422, headers: { "Content-Type": "application/json" } },
+      ),
+    )
 
   render(<DoctorDashboard onNavigate={vi.fn()} onLogout={vi.fn()} />)
 
@@ -82,4 +96,52 @@ test("invalid code does not reveal patient data", async () => {
     "O código informado não é válido.",
   )
   expect(screen.queryByText(/CPF/)).not.toBeInTheDocument()
+})
+
+test("professional sees only authorized patients and revalidates detail", async () => {
+  const user = userEvent.setup()
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            id: "99999999-9999-4999-8999-999999999999",
+            name: "Paciente Autorizada",
+            categories: ["histórico"],
+            operations: ["consultar"],
+            expires_at: "2026-09-13T05:00:00Z",
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "99999999-9999-4999-8999-999999999999",
+          name: "Paciente Autorizada",
+          birthdate: "1992-08-13",
+          phone: "+5553999999999",
+          blood_type: "O+",
+          categories: ["histórico"],
+          operations: ["consultar"],
+          expires_at: "2026-09-13T05:00:00Z",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+  render(<DoctorDashboard onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  expect(await screen.findByText("Paciente Autorizada")).toBeInTheDocument()
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    "/api/v1/patients",
+    expect.objectContaining({ credentials: "same-origin" }),
+  )
+  await user.click(screen.getByRole("button", { name: "Ver detalhes" }))
+  expect(await screen.findByText("+5553999999999")).toBeInTheDocument()
+  expect(globalThis.fetch).toHaveBeenLastCalledWith(
+    "/api/v1/patients/99999999-9999-4999-8999-999999999999",
+    expect.objectContaining({ credentials: "same-origin" }),
+  )
 })

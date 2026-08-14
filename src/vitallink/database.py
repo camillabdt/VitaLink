@@ -110,6 +110,27 @@ class AccessRequest(Base):
     )
 
 
+class Authorization(Base):
+    """Patient-granted professional access with explicit scope and term."""
+
+    __tablename__ = "authorizations"
+
+    id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), primary_key=True, default=uuid4)
+    access_request_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("access_requests.id"), unique=True, nullable=False
+    )
+    patient_id: Mapped[UUID] = mapped_column(PostgreSQLUUID(as_uuid=True), ForeignKey("patients.id"), nullable=False)
+    professional_id: Mapped[UUID] = mapped_column(
+        PostgreSQLUUID(as_uuid=True), ForeignKey("professionals.id"), nullable=False
+    )
+    categories: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    operations: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), default="active", nullable=False)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
 class Notification(Base):
     """Internal account notification linked to a domain event."""
 

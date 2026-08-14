@@ -34,6 +34,7 @@ from vitallink.database import (
     Account,
     AccountSession,
     AuditEvent,
+    Authorization,
     EmailVerification,
     LoginThrottle,
     Notification,
@@ -48,6 +49,18 @@ from vitallink.database import (
 GENERIC_REGISTRATION_MESSAGE = "Se os dados puderem ser cadastrados, enviaremos as instruções de confirmação."
 GENERIC_RECOVERY_MESSAGE = "Se a conta puder ser recuperada, enviaremos as instruções por e-mail."
 COMMON_PASSWORDS = {"123456789012", "password1234", "senha12345678", "qwerty123456"}
+AUTHORIZATION_CATEGORIES = {
+    "histórico",
+    "consultas",
+    "exames",
+    "laudos",
+    "receitas",
+    "imagens",
+    "recomendações",
+    "metas",
+    "mensagens",
+}
+AUTHORIZATION_OPERATIONS = {"consultar", "anexar", "atualizar"}
 password_hasher = PasswordHasher()
 settings = get_settings()
 secret_cipher = Fernet(urlsafe_b64encode(hashlib.sha256(settings.secret_key.get_secret_value().encode()).digest()))
@@ -326,6 +339,88 @@ class AccessRequestResponse(BaseModel):
     patient: str
 
 
+class RequestingProfessionalResponse(BaseModel):
+    """Professional identity needed for a patient access decision."""
+
+    name: str
+    specialty: str
+    institution: str | None
+
+
+class PatientAccessRequestResponse(BaseModel):
+    """Pending request visible only to its target patient."""
+
+    id: UUID
+    status: str
+    created_at: datetime
+    justification: str
+    professional: RequestingProfessionalResponse
+
+
+class AccessRequestDecisionRequest(BaseModel):
+    """Patient decision for one pending access request."""
+
+    decision: str = Field(pattern=r"^(rejected|granted)$")
+    categories: list[str] | None = Field(default=None, min_length=1, max_length=9)
+    operations: list[str] | None = Field(default=None, min_length=1, max_length=3)
+    duration_days: int | None = Field(default=None, ge=1, le=90)
+    step_up_confirmation_id: UUID | None = None
+
+
+class AccessRequestDecisionResponse(BaseModel):
+    """Safe confirmation of an access-request decision."""
+
+    id: UUID
+    status: str
+
+
+class AuthorizedPatientResponse(BaseModel):
+    """Minimal patient card backed by one active authorization."""
+
+    id: UUID
+    name: str
+    categories: list[str]
+    operations: list[str]
+    expires_at: datetime
+
+
+class AuthorizedPatientDetailResponse(AuthorizedPatientResponse):
+    """Patient profile fields allowed by the history-read scope."""
+
+    birthdate: date
+    blood_type: str | None
+    phone: str
+
+
+class AuthorizationPatientResponse(BaseModel):
+    """Patient identity visible to a party in the authorization."""
+
+    id: UUID
+    name: str
+
+
+class AuthorizationProfessionalResponse(BaseModel):
+    """Professional identity visible to a party in the authorization."""
+
+    id: UUID
+    name: str
+    specialty: str
+    institution: str | None
+
+
+class AuthorizationResponse(BaseModel):
+    """Authorization visible only to its patient or professional."""
+
+    id: UUID
+    status: str
+    starts_at: datetime
+    expires_at: datetime
+    categories: list[str]
+    operations: list[str]
+    patient: AuthorizationPatientResponse
+    professional: AuthorizationProfessionalResponse
+
+
 class AccountSessionResponse(BaseModel):
     """Safe session metadata visible only to its account owner."""
 
@@ -339,7 +434,7 @@ class AccountSessionResponse(BaseModel):
 class StepUpConfirmationRequest(BaseModel):
     """TOTP proof bound to one supported sensitive action."""
 
-    action: str = Field(pattern=r"^password_change$")
+    action: str = Field(pattern=r"^(password_change|authorization_grant)$")
     totp_code: str = Field(pattern=r"^\d{6}$")
 
 
@@ -2356,6 +2451,42 @@ def access_code_status(access_code: AccessCode, now: datetime) -> str:
     return "active"
 
 
+def active_authorization(
+    session: Session,
+    professional_id: UUID,
+    patient_id: UUID,
+    category: str,
+    operation: str,
+    now: datetime,
+) -> Authorization | None:
+    """Reevaluate one professional operation against persisted authorization.
+
+    Args:
+        session: Database transaction scope.
+        professional_id: Professional attempting the operation.
+        patient_id: Patient whose resource is requested.
+        category: Normative data category required by the resource.
+        operation: Normative operation required by the resource.
+        now: Server-controlled operation time.
+
+    Returns:
+        A matching active authorization, or None for every denial case.
+    """
+    return session.scalar(
+        select(Authorization)
+        .where(
+            Authorization.professional_id == professional_id,
+            Authorization.patient_id == patient_id,
+            Authorization.status == "active",
+            Authorization.starts_at <= now,
+            Authorization.expires_at > now,
+            Authorization.categories.contains([category]),
+            Authorization.operations.contains([operation]),
+        )
+        .order_by(Authorization.expires_at.desc())
+    )
+
+
 @app.get("/api/v1/access-codes", response_model=list[AccessCodeResponse])
 def list_access_codes(
     request: Request,
@@ -2479,6 +2610,389 @@ def revoke_access_code(
     )
     session.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.get("/api/v1/access-requests", response_model=list[PatientAccessRequestResponse])
+def list_access_requests(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[PatientAccessRequestResponse] | JSONResponse:
+    """List requests addressed to the authenticated patient.
+
+    Args:
+        request: Authenticated same-origin request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The patient's requests with only decision-relevant professional data.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        return error_response(request, 403, "patient_required", "Apenas pacientes podem consultar solicitações.")
+    rows = session.execute(
+        select(AccessRequest, Professional)
+        .join(Professional, Professional.id == AccessRequest.professional_id)
+        .where(AccessRequest.patient_id == patient.id)
+        .order_by(AccessRequest.created_at.desc())
+    ).all()
+    return [
+        PatientAccessRequestResponse(
+            id=access_request.id,
+            status=access_request.status,
+            created_at=access_request.created_at,
+            justification=access_request.justification,
+            professional=RequestingProfessionalResponse(
+                name=professional.name,
+                specialty=professional.specialty,
+                institution=professional.institution,
+            ),
+        )
+        for access_request, professional in rows
+    ]
+
+
+@app.post(
+    "/api/v1/access-requests/{access_request_id}/decisions",
+    response_model=AccessRequestDecisionResponse,
+)
+def decide_access_request(
+    access_request_id: UUID,
+    decision_request: AccessRequestDecisionRequest,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> AccessRequestDecisionResponse | JSONResponse:
+    """Grant or reject one pending request addressed to the authenticated patient.
+
+    Args:
+        access_request_id: Opaque request identifier.
+        decision_request: Explicit patient decision.
+        request: Authenticated request with origin and CSRF proof.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The resulting state or a non-enumerating denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    account_session, account = context
+    if not valid_csrf(request, "__Host-vitallink_session"):
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_request.decided",
+                target_id=audit_identifier(access_request_id),
+                result="denied",
+                reason="request_verification_failed",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return csrf_denied_response(request)
+    patient = session.scalar(select(Patient).where(Patient.account_id == account.id))
+    if patient is None:
+        return error_response(request, 403, "patient_required", "Apenas pacientes podem decidir solicitações.")
+    pending_request = session.scalar(
+        select(AccessRequest)
+        .where(
+            AccessRequest.id == access_request_id,
+            AccessRequest.patient_id == patient.id,
+            AccessRequest.status == "pending",
+        )
+        .with_for_update()
+    )
+    if pending_request is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="access_request.decided",
+                target_id=audit_identifier(access_request_id),
+                result="denied",
+                reason="not_found_or_not_pending",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "access_request_not_found", "Solicitação não encontrada.")
+    if decision_request.decision == "granted":
+        categories = sorted(set(decision_request.categories or []))
+        operations = sorted(set(decision_request.operations or []))
+        if (
+            not categories
+            or not operations
+            or not set(categories) <= AUTHORIZATION_CATEGORIES
+            or not set(operations) <= AUTHORIZATION_OPERATIONS
+            or decision_request.duration_days is None
+        ):
+            session.add(
+                AuditEvent(
+                    actor_id=audit_identifier(account.id),
+                    action="authorization.granted",
+                    target_id=audit_identifier(pending_request.id),
+                    result="denied",
+                    reason="invalid_scope_or_term",
+                    correlation_id=request.state.correlation_id,
+                    event_metadata={"role": account.role},
+                )
+            )
+            session.commit()
+            return error_response(request, 422, "authorization_scope_invalid", "Revise o escopo e o prazo informados.")
+        confirmation = None
+        if decision_request.step_up_confirmation_id is not None:
+            confirmation = session.scalar(
+                select(StepUpConfirmation)
+                .where(
+                    StepUpConfirmation.id == decision_request.step_up_confirmation_id,
+                    StepUpConfirmation.account_id == account.id,
+                    StepUpConfirmation.session_id == account_session.id,
+                    StepUpConfirmation.action == "authorization_grant",
+                    StepUpConfirmation.used_at.is_(None),
+                    StepUpConfirmation.expires_at > now,
+                )
+                .with_for_update()
+            )
+        if confirmation is None:
+            session.add(
+                AuditEvent(
+                    actor_id=audit_identifier(account.id),
+                    action="authorization.granted",
+                    target_id=audit_identifier(pending_request.id),
+                    result="denied",
+                    reason="action_confirmation_required",
+                    correlation_id=request.state.correlation_id,
+                    event_metadata={"role": account.role},
+                )
+            )
+            session.commit()
+            return error_response(request, 403, "action_confirmation_required", "Confirme novamente esta ação.")
+        confirmation.used_at = now
+        authorization = Authorization(
+            access_request_id=pending_request.id,
+            patient_id=pending_request.patient_id,
+            professional_id=pending_request.professional_id,
+            categories=categories,
+            operations=operations,
+            status="active",
+            starts_at=now,
+            expires_at=now + timedelta(days=decision_request.duration_days),
+            changed_at=now,
+        )
+        session.add(authorization)
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="authorization.granted",
+                target_id=audit_identifier(pending_request.id),
+                result="success",
+                reason="patient_granted",
+                correlation_id=request.state.correlation_id,
+                event_metadata={
+                    "role": account.role,
+                    "category_count": len(categories),
+                    "operation_count": len(operations),
+                    "duration_days": decision_request.duration_days,
+                },
+            )
+        )
+    pending_request.status = decision_request.decision
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="access_request.decided",
+            target_id=audit_identifier(pending_request.id),
+            result="success",
+            reason=f"patient_{decision_request.decision}",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "previous_status": "pending", "status": pending_request.status},
+        )
+    )
+    session.commit()
+    return AccessRequestDecisionResponse(id=pending_request.id, status=pending_request.status)
+
+
+@app.get("/api/v1/authorizations", response_model=list[AuthorizationResponse])
+def list_authorizations(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[AuthorizationResponse] | JSONResponse:
+    """List authorizations involving only the authenticated user.
+
+    Args:
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Scoped authorization summaries or a role-safe denial.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    statement = (
+        select(Authorization, Patient, Professional)
+        .join(Patient, Patient.id == Authorization.patient_id)
+        .join(Professional, Professional.id == Authorization.professional_id)
+        .order_by(Authorization.changed_at.desc())
+    )
+    if account.role == "patient":
+        statement = statement.where(Patient.account_id == account.id)
+    elif account.role == "professional":
+        statement = statement.where(Professional.account_id == account.id)
+    else:
+        return error_response(request, 403, "role_not_supported", "Este perfil não possui autorizações.")
+    rows = session.execute(statement).all()
+    return [
+        AuthorizationResponse(
+            id=authorization.id,
+            status=(
+                "expired"
+                if authorization.status == "active" and authorization.expires_at <= now
+                else authorization.status
+            ),
+            starts_at=authorization.starts_at,
+            expires_at=authorization.expires_at,
+            categories=authorization.categories,
+            operations=authorization.operations,
+            patient=AuthorizationPatientResponse(id=patient.id, name=patient.name),
+            professional=AuthorizationProfessionalResponse(
+                id=professional.id,
+                name=professional.name,
+                specialty=professional.specialty,
+                institution=professional.institution,
+            ),
+        )
+        for authorization, patient, professional in rows
+    ]
+
+
+@app.get("/api/v1/patients", response_model=list[AuthorizedPatientResponse])
+def list_authorized_patients(
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> list[AuthorizedPatientResponse] | JSONResponse:
+    """List only patients currently authorized for the professional.
+
+    Args:
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        Minimal patient cards with the currently granted scope.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+    if professional is None:
+        return error_response(request, 403, "professional_required", "Apenas profissionais podem consultar pacientes.")
+    rows = session.execute(
+        select(Authorization, Patient)
+        .join(Patient, Patient.id == Authorization.patient_id)
+        .where(
+            Authorization.professional_id == professional.id,
+            Authorization.status == "active",
+            Authorization.starts_at <= now,
+            Authorization.expires_at > now,
+        )
+        .order_by(Patient.name, Authorization.expires_at.desc())
+    ).all()
+    return [
+        AuthorizedPatientResponse(
+            id=patient.id,
+            name=patient.name,
+            categories=authorization.categories,
+            operations=authorization.operations,
+            expires_at=authorization.expires_at,
+        )
+        for authorization, patient in rows
+    ]
+
+
+@app.get("/api/v1/patients/{patient_id}", response_model=AuthorizedPatientDetailResponse)
+def get_authorized_patient(
+    patient_id: UUID,
+    request: Request,
+    session: Annotated[Session, Depends(get_session)],
+    now: Annotated[datetime, Depends(current_time)],
+) -> AuthorizedPatientDetailResponse | JSONResponse:
+    """Read patient profile details with history-read authorization.
+
+    Args:
+        patient_id: Opaque patient identifier.
+        request: Authenticated request.
+        session: Database transaction scope.
+        now: Server-controlled UTC time shared by the request.
+
+    Returns:
+        The authorized detail or the same response for every denied identifier.
+    """
+    context = authenticated_session(request, session, now)
+    if context is None:
+        return error_response(request, 401, "authentication_required", "Entre novamente.")
+    _, account = context
+    professional = session.scalar(select(Professional).where(Professional.account_id == account.id))
+    if professional is None:
+        return error_response(request, 403, "professional_required", "Apenas profissionais podem consultar pacientes.")
+    authorization = active_authorization(
+        session,
+        professional.id,
+        patient_id,
+        "histórico",
+        "consultar",
+        now,
+    )
+    patient = session.get(Patient, patient_id) if authorization is not None else None
+    if authorization is None or patient is None:
+        session.add(
+            AuditEvent(
+                actor_id=audit_identifier(account.id),
+                action="patient_profile.read",
+                target_id=audit_identifier(patient_id),
+                result="denied",
+                reason="not_found_or_not_authorized",
+                correlation_id=request.state.correlation_id,
+                event_metadata={"role": account.role, "category": "histórico", "operation": "consultar"},
+            )
+        )
+        session.commit()
+        return error_response(request, 404, "patient_not_found", "Paciente não encontrado.")
+    session.add(
+        AuditEvent(
+            actor_id=audit_identifier(account.id),
+            action="patient_profile.read",
+            target_id=audit_identifier(patient.id),
+            result="success",
+            reason="active_authorization",
+            correlation_id=request.state.correlation_id,
+            event_metadata={"role": account.role, "category": "histórico", "operation": "consultar"},
+        )
+    )
+    session.commit()
+    return AuthorizedPatientDetailResponse(
+        id=patient.id,
+        name=patient.name,
+        birthdate=patient.birthdate,
+        blood_type=patient.blood_type,
+        phone=patient.phone,
+        categories=authorization.categories,
+        operations=authorization.operations,
+        expires_at=authorization.expires_at,
+    )
 
 
 @app.post("/api/v1/access-requests", status_code=status.HTTP_201_CREATED, response_model=AccessRequestResponse)

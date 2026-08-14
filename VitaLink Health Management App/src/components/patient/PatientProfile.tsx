@@ -23,6 +23,33 @@ interface AccessCodeMetadata {
   status: "active" | "consumed" | "revoked" | "expired"
 }
 
+interface AccessRequest {
+  id: string
+  status: "pending" | "granted" | "rejected"
+  created_at: string
+  justification: string
+  professional: {
+    name: string
+    specialty: string
+    institution: string | null
+  }
+}
+
+interface Authorization {
+  id: string
+  status: string
+  starts_at: string
+  expires_at: string
+  categories: string[]
+  operations: string[]
+  professional: {
+    id: string
+    name: string
+    specialty: string
+    institution: string | null
+  }
+}
+
 interface OwnedProfileResponse {
   role: "patient" | "professional"
   status: string
@@ -74,6 +101,15 @@ export default function PatientProfile({
   const [accessCodeError, setAccessCodeError] = useState("")
   const [accessCodeMessage, setAccessCodeMessage] = useState("")
   const [generatedCode, setGeneratedCode] = useState("")
+  const [accessRequests, setAccessRequests] = useState<AccessRequest[]>([])
+  const [authorizations, setAuthorizations] = useState<Authorization[]>([])
+  const [decisionSaving, setDecisionSaving] = useState("")
+  const [grantForm, setGrantForm] = useState({
+    categories: ["histórico"],
+    operations: ["consultar"],
+    durationDays: "30",
+    totpCode: "",
+  })
   const [sessions, setSessions] = useState<AccountSession[]>([])
   const [sessionsLoading, setSessionsLoading] = useState(false)
   const [sessionsError, setSessionsError] = useState("")
@@ -152,20 +188,44 @@ export default function PatientProfile({
     let active = true
     setAccessCodesLoading(true)
     setAccessCodeError("")
-    fetch("/api/v1/access-codes", { credentials: "same-origin" })
-      .then(async (response) => {
-        if (response.status === 401) {
-          handleSessionExpired()
-          return []
-        }
-        if (!response.ok) throw new Error("access codes unavailable")
-        return (await response.json()) as AccessCodeMetadata[]
-      })
-      .then((codes) => {
-        if (active) setAccessCodes(codes)
+    Promise.all([
+      fetch("/api/v1/access-codes", { credentials: "same-origin" }),
+      fetch("/api/v1/access-requests", { credentials: "same-origin" }),
+      fetch("/api/v1/authorizations", { credentials: "same-origin" }),
+    ])
+      .then(
+        async ([codesResponse, requestsResponse, authorizationsResponse]) => {
+          if (
+            codesResponse.status === 401 ||
+            requestsResponse.status === 401 ||
+            authorizationsResponse.status === 401
+          ) {
+            handleSessionExpired()
+            return null
+          }
+          if (
+            !codesResponse.ok ||
+            !requestsResponse.ok ||
+            !authorizationsResponse.ok
+          )
+            throw new Error("access data unavailable")
+          return {
+            codes: (await codesResponse.json()) as AccessCodeMetadata[],
+            requests: (await requestsResponse.json()) as AccessRequest[],
+            authorizations:
+              (await authorizationsResponse.json()) as Authorization[],
+          }
+        },
+      )
+      .then((accessData) => {
+        if (!active || !accessData) return
+        setAccessCodes(accessData.codes)
+        setAccessRequests(accessData.requests)
+        setAuthorizations(accessData.authorizations)
       })
       .catch(() => {
-        if (active) setAccessCodeError("Não foi possível carregar os códigos.")
+        if (active)
+          setAccessCodeError("Não foi possível carregar os dados de acesso.")
       })
       .finally(() => {
         if (active) setAccessCodesLoading(false)
@@ -330,6 +390,100 @@ export default function PatientProfile({
       setAccessCodeMessage("Código revogado.")
     } catch {
       setAccessCodeError("Não foi possível revogar o código.")
+    }
+  }
+
+  const toggleGrantValue = (
+    field: "categories" | "operations",
+    value: string,
+  ) => {
+    setGrantForm((current) => ({
+      ...current,
+      [field]: current[field].includes(value)
+        ? current[field].filter((item) => item !== value)
+        : [...current[field], value],
+    }))
+  }
+
+  const decideAccessRequest = async (
+    accessRequestId: string,
+    decision: "granted" | "rejected",
+  ) => {
+    const csrfToken = sessionStorage.getItem("vitallink.csrf")
+    if (!csrfToken) {
+      setAccessCodeError("Recarregue a página para validar esta solicitação.")
+      return
+    }
+    setDecisionSaving(accessRequestId)
+    setAccessCodeError("")
+    setAccessCodeMessage("")
+    const headers = {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfToken,
+    }
+    try {
+      let stepUpConfirmationId: string | undefined
+      if (decision === "granted") {
+        if (
+          grantForm.categories.length === 0 ||
+          grantForm.operations.length === 0 ||
+          grantForm.totpCode.length !== 6
+        ) {
+          setAccessCodeError("Informe escopo, prazo e TOTP para conceder.")
+          return
+        }
+        const stepUp = await fetch("/api/v1/step-up-confirmations", {
+          method: "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify({
+            action: "authorization_grant",
+            totp_code: grantForm.totpCode,
+          }),
+        })
+        if (!stepUp.ok) {
+          setAccessCodeError("Não foi possível confirmar o TOTP.")
+          return
+        }
+        stepUpConfirmationId = ((await stepUp.json()) as { id: string }).id
+      }
+      const response = await fetch(
+        `/api/v1/access-requests/${accessRequestId}/decisions`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify(
+            decision === "granted"
+              ? {
+                  decision,
+                  categories: grantForm.categories,
+                  operations: grantForm.operations,
+                  duration_days: Number(grantForm.durationDays),
+                  step_up_confirmation_id: stepUpConfirmationId,
+                }
+              : { decision },
+          ),
+        },
+      )
+      if (response.status === 401) {
+        handleSessionExpired()
+        return
+      }
+      if (!response.ok) throw new Error("decision failed")
+      setAccessRequests((current) =>
+        current.map((item) =>
+          item.id === accessRequestId ? { ...item, status: decision } : item,
+        ),
+      )
+      setGrantForm((current) => ({ ...current, totpCode: "" }))
+      setAccessCodeMessage(
+        decision === "granted" ? "Acesso concedido." : "Solicitação recusada.",
+      )
+    } catch {
+      setAccessCodeError("Não foi possível registrar a decisão.")
+    } finally {
+      setDecisionSaving("")
     }
   }
 
@@ -723,6 +877,224 @@ export default function PatientProfile({
                     ))}
                   </ul>
                 )}
+
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="font-semibold text-gray-900">
+                    Solicitações de profissionais
+                  </h3>
+                  {accessRequests.filter((item) => item.status === "pending")
+                    .length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">
+                      Nenhuma solicitação pendente.
+                    </p>
+                  ) : (
+                    <ul className="mt-4 space-y-4">
+                      {accessRequests
+                        .filter((item) => item.status === "pending")
+                        .map((accessRequest) => (
+                          <li
+                            key={accessRequest.id}
+                            className="rounded-xl border p-4"
+                            style={{ borderColor: "var(--border)" }}
+                          >
+                            <p className="font-semibold text-gray-900">
+                              {accessRequest.professional.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {accessRequest.professional.specialty}
+                              {accessRequest.professional.institution
+                                ? ` · ${accessRequest.professional.institution}`
+                                : ""}
+                            </p>
+                            <p className="mt-3 text-sm text-gray-700">
+                              {accessRequest.justification}
+                            </p>
+
+                            <fieldset className="mt-4">
+                              <legend className="text-sm font-semibold text-gray-800">
+                                Categorias autorizadas
+                              </legend>
+                              <div className="mt-2 flex flex-wrap gap-3">
+                                {[
+                                  "histórico",
+                                  "consultas",
+                                  "exames",
+                                  "laudos",
+                                  "receitas",
+                                  "imagens",
+                                  "recomendações",
+                                  "metas",
+                                  "mensagens",
+                                ].map((category) => (
+                                  <label
+                                    key={category}
+                                    className="flex items-center gap-2 text-sm text-gray-700"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={grantForm.categories.includes(
+                                        category,
+                                      )}
+                                      onChange={() =>
+                                        toggleGrantValue("categories", category)
+                                      }
+                                    />
+                                    {category}
+                                  </label>
+                                ))}
+                              </div>
+                            </fieldset>
+
+                            <fieldset className="mt-4">
+                              <legend className="text-sm font-semibold text-gray-800">
+                                Operações autorizadas
+                              </legend>
+                              <div className="mt-2 flex flex-wrap gap-3">
+                                {["consultar", "anexar", "atualizar"].map(
+                                  (operation) => (
+                                    <label
+                                      key={operation}
+                                      className="flex items-center gap-2 text-sm text-gray-700"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={grantForm.operations.includes(
+                                          operation,
+                                        )}
+                                        onChange={() =>
+                                          toggleGrantValue(
+                                            "operations",
+                                            operation,
+                                          )
+                                        }
+                                      />
+                                      {operation}
+                                    </label>
+                                  ),
+                                )}
+                              </div>
+                            </fieldset>
+
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                              <div>
+                                <label
+                                  htmlFor={`authorization-duration-${accessRequest.id}`}
+                                  className="block text-sm font-medium text-gray-700"
+                                >
+                                  Prazo em dias
+                                </label>
+                                <input
+                                  id={`authorization-duration-${accessRequest.id}`}
+                                  type="number"
+                                  min="1"
+                                  max="90"
+                                  value={grantForm.durationDays}
+                                  onChange={(event) =>
+                                    setGrantForm((current) => ({
+                                      ...current,
+                                      durationDays: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label
+                                  htmlFor={`authorization-totp-${accessRequest.id}`}
+                                  className="block text-sm font-medium text-gray-700"
+                                >
+                                  TOTP para concessão
+                                </label>
+                                <input
+                                  id={`authorization-totp-${accessRequest.id}`}
+                                  inputMode="numeric"
+                                  pattern="[0-9]{6}"
+                                  maxLength={6}
+                                  value={grantForm.totpCode}
+                                  onChange={(event) =>
+                                    setGrantForm((current) => ({
+                                      ...current,
+                                      totpCode: event.target.value,
+                                    }))
+                                  }
+                                  className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap gap-3">
+                              <button
+                                type="button"
+                                disabled={decisionSaving === accessRequest.id}
+                                onClick={() =>
+                                  void decideAccessRequest(
+                                    accessRequest.id,
+                                    "granted",
+                                  )
+                                }
+                                className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                                style={{ background: "var(--primary)" }}
+                              >
+                                Conceder acesso
+                              </button>
+                              <button
+                                type="button"
+                                disabled={decisionSaving === accessRequest.id}
+                                onClick={() =>
+                                  void decideAccessRequest(
+                                    accessRequest.id,
+                                    "rejected",
+                                  )
+                                }
+                                className="rounded-xl px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                Recusar
+                              </button>
+                            </div>
+                          </li>
+                        ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="mt-8 border-t pt-6">
+                  <h3 className="font-semibold text-gray-900">
+                    Compartilhado com {authorizations.length}{" "}
+                    {authorizations.length === 1
+                      ? "profissional"
+                      : "profissionais"}
+                  </h3>
+                  {authorizations.length === 0 ? (
+                    <p className="mt-3 text-sm text-gray-500">
+                      Nenhuma autorização concedida.
+                    </p>
+                  ) : (
+                    <ul className="mt-4 grid gap-3 md:grid-cols-2">
+                      {authorizations.map((authorization) => (
+                        <li
+                          key={authorization.id}
+                          className="rounded-xl border p-4"
+                          style={{ borderColor: "var(--border)" }}
+                        >
+                          <p className="font-semibold text-gray-900">
+                            {authorization.professional.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {authorization.professional.specialty}
+                          </p>
+                          <p className="mt-2 text-xs text-gray-600">
+                            {authorization.categories.join(", ")} ·{" "}
+                            {authorization.operations.join(", ")}
+                          </p>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {authorization.status === "active"
+                              ? `Ativo até ${new Date(authorization.expires_at).toLocaleDateString("pt-BR")}`
+                              : "Autorização expirada"}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
                 {accessCodeMessage && (
                   <p role="status" className="mt-4 text-sm text-emerald-700">
                     {accessCodeMessage}

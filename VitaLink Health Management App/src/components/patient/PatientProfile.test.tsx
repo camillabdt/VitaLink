@@ -114,6 +114,18 @@ test("patient generates and copies a temporary access code", async () => {
       }),
     )
     .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
       new Response(
         JSON.stringify({
           id: "44444444-4444-4444-8444-444444444444",
@@ -159,6 +171,18 @@ test("patient revokes an owned active access code", async () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
     .mockResolvedValueOnce(new Response(null, { status: 204 }))
 
   render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
@@ -175,6 +199,81 @@ test("patient revokes an owned active access code", async () => {
     }),
   )
   expect(screen.getByText("Código revogado")).toBeInTheDocument()
+})
+
+test("patient grants a pending request with explicit scope and TOTP", async () => {
+  const user = userEvent.setup()
+  sessionStorage.setItem("vitallink.csrf", "session-csrf-token")
+  vi.spyOn(globalThis, "fetch")
+    .mockResolvedValueOnce(patientProfileResponse())
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            id: "77777777-7777-4777-8777-777777777777",
+            status: "pending",
+            created_at: "2026-08-14T05:00:00Z",
+            justification: "Acompanhamento cardiológico solicitado.",
+            professional: {
+              name: "Dra. Profissional",
+              specialty: "Cardiologia",
+              institution: "Hospital Escola",
+            },
+          },
+        ]),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response("[]", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ id: "88888888-8888-4888-8888-888888888888" }),
+        { status: 201, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+    .mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          id: "77777777-7777-4777-8777-777777777777",
+          status: "granted",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    )
+
+  render(<PatientProfile onNavigate={vi.fn()} onLogout={vi.fn()} />)
+
+  await screen.findByRole("heading", { name: "Paciente de Teste" })
+  await user.click(screen.getByRole("tab", { name: "Acesso temporário" }))
+  expect(await screen.findByText("Dra. Profissional")).toBeInTheDocument()
+  await user.type(screen.getByLabelText("TOTP para concessão"), "123456")
+  await user.click(screen.getByRole("button", { name: "Conceder acesso" }))
+
+  expect(globalThis.fetch).toHaveBeenCalledWith(
+    "/api/v1/access-requests/77777777-7777-4777-8777-777777777777/decisions",
+    expect.objectContaining({
+      method: "POST",
+      body: JSON.stringify({
+        decision: "granted",
+        categories: ["histórico"],
+        operations: ["consultar"],
+        duration_days: 30,
+        step_up_confirmation_id: "88888888-8888-4888-8888-888888888888",
+      }),
+    }),
+  )
+  expect(await screen.findByText("Acesso concedido.")).toBeInTheDocument()
 })
 
 test("patient loads and ends an owned active session", async () => {

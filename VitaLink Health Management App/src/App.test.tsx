@@ -134,7 +134,7 @@ test("professional settings opens the persisted professional profile", async () 
       }),
     )
     .mockResolvedValueOnce(
-      new Response(JSON.stringify(professionalProfile), {
+      new Response("[]", {
         status: 200,
         headers: { "Content-Type": "application/json" },
       }),
