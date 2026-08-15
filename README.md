@@ -17,8 +17,7 @@ Nesta documentação, os termos têm significado explícito:
 - **Estado atual:** artefato ou evidência presente no repositório.
 - **Proposto:** requisito, controle ou decisão planejada, ainda sem comprovação de implementação.
 - **Evidência:** saída, teste, relatório ou outro artefato reproduzível versionado.
-- **[A confirmar]:** informação ainda não documentada ou não validável.
-
+- 
 ## Organização do repositório
 
 - `docs/`: requisitos, domínio, ameaças, riscos, arquitetura e decisões de segurança.
