@@ -2,7 +2,7 @@
 
 Este é o documento canônico dos casos de abuso do VitaLink. Os identificadores e títulos são mantidos em um único lugar para que diferentes integrantes possam acrescentar casos sem duplicar fluxos ou alterar a rastreabilidade. Documentos de ameaças e riscos devem referenciar estes identificadores.
 
-As condições descritas representam situações necessárias para que o abuso seja possível. Elas não afirmam que o sistema já possua uma vulnerabilidade, e mecanismos não documentados permanecem `[A confirmar]`.
+As condições descritas representam situações necessárias para que o abuso seja possível. Elas não afirmam que o sistema já possua uma vulnerabilidade; os controles implementados e testados estão descritos nas etapas de código seguro e verificação.
 
 ## Catálogo
 

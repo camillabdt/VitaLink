@@ -517,4 +517,4 @@ A primeira versão estará concluída somente quando:
 - documentação e evidências corresponderem ao comportamento executável;
 - a aplicação estiver identificada como demonstração com dados sintéticos.
 
-Qualquer item sem teste ou evidência permanece **[A confirmar]** e não pode ser declarado como controle implementado.
+Qualquer item sem teste ou evidência não deve ser declarado como controle implementado.

@@ -35,7 +35,7 @@ As premissas usadas nesta análise são:
 3. O ator acessa o link.
 4. A API ou o armazenamento entrega o arquivo sem confirmar a autorização do leitor.
 
-**Condição ou vulnerabilidade:** existência de rota pública, ausência de autenticação e autorização por documento ou uso do identificador como autoridade. A primeira versão trata o risco evitando o recurso; a ausência real da rota fica [A confirmar] até o teste.
+**Condição ou vulnerabilidade:** existência de rota pública, ausência de autenticação e autorização por documento ou uso do identificador como autoridade. A primeira versão evita o recurso público e os testes de documentos verificam sessão, escopo e IDOR.
 
 **Caso de abuso relacionado:** CA07 — Compartilhamento público de documento médico, situação a ser detalhada na Issue #14.
 
@@ -52,7 +52,7 @@ As premissas usadas nesta análise são:
 3. A API responde rapidamente a milhares de consultas sem impor limite de taxa (rate limiting).
 4. O ator consolida e exfiltra os dados coletados de múltiplos pacientes.
 
-**Condição ou vulnerabilidade:** ausência de limitação de requisições (rate limit) por IP ou sessão, falha de autorização (IDOR - Insecure Direct Object References) permitindo leitura fora do escopo, ou falta de alertas de uso anômalo. A configuração dessas proteções permanece [A confirmar].
+**Condição ou vulnerabilidade:** ausência de limitação de requisições (rate limit) por IP ou sessão, falha de autorização (IDOR - Insecure Direct Object References) permitindo leitura fora do escopo, ou falta de alertas de uso anômalo. A primeira versão implementa autorização por escopo e limites de requisição, com testes correspondentes.
 
 **Caso de abuso relacionado:** CA08 — Extração em massa de informações, situação a ser detalhada na Issue #14.
 
@@ -69,7 +69,7 @@ As premissas usadas nesta análise são:
 3. O evento de compartilhamento ocorre e dados são expostos.
 4. Ocorre uma investigação sobre o vazamento, mas os logs insuficientes impedem a identificação de quem realizou a ação.
 
-**Condição ou vulnerabilidade:** registro de logs incompleto ou inexistente para eventos críticos de acesso, logs mutáveis que não protegem contra adulteração, ou banco de dados de auditoria não isolado. A proteção e o escopo dos registros ficam [A confirmar].
+**Condição ou vulnerabilidade:** registro de logs incompleto ou inexistente para eventos críticos de acesso, logs mutáveis que não protegem contra adulteração, ou banco de dados de auditoria não isolado. A primeira versão registra eventos mínimos, usa identificadores pseudonimizados e protege a auditoria contra alteração.
 
 **Casos de abuso relacionados:** CA07 — Compartilhamento público de documento médico; CA08 — Extração em massa de informações.
 

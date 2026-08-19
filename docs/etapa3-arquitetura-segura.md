@@ -63,4 +63,4 @@ V01–V09 são condições de projeto derivadas da modelagem de ameaças, não a
 
 As tecnologias e a separação dos componentes estão detalhadas no [plano de implementação da primeira versão](implementacao-segura/plano-implementacao-primeira-versao.md). DS03, DS06, DS08 e DS21 definem o comportamento obrigatório de sessão, autorização, auditoria e proteção de requisições; as decisões devem ser revisadas antes do código.
 
-Os critérios de aceitação desta etapa são exercitados pelas suítes e evidências reunidas em [implementação segura](implementacao-segura/README.md). O estado atual não comprova redução de risco em produção: o gate do HEAD, o DAST do VitaLink e o monitoramento ativo ainda precisam ser concluídos.
+Os critérios de aceitação desta etapa são exercitados pelas suítes e evidências reunidas em [implementação segura](implementacao-segura/README.md). A evidência desta versão cobre a aplicação local, o código, os testes e o gate de CI; não representa implantação de produção.

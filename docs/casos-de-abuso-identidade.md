@@ -31,7 +31,7 @@ Este documento detalha os casos de abuso relacionados à identidade e à autenti
 
 O sistema confia nos dados informados durante o cadastro sem possuir uma verificação suficiente de que a identidade e a habilitação profissional pertencem realmente à pessoa que está criando a conta.
 
-A forma concreta de validação do registro profissional permanece **[A confirmar]** nesta etapa do projeto.
+A primeira versão mantém a conta profissional sem acesso até a validação manual auditada, conforme a evidência da issue #52. Integração automática com conselho de classe e KYC fica fora do escopo da primeira versão.
 
 ### Impacto
 
@@ -95,7 +95,7 @@ Entre os possíveis impactos estão:
 
 O ataque utiliza uma evidência de autenticação comprometida pertencente a uma conta legítima.
 
-Os mecanismos concretos de proteção de credenciais, limitação de sessões, recuperação de conta e revogação de tokens ainda permanecem **[A confirmar]** no VitaLink.
+O VitaLink protege credenciais e sessões com Argon2, TOTP, cookies opacos, recuperação reforçada, limites e encerramento de sessões, com cobertura nas rotas de conta e nos testes correspondentes.
 
 ### Impacto
 

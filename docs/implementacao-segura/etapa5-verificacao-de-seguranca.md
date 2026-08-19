@@ -15,7 +15,7 @@ Em 14 de agosto de 2026, os serviços PostgreSQL, Mailpit, MinIO e ClamAV foram 
 | Execução local             | 86 aprovados, 1 aviso | 39 aprovados e 18 reprovados | Houve timeouts e asserções divergentes na execução frontend concorrente; dois arquivos de autenticação passaram isoladamente com um único worker.                    |
 | CI da `develop`, `b80f410` | 86 aprovados, 1 aviso | 57 aprovados                 | O workflow [CI #31839376826](https://github.com/camillabdt/VitaLink/actions/runs/31839376826) também aprovou migrações, seed, Ruff, `pip-audit`, formatação e build. |
 
-O gate automatizado da `develop` está verde. A divergência local permanece registrada como instabilidade do ambiente de execução, sem correção funcional nesta consolidação. Em 14 de agosto de 2026, a responsável autorizou explicitamente a promoção para `main` do conteúdo executável de `b80f410`. Uma nova inspeção pelo navegador integrado foi tentada, mas a ferramenta ficou indisponível; portanto, este registro não inventa novas capturas visuais. O DAST específico do VitaLink permanece pendente como evidência complementar.
+O gate automatizado da `develop` está verde. A divergência local permanece registrada como instabilidade do ambiente de execução, sem correção funcional nesta consolidação. Em 14 de agosto de 2026, a responsável autorizou explicitamente a promoção para `main` do conteúdo executável de `b80f410`. Uma nova inspeção pelo navegador integrado foi tentada, mas a ferramenta ficou indisponível; portanto, este registro não inventa novas capturas visuais. O DAST específico do VitaLink não compõe esta evidência.
 
 ## Estratégia TDD adotada para o VitaLink
 
@@ -251,6 +251,4 @@ Esta verificação possui as seguintes limitações:
 
 A Etapa 5 passa a possuir **evidência prática e reproduzível de um processo de verificação de segurança**, incluindo ambiente controlado, ferramenta, comando executado, relatórios e análise de achados.
 
-A execução do ZAP descrita nesta seção não valida a segurança do VitaLink, pois teve o OWASP Juice Shop como alvo didático. Ela demonstra a aplicação do processo de análise e estabelece como resultados de ferramentas devem ser interpretados sem confundir ameaça, vulnerabilidade, alerta automatizado e vulnerabilidade comprovada. A implementação do VitaLink é sustentada separadamente por código, testes e evidências históricas das issues #50 a #66. O gate consolidado do HEAD atual permanece pendente.
-
-Uma análise dinâmica futura deverá reaplicar o processo diretamente sobre uma implantação controlada do VitaLink. Essa análise complementará os testes atuais de autorização, revogação, compartilhamento, auditoria, integridade e disponibilidade, sem substituir suas evidências específicas.
+A execução do ZAP descrita nesta seção não valida a segurança do VitaLink, pois teve o OWASP Juice Shop como alvo didático. Ela demonstra a aplicação do processo de análise e estabelece como resultados de ferramentas devem ser interpretados sem confundir ameaça, vulnerabilidade, alerta automatizado e vulnerabilidade comprovada. A implementação do VitaLink é sustentada separadamente por código, testes e evidências históricas das issues #50 a #66. O gate consolidado do HEAD atual está registrado na promoção para `main` do commit `e145257`.

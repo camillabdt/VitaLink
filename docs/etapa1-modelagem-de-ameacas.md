@@ -2,7 +2,7 @@
 
 ## Escopo
 
-Este índice consolida a modelagem STRIDE do VitaLink. As ameaças são cenários de projeto, não achados de implementação. Os detalhes de cada grupo estão nos documentos vinculados; controles e evidências técnicas permanecem **[A confirmar]** enquanto não houver código ou testes versionados.
+Este índice consolida a modelagem STRIDE do VitaLink. As ameaças são cenários de projeto, não achados de implementação. Os detalhes de cada grupo estão nos documentos vinculados; controles e evidências técnicas estão registrados nas etapas de implementação e verificação.
 
 ## Tabela STRIDE consolidada
 
@@ -45,4 +45,4 @@ Os documentos vinculados descrevem ator, objetivo, condições, fluxo, impacto e
 
 ## Considerações finais
 
-Os ativos prioritários são os dados e documentos médicos, seguidos por autorização, auditoria, API e armazenamento. O maior impacto esperado decorre de acesso indevido, alteração de informação clínica, vazamento em massa e indisponibilidade durante atendimento. A implementação e os testes atuais exercitam controles relevantes, mas a confirmação das condições de exploração ainda exige revisão de segurança, DAST e observação operacional.
+Os ativos prioritários são os dados e documentos médicos, seguidos por autorização, auditoria, API e armazenamento. O maior impacto esperado decorre de acesso indevido, alteração de informação clínica, vazamento em massa e indisponibilidade durante atendimento. A implementação e os testes atuais exercitam os controles preventivos documentados.

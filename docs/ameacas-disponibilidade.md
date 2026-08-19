@@ -2,7 +2,7 @@
 
 Análise de ameaças focada nos impactos de indisponibilidade, sobrecarga e perda de dados no ambiente do **VitaLink**.
 
-O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), respectivamente como R13, R14 e R15. Limites de requisição, upload e quota possuem implementação e testes; monitoramento de capacidade e alertas ativos permanecem pendentes.
+O [índice da Etapa 1](etapa1-modelagem-de-ameacas.md) mantém a rastreabilidade com os casos de abuso. A avaliação, priorização e tratamento de T13, T14 e T15 estão em [Etapa 2](etapa2-riscos-e-tratamento.md), respectivamente como R13, R14 e R15. Limites de requisição, upload e quota possuem implementação e testes.
 
 ---
 

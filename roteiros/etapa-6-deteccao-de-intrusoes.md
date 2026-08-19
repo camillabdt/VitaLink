@@ -4,7 +4,7 @@
 
 Este roteiro separa a telemetria já produzida pela aplicação das regras de detecção ainda propostas.
 
-O backend persiste eventos de auditoria para autenticação, autorizações, documentos, dados clínicos, notificações e negações, além de emitir logs operacionais mínimos. O repositório ainda não possui coleta centralizada, correlação temporal, painel de monitoramento nem emissão de alertas D01–D08. Portanto, os eventos são implementados, mas a detecção ativa permanece pendente.
+O backend persiste eventos de auditoria para autenticação, autorizações, documentos, dados clínicos, notificações e negações, além de emitir logs operacionais mínimos. As regras D01–D08 estão documentadas como critérios de detecção; a versão entregue não inclui coleta centralizada, correlação temporal, painel de monitoramento ou emissão operacional desses alertas.
 
 A Etapa 6 complementa os controles preventivos das etapas anteriores: impedir uma operação indevida e detectar que uma tentativa ocorreu são objetivos diferentes e complementares.
 
@@ -181,7 +181,7 @@ Após o encerramento:
 - revisar regra de detecção;
 - revisar limiares quando necessário;
 - identificar controles preventivos que precisam ser alterados;
-- registrar ações pendentes e responsáveis.
+- registrar ações e responsáveis.
 
 ## Responsabilidades
 

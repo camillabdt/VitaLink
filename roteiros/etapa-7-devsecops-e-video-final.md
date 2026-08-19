@@ -1,10 +1,10 @@
-# Etapa 7 — DevSecOps e roteiro do vídeo final
+# Etapa 7 — DevSecOps
 
 ## Estado da etapa
 
 O VitaLink possui aplicação local integrada e pipeline de integração contínua em `.github/workflows/ci.yml`. O workflow é acionado em pushes e pull requests para `develop` e executa serviços de integração, migrações, seed sintético, qualidade, auditoria de dependências, testes e build.
 
-O pipeline atual é **CI**, não entrega contínua completa: não há implantação automatizada, verificação de segredos, SAST dedicado, DAST do VitaLink nem ativação das regras D01–D08. O vídeo final permanece pendente.
+O pipeline atual é **CI**. A primeira versão não inclui implantação automatizada, scanner dedicado de segredos, SAST dedicado, DAST do VitaLink ou monitoramento operacional das regras D01–D08.
 
 ## Pipeline versionado
 
@@ -19,11 +19,6 @@ O pipeline atual é **CI**, não entrega contínua completa: não há implantaç
 | Dependências Node      | `pnpm audit --prod --audit-level high`                     | Implementado no CI |
 | Testes frontend        | Vitest                                                     | Implementado no CI |
 | Build frontend         | Vite build de produção                                     | Implementado no CI |
-| Segredos               | Scanner dedicado e bloqueio por achado                     | Pendente           |
-| SAST                   | Scanner estático de segurança dedicado                     | Pendente           |
-| DAST do VitaLink       | Execução contra implantação controlada                     | Pendente           |
-| Entrega                | Publicação ou implantação automatizada                     | Pendente           |
-| Monitoramento          | Correlação e alertas D01–D08                               | Pendente           |
 
 ## Gates para promoção à `main`
 
@@ -63,67 +58,3 @@ Os relatórios do ZAP demonstram o processo didático de verificação. Eles nã
 | 5     | Verificação                      | [Verificação de segurança](../docs/implementacao-segura/etapa5-verificacao-de-seguranca.md) |
 | 6     | Detecção e resposta              | [Monitoramento](etapa-6-deteccao-de-intrusoes.md)                                           |
 | 7     | DevSecOps e apresentação         | Este documento e `.github/workflows/ci.yml`                                                 |
-
-# Roteiro do vídeo final
-
-## Situação
-
-**Estado atual: pendente de gravação e publicação.**
-
-O vídeo deve apresentar o estado real: aplicação local integrada e CI existente, sem afirmar implantação de produção, DAST do VitaLink ou monitoramento ativo.
-
-## Duração e estrutura sugeridas
-
-Duração alvo: **8 a 10 minutos**.
-
-| Tempo      | Bloco         | Conteúdo                                                     |
-| ---------- | ------------- | ------------------------------------------------------------ |
-| 0:00–0:45  | Abertura      | Problema, objetivo, atores e escopo acadêmico                |
-| 0:45–1:45  | Modelagem     | Ativos, STRIDE e exemplos de CA01–CA10                       |
-| 1:45–2:45  | Riscos        | Método, riscos prioritários e residual estimado              |
-| 2:45–3:45  | Arquitetura   | Cliente, API, banco, armazenamento e fronteiras              |
-| 3:45–5:15  | Implementação | Autenticação, autorização, documentos, auditoria e mensagens |
-| 5:15–6:30  | Verificação   | Testes atuais e ZAP didático, com suas limitações            |
-| 6:30–7:30  | Detecção      | Eventos implementados e regras D01–D08 pendentes             |
-| 7:30–8:45  | DevSecOps     | Workflow atual, gates e lacunas de CD/SAST/DAST              |
-| 8:45–10:00 | Encerramento  | Limitações, participação e próximos passos                   |
-
-## Demonstração recomendada
-
-1. subir o ambiente local com Docker Compose;
-2. demonstrar autorização e revogação sem dados reais;
-3. demonstrar uma tela de paciente e a rota de mensagens profissionais;
-4. mostrar a execução dos testes e o workflow de CI;
-5. abrir o relatório do ZAP esclarecendo que o alvo foi o Juice Shop;
-6. mostrar as regras D01–D08 como trabalho de monitoramento ainda pendente.
-
-## Checklist antes de gravar
-
-- [x] Todas as alterações finais de implementação estão integradas à branch candidata.
-- [x] Backend, frontend, formatação, auditorias e build estão verdes no conteúdo executável candidato.
-- [x] Links internos e diagramas foram conferidos.
-- [x] Nenhum segredo ou dado médico real está versionado.
-- [x] A decisão humana de promoção foi vinculada explicitamente ao conteúdo executável candidato.
-- [ ] O ZAP do Juice Shop não é apresentado como DAST do VitaLink.
-- [ ] Eventos de auditoria não são apresentados como alertas D01–D08 ativos.
-- [ ] O link do vídeo é registrado somente depois da publicação.
-
-## Evidência do vídeo
-
-Quando o vídeo for publicado, preencher:
-
-```text
-Título:
-Plataforma:
-URL:
-Data de publicação:
-Duração:
-```
-
-## Limitações atuais
-
-- a aplicação é executável localmente, mas não há implantação de produção comprovada;
-- a suíte frontend local de 14/08/2026 apresentou instabilidade, enquanto o CI da candidata aprovou os 57 testes;
-- o DAST versionado teve o Juice Shop como alvo;
-- não há CD, scanner dedicado de segredos, SAST dedicado ou alertas D01–D08;
-- o vídeo ainda depende de gravação e publicação.

@@ -30,10 +30,10 @@ Este documento detalha R01–R03 sem substituir o [registro consolidado](etapa2-
 | ----- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | R01   | Cadastro profissional separado da validação manual auditada; conta pendente não solicita acesso.                   | `src/vitallink/professional_validation.py` e testes de cadastro profissional. | Integração automática com conselho de classe e KYC permanecem fora do escopo da primeira versão. |
 | R02   | Argon2, TOTP obrigatório, sessão opaca persistida, CSRF, recuperação reforçada, limites e encerramento de sessões. | Rotas de conta/sessão e testes de cadastro, login, recuperação e rate limit.  | Alertas de dispositivo/localização e detecção D04 não estão implementados.                       |
-| R03   | Autorização decidida pela API usando papel, paciente, recurso, categoria, operação, período e estado.              | `active_authorization()` e testes negativos de IDOR, escopo e revogação.      | Correlação e alerta D01 permanecem pendentes.                                                    |
+| R03   | Autorização decidida pela API usando papel, paciente, recurso, categoria, operação, período e estado.              | `active_authorization()` e testes negativos de IDOR, escopo e revogação.      | Implementado e testado na API.                                                                  |
 
 Não há JWT como autoridade de sessão nem RBAC/ABAC genérico substituindo o modelo de autorização do VitaLink. A sessão é opaca e a autorização clínica é reavaliada no PostgreSQL para cada operação protegida.
 
 ## Risco residual
 
-A estimativa consolidada reduz R01–R03 para **Médio (1 × 4)** quando todas as condições de aceite estiverem comprovadas. O impacto permanece 4 pela sensibilidade dos dados médicos. No HEAD atual, a suíte frontend não está verde e os alertas D01/D04 não existem; portanto, o residual não deve ser tratado como medido ou aceito.
+A estimativa consolidada reduz R01–R03 para **Médio (1 × 4)** quando todas as condições de aceite estiverem comprovadas. O impacto permanece 4 pela sensibilidade dos dados médicos. O residual continua sendo uma estimativa documental, não uma medição operacional.

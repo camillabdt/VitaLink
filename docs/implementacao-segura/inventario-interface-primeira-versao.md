@@ -28,7 +28,7 @@ O paciente gera, copia, lista e revoga códigos temporários próprios. O profis
 
 ### Situação da validação da issue #66
 
-As fatias das issues #55 a #65 completaram os destinos e controles previstos. A revisão humana da issue #66 aprovou o commit `7068e3c`, mas mensagens profissionais, pacientes e valores de referência mudaram depois dessa revisão. O gate do HEAD atual está pendente e a suíte frontend local possui falhas. Consulte a [evidência histórica da issue #66](implementacao-issue-66.md).
+As fatias das issues #55 a #65 completaram os destinos e controles previstos. A revisão humana da issue #66 aprovou o commit `7068e3c`, mas mensagens profissionais, pacientes e valores de referência mudaram depois dessa revisão. O gate do HEAD atual está registrado na [Etapa 5](etapa5-verificacao-de-seguranca.md), e a suíte frontend local possui instabilidade documentada. Consulte também a [evidência histórica da issue #66](implementacao-issue-66.md).
 
 ## Telas e destinos
 

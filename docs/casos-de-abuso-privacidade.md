@@ -70,7 +70,7 @@ Violação grave de privacidade com a exposição de exames, diagnósticos e his
 6. Os dados extraídos em massa são exfiltrados, concluindo o vazamento sistemático.
 
 **Falha de segurança explorada:**
-A aplicação falha duplamente: em garantir que o ator consulte apenas o escopo estrito ao qual tem direito (IDOR) e em impor barreiras contra abusos de grande volume de tráfego de leitura de dados (Rate Limit). As configurações reais do rate limit e do monitoramento da API permanecem [A confirmar].
+A aplicação trata o risco de duas formas: autorização por escopo para impedir IDOR e limites de requisição para reduzir abusos de grande volume. A detecção operacional de padrões anômalos não faz parte desta versão.
 
 **Impacto:**
 Vazamento em massa da base de dados do sistema, expondo centenas ou milhares de pacientes simultaneamente. Pode resultar em pesadas multas regulatórias e judiciais (LGPD), danos irreparáveis à reputação e exposição massiva de dados pessoais e clínicos.

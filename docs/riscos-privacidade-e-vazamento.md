@@ -103,7 +103,7 @@ Os registros devem identificar ator, recurso, operação, resultado e horário, 
 ### Estado dos controles
 
 - R10: não existe compartilhamento público; documentos usam armazenamento privado e leitura mediada pela API, com testes de sessão, escopo e IDOR.
-- R11: limites de requisição e carga controlada possuem implementação e testes; detecção de extração anômala e alerta D06 permanecem pendentes.
+- R11: limites de requisição e carga controlada possuem implementação e testes; a detecção operacional de extração anômala não compõe esta versão.
 - R12: eventos de auditoria pseudonimizados e projeções mínimas estão implementados; integridade operacional, retenção e alerta D08 ainda precisam de evidência.
 
 ## Relação complementar com o Framework NIST CSF 2.0

@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-O VitaLink possui implementação executável no backend FastAPI e no frontend React. Os controles abaixo foram conferidos no código e possuem testes automatizados. A implementação não comprova, por si só, redução de risco em produção: DAST do VitaLink, monitoramento centralizado e validação humana do HEAD atual permanecem pendentes.
+O VitaLink possui implementação executável no backend FastAPI e no frontend React. Os controles abaixo foram conferidos no código e possuem testes automatizados. A implementação não comprova, por si só, redução de risco em produção.
 
 ## Práticas implementadas
 
